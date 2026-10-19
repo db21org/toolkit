@@ -1,0 +1,27 @@
+{
+  "extends": "./typescript/node-next.json",
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "useUnknownInCatchVariables": true,
+    "verbatimModuleSyntax": true,
+    "jsx": "react-jsx",
+    "types": ["node", "vitest", "react", "react-dom"],
+    "paths": {
+      "@db21/toolkit/utils": ["./src/utils/index.ts"],
+      "@db21/toolkit/money": ["./src/money/index.ts"],
+      "@db21/toolkit/feature-kit": ["./src/feature-kit/core/index.ts"],
+      "@db21/toolkit/feature-kit/react": ["./src/feature-kit/react/index.ts"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.d.mts",
+    "test/**/*.ts",
+    "test/**/*.tsx",
+    "vitest.config.ts",
+    "tsup.config.ts"
+  ]
+}

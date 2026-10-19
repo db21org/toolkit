@@ -1,0 +1,143 @@
+# @db21/toolkit
+
+Runtime utilities, decimal-backed money primitives, modular dependency injection,
+and shared TypeScript tooling. Import only the entry points your project needs.
+
+**Release status:** the first npm release and public GitHub repository are not yet
+available. Installation commands and remote links below apply after launch.
+
+## Installation
+
+Requires Node.js **22.16 or newer**. Use your preferred package manager:
+
+```sh
+npm install @db21/toolkit
+# or
+yarn add @db21/toolkit
+```
+
+For tooling-only use, install with `npm install --save-dev @db21/toolkit` or
+`yarn add --dev @db21/toolkit`. Yarn is required only for contributing to this
+repository, not for consuming the package.
+
+## Quick start
+
+```ts
+import { createMoney } from "@db21/toolkit/money";
+import { assert } from "@db21/toolkit/utils";
+
+const price = createMoney("19.99", "USD");
+assert.defined(price, "Invalid price");
+```
+
+Use the shared ESLint profile:
+
+```js
+// eslint.config.mjs
+export { default } from "@db21/toolkit/eslint";
+```
+
+Extend a TypeScript preset:
+
+```json
+{
+  "extends": "@db21/toolkit/typescript/node-next.json"
+}
+```
+
+There is no root import: use `@db21/toolkit/utils`, not `@db21/toolkit`.
+
+## Integration requirements
+
+Install the optional peer dependencies used by your integration:
+
+- **Utilities, money, or Feature Kit core:** no integration peers required.
+- **Feature Kit React:** React 19; TypeScript projects also need `@types/react`.
+- **ESLint profiles:** ESLint `>=10.4 <11` and TypeScript `>=5 <7`.
+- **Dependency-cruiser conventions:** dependency-cruiser 18.
+- **GraphQL validation helpers:** GraphQL 16, in addition to the linting hosts.
+
+For example:
+
+```sh
+npm install react@19
+npm install --save-dev 'eslint@>=10.4 <11' 'typescript@>=5 <7'
+```
+
+Feature Kit requires TypeScript's `experimentalDecorators: true`. Its React entry
+registers module metadata as a side effect; do not mark the entire package as
+side-effect-free in your bundler configuration.
+
+## Entry points and compatibility
+
+Utilities and money support ESM and CommonJS. Feature Kit and JavaScript tooling
+entries are ESM-only. Type declarations are included.
+
+| Subpath                                                                                 | Purpose                                                     |
+| --------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `@db21/toolkit/utils`                                                                   | Assertions, predicates, `Maybe`, and waiting helpers        |
+| `@db21/toolkit/money`                                                                   | Decimal-backed money primitives                             |
+| `@db21/toolkit/feature-kit`                                                             | Modular dependency injection and application lifecycle      |
+| `@db21/toolkit/feature-kit/react`                                                       | React providers and Surfaces                                |
+| `@db21/toolkit/feature-kit/conventions/{core,react,nestjs}/{eslint,dependency-cruiser}` | Static module conventions                                   |
+| `@db21/toolkit/eslint/base`                                                             | Project-agnostic `recommended` and opt-in `react` rules     |
+| `@db21/toolkit/eslint`                                                                  | Shared TypeScript/JavaScript conventions                    |
+| `@db21/toolkit/eslint/{react,astro}`                                                    | Framework-specific flat-config arrays                       |
+| `@db21/toolkit/eslint/{expo,nest}`                                                      | `createExpoConfig({ cwd })` and `createNestConfig({ cwd })` |
+| `@db21/toolkit/eslint/plugins`                                                          | Individual custom rule plugins                              |
+| `@db21/toolkit/eslint/expo/graphql-conventions`                                         | Feature-private GraphQL validation helpers                  |
+| `@db21/toolkit/typescript/{base,browser,bundler,node-next,node16,vitest}.json`          | TypeScript presets                                          |
+
+Subpaths isolate loading, not installation size or releases. Every entry shares
+one package version and dependency installation. Arbitrary deep imports are not
+supported.
+
+The framework lint profiles are opinionated, opt-in presets, not universal
+framework requirements. The Expo profile defaults to `src/features` and
+`src/modules`, feature-private generated GraphQL files, i18n, NativeWind, and a
+navigation hook. Customize source/module roots, roles, folders, and GraphQL layout
+through the factory options. Override the default
+`useAppRouter` from `@/components/navigation` with
+`navigationHook: { file, importSource, name }`. The default hook file is
+`src/components/navigation/use-app-router.hook.ts`. Use lower-level convention
+factories when you do not want the entire shared profile. See
+[lint profiles](docs/lint-profiles.md) for configuration examples.
+
+## Documentation
+
+- [Utilities](docs/utils.md)
+- [Money policies and conversion behavior](docs/money.md)
+- [Lint profiles and configurable layouts](docs/lint-profiles.md)
+- [Feature Kit React](docs/feature-kit-react.md)
+- [Module conventions](docs/feature-kit-conventions.md)
+- [Base ESLint rules](docs/eslint-base-rules.md)
+
+## GitHub Actions
+
+Two composite actions are included: `setup-yarn` and `prepare-turbo-workspace`.
+Once the public repository is available, reference them directly and replace
+`<full-commit-sha>` with a real, pinned commit:
+
+```yaml
+- uses: db21org/toolkit/actions/setup-yarn@<full-commit-sha>
+- uses: db21org/toolkit/actions/prepare-turbo-workspace@<full-commit-sha>
+  with:
+    workspace: your-workspace-name
+```
+
+Setup Yarn expects a Yarn project at the checkout root. The Turbo action accepts
+`directory`, `workspace`, `tasks`, and `run-tasks`. Neither action publishes
+packages. Public actions require no private-repository access credentials.
+
+## Contributing and support
+
+See the [development guide](docs/development.md) for setup, validation, and known
+dependency warnings. Include a minimal reproduction, package version, Node.js
+version, and affected entry point when reporting a bug.
+
+After launch, report bugs through [GitHub Issues](https://github.com/db21org/toolkit/issues).
+Release maintainers should use the separate [publishing guide](docs/publishing.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE) and [NOTICE](NOTICE) for attribution.

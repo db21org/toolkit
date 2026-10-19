@@ -1,0 +1,12 @@
+{
+  "extends": "@db21/toolkit/typescript/node-next.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "experimentalDecorators": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": false,
+    "types": ["node", "react"]
+  },
+  "include": ["*.mts", "*.cts"]
+}

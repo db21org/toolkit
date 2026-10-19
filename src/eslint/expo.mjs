@@ -1,0 +1,231 @@
+import { createReactEslintConfig } from "@db21/toolkit/feature-kit/conventions/react/eslint";
+import commonConfig, {
+  reactConfig,
+  reactHookRules,
+  typescriptRepositoryRules,
+} from "./index.mjs";
+import { createFeatureGraphqlPlugin } from "./expo/feature-graphql.mjs";
+
+const translatableAttributePattern =
+  "^(accessibilityHint|accessibilityLabel|alt|aria-description|aria-label|caption|content|description|emptyMessage|errorMessage|helperText|label|message|placeholder|subtitle|text|title)$";
+
+const appRestrictedSyntax = [
+  {
+    selector:
+      'JSXExpressionContainer > ConditionalExpression[consequent.type="Literal"][consequent.value=null], JSXExpressionContainer > ConditionalExpression[alternate.type="Literal"][alternate.value=null]',
+    message:
+      "Use condition && <Component /> rendering instead of JSX ternaries that return null.",
+  },
+  {
+    selector: "JSXText[value=/\\S/]",
+    message:
+      "Use an i18n translation instead of hardcoded user-facing JSX text.",
+  },
+  {
+    selector: `JSXElement > JSXExpressionContainer > Literal[value=/\\S/][raw=/^("|')/], JSXFragment > JSXExpressionContainer > Literal[value=/\\S/][raw=/^("|')/]`,
+    message:
+      "Use an i18n translation instead of a hardcoded user-facing string.",
+  },
+  {
+    selector: `JSXElement > JSXExpressionContainer > ConditionalExpression > Literal[value=/\\S/][raw=/^("|')/], JSXFragment > JSXExpressionContainer > ConditionalExpression > Literal[value=/\\S/][raw=/^("|')/]`,
+    message:
+      "Use i18n translations instead of hardcoded strings returned by a JSX conditional.",
+  },
+  {
+    selector: `JSXElement > JSXExpressionContainer > LogicalExpression > Literal[value=/\\S/][raw=/^("|')/], JSXFragment > JSXExpressionContainer > LogicalExpression > Literal[value=/\\S/][raw=/^("|')/]`,
+    message:
+      "Use an i18n translation instead of a hardcoded string returned by a JSX expression.",
+  },
+  {
+    selector:
+      "JSXElement > JSXExpressionContainer > TemplateLiteral > TemplateElement[value.raw=/\\S/], JSXFragment > JSXExpressionContainer > TemplateLiteral > TemplateElement[value.raw=/\\S/]",
+    message:
+      "Use an i18n translation instead of a hardcoded user-facing template string.",
+  },
+  {
+    selector: `JSXAttribute[name.name=/${translatableAttributePattern}/][value.type="Literal"][value.value=/\\S/]`,
+    message:
+      "Use an i18n translation instead of a hardcoded user-facing attribute.",
+  },
+  {
+    selector: `JSXAttribute[name.name=/${translatableAttributePattern}/] > JSXExpressionContainer > Literal[value=/\\S/][raw=/^("|')/]`,
+    message:
+      "Use an i18n translation instead of a hardcoded user-facing attribute value.",
+  },
+  {
+    selector: `JSXAttribute[name.name=/${translatableAttributePattern}/] > JSXExpressionContainer > ConditionalExpression > Literal[value=/\\S/][raw=/^("|')/]`,
+    message:
+      "Use i18n translations instead of hardcoded strings returned by a user-facing attribute.",
+  },
+  {
+    selector: `JSXAttribute[name.name=/${translatableAttributePattern}/] > JSXExpressionContainer > TemplateLiteral > TemplateElement[value.raw=/\\S/]`,
+    message:
+      "Use an i18n translation instead of a hardcoded user-facing attribute template.",
+  },
+  {
+    selector: 'JSXExpressionContainer > Literal[value=" "]',
+    message:
+      "Do not use JSX space expressions. Include spacing in text or layout instead.",
+  },
+  {
+    selector: 'JSXAttribute[name.name="style"]',
+    message:
+      "Prefer NativeWind className tokens instead of the style prop. If inline style is unavoidable, disable this rule locally with a reason.",
+  },
+  {
+    selector:
+      "ExportAllDeclaration[source.value=/generated/], ExportNamedDeclaration[source.value=/generated/]",
+    message:
+      "Generated GraphQL artifacts are feature-private and must not be re-exported.",
+  },
+];
+
+export const expoRestrictedSyntax = [
+  ...typescriptRepositoryRules["no-restricted-syntax"].slice(1),
+  ...appRestrictedSyntax,
+];
+
+export const createExpoFeatureKitConfig = ({
+  cwd,
+  sourceRoot = "src",
+  moduleRoots = [`${sourceRoot}/features`, `${sourceRoot}/modules`],
+  additionalRoles = [],
+  allowedFolders,
+}) =>
+  createReactEslintConfig({
+    additionalRoles: [
+      {
+        case: "kebab",
+        extensions: [".ts"],
+        folder: "schemas",
+        suffix: ".schema",
+      },
+      {
+        case: "pascal",
+        extensions: [".tsx"],
+        folder: "components",
+        recursive: true,
+        suffix: "",
+      },
+      {
+        case: "kebab",
+        extensions: [".ts"],
+        folder: "providers",
+        suffix: ".provider",
+      },
+      {
+        case: "kebab",
+        extensions: [".ts"],
+        folder: "repositories",
+        suffix: ".repository",
+      },
+      {
+        case: "kebab",
+        extensions: [".ts"],
+        folder: "types",
+        suffix: ".type",
+      },
+      ...additionalRoles,
+    ],
+    allowedFolders: allowedFolders ?? [
+      "cache",
+      "components",
+      "generated",
+      "graphql",
+      "hooks",
+      "locales",
+      "providers",
+      "queries",
+      "react-providers",
+      "repositories",
+      "schemas",
+      "services",
+      "surfaces",
+      "test",
+      "types",
+      "utils",
+      ...additionalRoles.map(({ folder }) => folder),
+    ],
+    cwd,
+    moduleRoots,
+  });
+
+export const createExpoConfig = ({
+  cwd,
+  sourceRoot = "src",
+  moduleRoots = [`${sourceRoot}/features`, `${sourceRoot}/modules`],
+  additionalRoles = [],
+  allowedFolders,
+  graphql = {},
+  navigationHook = {
+    file: `${sourceRoot}/components/navigation/use-app-router.hook.ts`,
+    importSource: "@/components/navigation",
+    name: "useAppRouter",
+  },
+}) => {
+  const featureKitConfig = createExpoFeatureKitConfig({
+    cwd,
+    sourceRoot,
+    moduleRoots,
+    additionalRoles,
+    allowedFolders,
+  });
+
+  const featureGraphqlPlugin = createFeatureGraphqlPlugin(cwd, {
+    moduleRoots,
+    ...graphql,
+  });
+
+  return [
+    ...commonConfig,
+    {
+      ignores: moduleRoots.map((root) => `${root}/*/generated/**`),
+    },
+    {
+      files: [`${sourceRoot}/**/*.{gql,graphql}`],
+      plugins: {
+        "feature-graphql": featureGraphqlPlugin,
+      },
+      processor: "feature-graphql/conventions",
+    },
+    featureKitConfig,
+    {
+      files: [`${sourceRoot}/**/*.{ts,tsx}`],
+      plugins: reactConfig.plugins,
+      rules: {
+        ...reactHookRules,
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: [
+              {
+                importNames: ["useRouter"],
+                message: `Use ${navigationHook.name} from ${navigationHook.importSource} as the configured navigation entry point.`,
+                name: "expo-router",
+              },
+            ],
+          },
+        ],
+        "no-restricted-syntax": ["error", ...expoRestrictedSyntax],
+      },
+    },
+    {
+      files: [navigationHook.file],
+      rules: {
+        "no-restricted-imports": "off",
+      },
+    },
+    {
+      files: [`${sourceRoot}/**/*.tsx`],
+      ...reactConfig,
+      rules: {
+        ...reactConfig.rules,
+        "db21-hooks/require-extracted-hooks": "error",
+        "max-lines-per-function": [
+          "warn",
+          { max: 150, skipBlankLines: true, skipComments: true },
+        ],
+      },
+    },
+  ];
+};

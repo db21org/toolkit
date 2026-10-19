@@ -1,0 +1,185 @@
+{
+  "name": "@db21/toolkit",
+  "version": "1.0.0",
+  "description": "Shared db21 runtime utilities, Feature Kit, development conventions and tooling.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Dmytro Baida",
+  "packageManager": "yarn@4.16.0",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/db21org/toolkit.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "exports": {
+    "./utils": {
+      "import": {
+        "types": "./dist/utils/index.d.ts",
+        "default": "./dist/utils/index.js"
+      },
+      "require": {
+        "types": "./dist/utils/index.d.cts",
+        "default": "./dist/utils/index.cjs"
+      }
+    },
+    "./money": {
+      "import": {
+        "types": "./dist/money/index.d.ts",
+        "default": "./dist/money/index.js"
+      },
+      "require": {
+        "types": "./dist/money/index.d.cts",
+        "default": "./dist/money/index.cjs"
+      }
+    },
+    "./feature-kit": {
+      "types": "./dist/feature-kit/core/index.d.ts",
+      "import": "./dist/feature-kit/core/index.js"
+    },
+    "./feature-kit/react": {
+      "types": "./dist/feature-kit/react/index.d.ts",
+      "import": "./dist/feature-kit/react/index.js"
+    },
+    "./feature-kit/conventions/core/eslint": {
+      "types": "./dist/feature-kit/conventions/core/eslint/index.d.mts",
+      "import": "./dist/feature-kit/conventions/core/eslint/index.mjs"
+    },
+    "./feature-kit/conventions/core/dependency-cruiser": {
+      "types": "./dist/feature-kit/conventions/core/dependency-cruiser/index.d.mts",
+      "import": "./dist/feature-kit/conventions/core/dependency-cruiser/index.mjs"
+    },
+    "./feature-kit/conventions/react/eslint": {
+      "types": "./dist/feature-kit/conventions/react/eslint/index.d.mts",
+      "import": "./dist/feature-kit/conventions/react/eslint/index.mjs"
+    },
+    "./feature-kit/conventions/react/dependency-cruiser": {
+      "types": "./dist/feature-kit/conventions/react/dependency-cruiser/index.d.mts",
+      "import": "./dist/feature-kit/conventions/react/dependency-cruiser/index.mjs"
+    },
+    "./feature-kit/conventions/nestjs/eslint": {
+      "types": "./dist/feature-kit/conventions/nestjs/eslint/index.d.mts",
+      "import": "./dist/feature-kit/conventions/nestjs/eslint/index.mjs"
+    },
+    "./feature-kit/conventions/nestjs/dependency-cruiser": {
+      "types": "./dist/feature-kit/conventions/nestjs/dependency-cruiser/index.d.mts",
+      "import": "./dist/feature-kit/conventions/nestjs/dependency-cruiser/index.mjs"
+    },
+    "./eslint": {
+      "types": "./dist/eslint/index.d.mts",
+      "import": "./dist/eslint/index.mjs"
+    },
+    "./eslint/base": {
+      "types": "./dist/eslint/base/index.d.ts",
+      "import": "./dist/eslint/base/index.js"
+    },
+    "./eslint/react": {
+      "types": "./dist/eslint/react.d.mts",
+      "import": "./dist/eslint/react.mjs"
+    },
+    "./eslint/astro": {
+      "types": "./dist/eslint/astro.d.mts",
+      "import": "./dist/eslint/astro.mjs"
+    },
+    "./eslint/expo": {
+      "types": "./dist/eslint/expo.d.mts",
+      "import": "./dist/eslint/expo.mjs"
+    },
+    "./eslint/expo/graphql-conventions": {
+      "types": "./dist/eslint/expo/graphql-conventions.d.mts",
+      "import": "./dist/eslint/expo/graphql-conventions.mjs"
+    },
+    "./eslint/nest": {
+      "types": "./dist/eslint/nest.d.mts",
+      "import": "./dist/eslint/nest.mjs"
+    },
+    "./eslint/plugins": {
+      "types": "./dist/eslint/plugins/index.d.mts",
+      "import": "./dist/eslint/plugins/index.mjs"
+    },
+    "./typescript/base.json": "./typescript/base.json",
+    "./typescript/browser.json": "./typescript/browser.json",
+    "./typescript/bundler.json": "./typescript/bundler.json",
+    "./typescript/node-next.json": "./typescript/node-next.json",
+    "./typescript/node16.json": "./typescript/node16.json",
+    "./typescript/vitest.json": "./typescript/vitest.json"
+  },
+  "files": [
+    "dist",
+    "typescript",
+    "actions",
+    "docs",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "prepack": "corepack yarn build",
+    "check": "yarn build && tsc --noEmit",
+    "lint": "yarn build && eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "yarn build && vitest run && node --test 'test/eslint-base/**/*.test.js'",
+    "version:preview": "node scripts/prepare-preview.mjs",
+    "test:pack": "yarn build && node scripts/test-pack.mjs"
+  },
+  "dependencies": {
+    "@eslint/js": "^10.0.1",
+    "@inversifyjs/plugin-dispose": "0.4.6",
+    "@typescript-eslint/utils": "^8.61.1",
+    "decimal.js": "10.6.0",
+    "eslint-plugin-astro": "^3.1.0",
+    "eslint-plugin-jsdoc": "63.0.2",
+    "eslint-plugin-simple-import-sort": "^13.0.0",
+    "eslint-plugin-sonarjs": "^4.2.0",
+    "eslint-plugin-unicorn": "^73.0.0",
+    "globals": "^17.6.0",
+    "inversify": "8.2.2",
+    "reflect-metadata": "0.2.2",
+    "typescript-eslint": "^8.61.1"
+  },
+  "peerDependencies": {
+    "dependency-cruiser": "^18.0.0",
+    "eslint": ">=10.4 <11",
+    "graphql": ">=16 <17",
+    "react": ">=19 <20",
+    "typescript": ">=5 <7"
+  },
+  "peerDependenciesMeta": {
+    "dependency-cruiser": {
+      "optional": true
+    },
+    "eslint": {
+      "optional": true
+    },
+    "graphql": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "~19.2.2",
+    "@types/react-dom": "~19.2.3",
+    "dependency-cruiser": "18.0.0",
+    "eslint": "10.8.1",
+    "graphql": "^16.11.0",
+    "prettier": "^3.9.5",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "tsup": "^8.5.1",
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.10"
+  }
+}

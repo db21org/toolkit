@@ -1,0 +1,39 @@
+name: 🏗️ Prepare Turbo workspace
+description: Build a workspace's dependencies and optionally validate it through Turbo.
+
+inputs:
+  directory:
+    description: Directory containing the workspace root.
+    default: .
+  run-tasks:
+    description: Whether to run the configured workspace tasks.
+    default: "true"
+  tasks:
+    description: Space-separated Turbo tasks to run after building dependencies.
+    default: check lint
+  workspace:
+    description: Workspace package name to prepare.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: 🧱 Build workspace dependencies
+      if: ${{ inputs.run-tasks != 'true' }}
+      env:
+        TURBO_WORKSPACE: ${{ inputs.workspace }}
+      shell: bash
+      working-directory: ${{ inputs.directory }}
+      run: yarn turbo run build "--filter=${TURBO_WORKSPACE}^..."
+
+    - name: 🏃 Run workspace tasks
+      # Task dependencies already build required workspaces in this same run.
+      if: ${{ inputs.run-tasks == 'true' }}
+      env:
+        TURBO_TASKS: ${{ inputs.tasks }}
+        TURBO_WORKSPACE: ${{ inputs.workspace }}
+      shell: bash
+      working-directory: ${{ inputs.directory }}
+      run: |
+        read -ra turbo_tasks <<< "$TURBO_TASKS"
+        yarn turbo run "${turbo_tasks[@]}" "--filter=${TURBO_WORKSPACE}"

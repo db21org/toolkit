@@ -1,0 +1,8 @@
+Attribution
+
+The base ESLint configuration and its rule tests were adapted from
+https://github.com/dmytrobaida/eslint-config (@dbaida/eslint-config).
+Copyright (c) 2026 Dmytro Baida. Its MIT license is retained in LICENSE.
+
+Third-party dependencies retain their own licenses; they are not relicensed by
+this notice.
