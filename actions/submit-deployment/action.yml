@@ -1,0 +1,46 @@
+name: 🚀 Submit deployment
+description: Submit a digest through a consumer-owned Make target using a private Cloudflare Access curl configuration.
+inputs:
+  component:
+    description: Component corresponding to a deploy-COMPONENT Make target.
+    required: true
+  image:
+    description: Immutable sha256 image digest.
+    required: true
+  channel:
+    description: Deployment ordering channel.
+    default: main
+  sequence:
+    description: Source publication run number.
+    required: true
+  attempt:
+    description: Source publication attempt number.
+    required: true
+  request-id:
+    description: Stable idempotency key reused for retries.
+    required: true
+  directory:
+    description: Directory containing the consumer Makefile.
+    default: .
+  access-client-id:
+    description: Cloudflare Access service token client ID.
+    required: true
+  access-client-secret:
+    description: Cloudflare Access service token secret.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: 🚀 Submit deployment through platform API
+      shell: bash
+      env:
+        COMPONENT: ${{ inputs.component }}
+        IMAGE: ${{ inputs.image }}
+        DEPLOY_CHANNEL: ${{ inputs.channel }}
+        DEPLOY_SEQUENCE: ${{ inputs.sequence }}
+        DEPLOY_ATTEMPT: ${{ inputs.attempt }}
+        REQUEST_ID: ${{ inputs.request-id }}
+        DEPLOY_DIRECTORY: ${{ inputs.directory }}
+        CF_ACCESS_CLIENT_ID: ${{ inputs.access-client-id }}
+        CF_ACCESS_CLIENT_SECRET: ${{ inputs.access-client-secret }}
+      run: bash "$GITHUB_ACTION_PATH/submit.sh"

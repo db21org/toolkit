@@ -1,0 +1,52 @@
+name: 🔎 Collect image releases
+description: Download one publication attempt and validate its source, digests, and component allowlist.
+inputs:
+  run-id:
+    description: Source publication workflow run ID.
+    required: true
+  run-attempt:
+    description: Source publication attempt number.
+    required: true
+  source-sha:
+    description: Expected full publication source SHA.
+    required: true
+  components:
+    description: JSON array of permitted component names.
+    required: true
+  github-token:
+    description: GitHub token with actions read permission.
+    required: true
+outputs:
+  images:
+    description: Validated JSON array of component, image, and sha records.
+    value: ${{ steps.receipts.outputs.images }}
+runs:
+  using: composite
+  steps:
+    - name: 🏗️ Prepare receipt download directory
+      id: directory
+      shell: bash
+      env:
+        RELEASE_RUN_ID: ${{ inputs.run-id }}
+        RELEASE_RUN_ATTEMPT: ${{ inputs.run-attempt }}
+      run: |
+        set -euo pipefail
+        [[ "$RELEASE_RUN_ID" =~ ^[1-9][0-9]*$ && "$RELEASE_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]] || { printf 'Invalid source publication run or attempt\n' >&2; exit 1; }
+        printf 'path=%s\n' "$(mktemp -d "$RUNNER_TEMP/image-releases.XXXXXX")" >> "$GITHUB_OUTPUT"
+    - name: 📥 Download image release receipts
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      with:
+        github-token: ${{ inputs.github-token }}
+        run-id: ${{ inputs.run-id }}
+        pattern: image-release-*-attempt-${{ inputs.run-attempt }}
+        path: ${{ steps.directory.outputs.path }}
+        # Keep artifacts separate so duplicate filenames cannot overwrite evidence.
+        merge-multiple: false
+    - name: 🔎 Validate image release receipts
+      id: receipts
+      shell: bash
+      env:
+        RELEASE_DIRECTORY: ${{ steps.directory.outputs.path }}
+        RELEASE_SOURCE_SHA: ${{ inputs.source-sha }}
+        RELEASE_COMPONENTS: ${{ inputs.components }}
+      run: node "$GITHUB_ACTION_PATH/collect.mjs"

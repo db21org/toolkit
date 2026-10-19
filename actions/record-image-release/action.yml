@@ -1,0 +1,34 @@
+name: 📤 Record image release
+description: Validate an image digest and upload an attempt-scoped publication receipt.
+inputs:
+  component:
+    description: Lowercase application component name.
+    required: true
+  digest:
+    description: Published sha256 image digest.
+    required: true
+  source-sha:
+    description: Full source commit SHA.
+    default: ${{ github.sha }}
+outputs:
+  artifact-name:
+    description: Attempt-scoped receipt artifact name.
+    value: ${{ steps.receipt.outputs.artifact-name }}
+runs:
+  using: composite
+  steps:
+    - name: 📝 Create image release receipt
+      id: receipt
+      shell: bash
+      env:
+        RELEASE_COMPONENT: ${{ inputs.component }}
+        RELEASE_DIGEST: ${{ inputs.digest }}
+        RELEASE_SOURCE_SHA: ${{ inputs.source-sha }}
+      run: node "$GITHUB_ACTION_PATH/record.mjs"
+    - name: 📤 Upload image release receipt
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      with:
+        name: ${{ steps.receipt.outputs.artifact-name }}
+        path: ${{ steps.receipt.outputs.path }}
+        if-no-files-found: error
+        retention-days: 30

@@ -1,4 +1,4 @@
-name: Validate and publish
+name: 📦 Validate and publish npm package
 
 on:
   pull_request:
@@ -11,25 +11,36 @@ permissions:
 
 jobs:
   validate:
+    name: ✅ Validate package
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: 📥 Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           package-manager-cache: false
-      - run: corepack enable
-      - run: corepack yarn install --immutable
-      - run: corepack yarn check
-      - run: corepack yarn lint
-      - run: corepack yarn test
-      - run: corepack yarn format:check
-      - run: corepack yarn test:pack
+      - name: 🧶 Enable Corepack
+        run: corepack enable
+      - name: 📦 Install dependencies
+        run: corepack yarn install --immutable
+      - name: 🔎 Check types
+        run: corepack yarn check
+      - name: 🧹 Lint
+        run: corepack yarn lint
+      - name: 🧪 Run tests
+        run: corepack yarn test
+      - name: 🎨 Check formatting
+        run: corepack yarn format:check
+      - name: 🧪 Test packed package
+        run: corepack yarn test:pack
 
   publish:
+    name: 📦 Publish npm dev preview
     needs: validate
     if: >-
       github.repository == 'db21org/toolkit' &&
@@ -44,21 +55,27 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: 📥 Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           package-manager-cache: false
           registry-url: https://registry.npmjs.org/
-      - run: corepack enable
-      - run: corepack yarn install --immutable
-      - run: corepack yarn version:preview
-      - run: corepack yarn build
+      - name: 🧶 Enable Corepack
+        run: corepack enable
+      - name: 📦 Install dependencies
+        run: corepack yarn install --immutable
+      - name: 🏷️ Set preview version
+        run: corepack yarn version:preview
+      - name: 🏗️ Build package
+        run: corepack yarn build
       # Concurrency alone does not order queued GitHub runs. Never move dev back
       # to an older checkout when a newer main commit is already available.
-      - name: Check current main
+      - name: 🔎 Check current main
         id: head
         env:
           GH_TOKEN: ${{ github.token }}
@@ -69,6 +86,6 @@ jobs:
           else
             echo 'Skipping superseded main commit.'
           fi
-      - name: Publish dev preview with OIDC
+      - name: 📤 Publish dev preview with OIDC
         if: steps.head.outputs.current == 'true'
         run: npm publish --tag dev --access public

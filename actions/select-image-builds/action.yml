@@ -1,0 +1,35 @@
+name: 🔎 Select image builds
+description: Build a component matrix from manual selection or paths-filter outputs.
+inputs:
+  components:
+    description: JSON array of all supported components.
+    required: true
+  workspace-components:
+    description: JSON array of components affected by workspace graph changes.
+    required: true
+  changes:
+    description: JSON array of changed path-filter keys.
+    default: "[]"
+  workspace-graph-changed:
+    description: Whether shared workspace configuration changed.
+    default: "false"
+  component:
+    description: Manual component selection, or all.
+    default: all
+outputs:
+  components:
+    description: JSON component array for a build matrix.
+    value: ${{ steps.plan.outputs.components }}
+runs:
+  using: composite
+  steps:
+    - name: 🔎 Select image builds
+      id: plan
+      shell: bash
+      env:
+        BUILD_COMPONENTS: ${{ inputs.components }}
+        BUILD_WORKSPACE_COMPONENTS: ${{ inputs.workspace-components }}
+        BUILD_CHANGES: ${{ inputs.changes }}
+        BUILD_WORKSPACE_GRAPH_CHANGED: ${{ inputs.workspace-graph-changed }}
+        BUILD_COMPONENT: ${{ inputs.component }}
+      run: node "$GITHUB_ACTION_PATH/select.mjs"

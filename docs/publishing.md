@@ -50,7 +50,7 @@ for a maintainer to run deliberately; setup work does not run them automatically
    - Workflow filename: `publish.yml` (not the full path)
    - Environment: leave empty; this workflow does not use one
    - Allowed actions: explicitly allow **npm publish**, not only staged publishing
-5. Push to `main`, or run **Validate and publish** manually on `main`. A new npm
+5. Push to `main`, or run **📦 Validate and publish npm package** manually on `main`. A new npm
    trusted-publisher configuration needs its first successful publish within two
    days or it expires. Every passing current-main run is eligible to publish;
    no repository variable is required.

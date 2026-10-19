@@ -114,8 +114,8 @@ factories when you do not want the entire shared profile. See
 
 ## GitHub Actions
 
-Two composite actions are included: `setup-yarn` and `prepare-turbo-workspace`.
-Once the public repository is available, reference them directly and replace
+Composite actions cover Yarn/Turbo setup, GHCR publication, image-release receipts,
+build selection, and deployment submission. Reference them directly and replace
 `<full-commit-sha>` with a real, pinned commit:
 
 ```yaml
@@ -126,8 +126,9 @@ Once the public repository is available, reference them directly and replace
 ```
 
 Setup Yarn expects a Yarn project at the checkout root. The Turbo action accepts
-`directory`, `workspace`, `tasks`, and `run-tasks`. Neither action publishes
-packages. Public actions require no private-repository access credentials.
+`directory`, `workspace`, `tasks`, and `run-tasks`. Public actions require no
+private-repository access credentials. See the [actions guide](docs/github-actions.md)
+for publication permissions, receipt validation, and deployment contracts.
 
 ## Contributing and support
 
