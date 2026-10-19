@@ -34,8 +34,7 @@ jobs:
     if: >-
       github.repository == 'db21org/toolkit' &&
       github.ref == 'refs/heads/main' &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
-      vars.NPM_PUBLISH_ENABLED == 'true'
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     concurrency:

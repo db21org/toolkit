@@ -50,10 +50,10 @@ for a maintainer to run deliberately; setup work does not run them automatically
    - Workflow filename: `publish.yml` (not the full path)
    - Environment: leave empty; this workflow does not use one
    - Allowed actions: explicitly allow **npm publish**, not only staged publishing
-5. Set the GitHub repository Actions variable `NPM_PUBLISH_ENABLED` to `true`.
-   Push to `main`, or run **Validate and publish** manually on `main`. A new npm
+5. Push to `main`, or run **Validate and publish** manually on `main`. A new npm
    trusted-publisher configuration needs its first successful publish within two
-   days or it expires. Validation runs without this variable; publication does not.
+   days or it expires. Every passing current-main run is eligible to publish;
+   no repository variable is required.
 6. Confirm `latest` still points to `1.0.0` and `dev` points to the preview. Once
    OIDC works, npm recommends **Require two-factor authentication and disallow
    tokens**. No npm token secret is needed by this workflow.
@@ -83,7 +83,7 @@ before publishing, the job checks GitHub's current `main` SHA and skips supersed
 checkouts. This avoids a delayed old run moving `dev` backward. Intermediate pushes
 may be skipped, including pending jobs replaced by GitHub's concurrency queue. If
 the newest commit fails validation, `dev` stays on its previous passing version.
-Disable the repository variable to pause future publication jobs.
+Disable the workflow in GitHub Actions to pause future publication runs.
 
 ## Later stable releases
 

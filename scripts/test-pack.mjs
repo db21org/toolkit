@@ -69,7 +69,8 @@ try {
   writeFileSync(consumerManifestPath, JSON.stringify(consumerManifest));
   writeFileSync(
     join(temporaryDirectory, ".yarnrc.yml"),
-    "nodeLinker: node-modules\nenableScripts: false\n",
+    // These disposable installs intentionally create and update their own lockfile.
+    "nodeLinker: node-modules\nenableScripts: false\nenableImmutableInstalls: false\n",
   );
   cpSync(join(root, "test/package"), temporaryDirectory, { recursive: true });
   writeFileSync(
