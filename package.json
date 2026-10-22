@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "description": "Shared db21 runtime utilities, Feature Kit, development conventions and tooling.",
   "type": "module",
-  "bin": {
-    "toolkit": "./dist/cli/index.js"
-  },
+  "bin": "./dist/cli/index.js",
   "license": "MIT",
   "author": "Dmytro Baida",
   "packageManager": "yarn@4.16.0",
