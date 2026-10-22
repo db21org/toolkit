@@ -17,6 +17,10 @@ Keep changes focused, document public API changes, and run the relevant checks
 before submitting a pull request. Do not include credentials, private project
 details, or unrelated changes.
 
+Shared ESLint presets enforce [per-test justification](test-policy.md). Existing
+tests must be reviewed individually before their policy errors are resolved;
+do not add blanket exceptions or delete tests solely to make lint pass.
+
 ## Build and package validation
 
 `build` uses tsup to bundle ESM and declarations plus CommonJS utilities/money.
