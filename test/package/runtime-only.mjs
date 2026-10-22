@@ -13,6 +13,6 @@ assert.equal(
   require("@db21/toolkit/money").createMoney("12.34", "USD").amount.toString(),
   "12.34",
 );
-for (const host of ["react", "eslint"]) {
+for (const host of ["react", "eslint", "zod"]) {
   assert.throws(() => require.resolve(host), { code: "MODULE_NOT_FOUND" });
 }

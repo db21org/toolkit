@@ -4,12 +4,30 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { URL } from "node:url";
 
+import { createRegistry, defineEvent } from "@db21/toolkit/events";
 import { Application, Module, inspectModule } from "@db21/toolkit/feature-kit";
 import { reactProvider } from "@db21/toolkit/feature-kit/react";
 import { createMoney, serializeMoney } from "@db21/toolkit/money";
 import { isEmpty } from "@db21/toolkit/utils";
+import { z } from "zod";
 
 const require = createRequire(import.meta.url);
+const metadata = {
+  eventId: "4423fb0f-848d-4e34-a71f-01b609b1e7cf",
+  occurredAt: "2026-08-21T12:00:00.000Z",
+};
+
+for (const events of [
+  { createRegistry, defineEvent },
+  require("@db21/toolkit/events"),
+]) {
+  const definition = events.defineEvent("ping", "system.ping", 1, z.object({}));
+  const registry = events.createRegistry([definition]);
+  const event = registry.createEvent(registry.eventTypes.ping, metadata);
+
+  assert.deepEqual(event, { ...metadata, type: "system.ping", version: 1 });
+  assert.equal(registry.safeParseEvent("system.ping", event).success, true);
+}
 const exports = JSON.parse(
   readFileSync(new URL("./exports.json", import.meta.url), "utf8"),
 );

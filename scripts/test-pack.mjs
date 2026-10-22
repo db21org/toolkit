@@ -45,6 +45,7 @@ try {
     "graphql",
     "react",
     "typescript",
+    "zod",
   ];
 
   const dependencies = Object.fromEntries(

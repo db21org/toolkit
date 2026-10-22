@@ -18,6 +18,16 @@
     "registry": "https://registry.npmjs.org/"
   },
   "exports": {
+    "./events": {
+      "import": {
+        "types": "./dist/events/index.d.ts",
+        "default": "./dist/events/index.js"
+      },
+      "require": {
+        "types": "./dist/events/index.d.cts",
+        "default": "./dist/events/index.cjs"
+      }
+    },
     "./utils": {
       "import": {
         "types": "./dist/utils/index.d.ts",
@@ -149,7 +159,8 @@
     "eslint": ">=10.4 <11",
     "graphql": ">=16 <17",
     "react": ">=19 <20",
-    "typescript": ">=5 <7"
+    "typescript": ">=5 <7",
+    "zod": "^4.4.3"
   },
   "peerDependenciesMeta": {
     "dependency-cruiser": {
@@ -166,6 +177,9 @@
     },
     "typescript": {
       "optional": true
+    },
+    "zod": {
+      "optional": true
     }
   },
   "devDependencies": {
@@ -180,6 +194,7 @@
     "react-dom": "19.2.3",
     "tsup": "^8.5.1",
     "typescript": "~6.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "zod": "4.4.3"
   }
 }
