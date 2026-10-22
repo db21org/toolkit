@@ -12,6 +12,7 @@ const parserOptions = {
   tsconfigRootDir: process.cwd(),
 };
 
+// eslint-disable-next-line db21-tests/require-justification -- An explicit empty-string comparison must remain valid under the strict boolean options.
 test(`${ruleName}: valid`, async () => {
   await expectValid({
     code: 'const value: string = "";\nif (value !== "") { run(); }',
@@ -22,6 +23,7 @@ test(`${ruleName}: valid`, async () => {
   });
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- A string used directly as a condition must be rejected so truthiness cannot hide empty-value behavior.
 test(`${ruleName}: invalid`, async () => {
   await expectInvalid({
     code: 'const value: string = "";\nif (value) { run(); }',

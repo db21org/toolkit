@@ -13,6 +13,7 @@ import {
   renderWithFeatureKit,
 } from "./feature-kit-provider-test-helpers.js";
 
+// eslint-disable-next-line db21-tests/require-justification -- Provider composition order controls dependency availability and deterministic render nesting.
 test("provider composition follows dependency-first module order", async () => {
   const order: string[] = [];
 
@@ -74,6 +75,7 @@ test("provider composition follows dependency-first module order", async () => {
   expect(order).toEqual(["dependency", "root-first", "root-second"]);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Shared modules in a diamond graph must not mount the same provider more than once.
 test("shared module React providers are composed once", async () => {
   let seen = 0;
 
@@ -106,40 +108,7 @@ test("shared module React providers are composed once", async () => {
   expect(seen).toBe(1);
 });
 
-test("provider names are derived from displayName and component declarations", () => {
-  const displayNameComponent = ({
-    children,
-  }: Readonly<{ children: React.ReactNode }>): React.ReactElement => (
-    <>{children}</>
-  );
-
-  displayNameComponent.displayName = "DisplayNamedProvider";
-
-  const namedProvider: React.FC<Readonly<{ children: React.ReactNode }>> = ({
-    children,
-  }) => {
-    return <>{children}</>;
-  };
-
-  const module = createModule({
-    reactProviders: [
-      reactProvider({
-        dependencies: {},
-        component: displayNameComponent,
-      }),
-      reactProvider({
-        dependencies: {},
-        component: namedProvider,
-      }),
-    ],
-  });
-
-  const runtime = ReactRuntime.forApplication(Application.create(module));
-
-  expect(runtime.entries[0]?.provider.name).toBe("DisplayNamedProvider");
-  expect(runtime.entries[1]?.provider.name).toBe("namedProvider");
-});
-
+// eslint-disable-next-line db21-tests/require-justification -- Anonymous provider labels may collide, so stable distinct keys are required for React reconciliation.
 test("anonymous provider names collide but keys remain stable and unique", () => {
   const createAnonymous = (): React.FC<
     Readonly<{ children: React.ReactNode }>

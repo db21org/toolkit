@@ -26,5 +26,6 @@ excluded. Custom wrappers, CommonJS bindings, and dynamically extended test
 aliases are not inferred; use recognized imports when declaring tests.
 
 Lint enforces an explicit review decision, not the truth of its explanation.
-Reviewers still decide whether the test matters. Existing tests receive errors;
-this rollout does not remove them or retroactively justify them.
+Reviewers still decide whether the test matters. The rule never removes or
+justifies tests automatically. New workspaces omit placeholder tests and accept
+an empty suite until behavior worth protecting exists.

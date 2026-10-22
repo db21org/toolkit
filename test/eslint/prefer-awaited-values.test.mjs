@@ -24,6 +24,7 @@ const lint = async (statement) => {
   return result.messages;
 };
 
+// eslint-disable-next-line db21-tests/require-justification -- Awaited call arguments must be named first so asynchronous values can be inspected before they enter another API.
 test("rejects awaited values nested in function arguments", async () => {
   const cases = [
     "consume(await load());",
@@ -41,6 +42,7 @@ test("rejects awaited values nested in function arguments", async () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Awaited return expressions must be named first so return paths do not conceal asynchronous work.
 test("rejects awaited values nested in returned expressions", async () => {
   const cases = [
     "return await load();",
@@ -56,6 +58,7 @@ test("rejects awaited values nested in returned expressions", async () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- A named awaited value passed onward or returned is the prescribed safe form and must remain lint-clean.
 test("allows named awaited values in calls and returns", async () => {
   const messages = await lint(
     "const value = await load(); consume(value); return value;",
@@ -64,6 +67,7 @@ test("allows named awaited values in calls and returns", async () => {
   assert.deepEqual(messages, []);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Awaits inside nested callbacks belong to that callback and must not be misclassified as outer call arguments.
 test("does not treat awaits inside callback functions as outer call arguments", async () => {
   const messages = await lint(
     "consume(async () => { const value = await load(); return value; });",
@@ -72,6 +76,7 @@ test("does not treat awaits inside callback functions as outer call arguments", 
   assert.deepEqual(messages, []);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- A callback return-await still hides its own awaited value and must remain reportable at the nested function boundary.
 test("still rejects return await inside a callback function", async () => {
   const messages = await lint("consume(async () => { return await load(); });");
 
@@ -79,6 +84,7 @@ test("still rejects return await inside a callback function", async () => {
   assert.equal(messages[0].messageId, "return");
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Await expressions outside calls and returns are intentionally allowed so arrays and local composition are not over-restricted.
 test("allows awaited values outside calls and returns", async () => {
   const messages = await lint(
     "const values = [await first(), await second()];",

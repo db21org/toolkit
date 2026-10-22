@@ -1,3 +1,4 @@
 import { defineConfig } from "vitest/config";
 
-export default defineConfig({ test: { include: ["test/**/*.test.ts"] } });
+// New workspaces start without tests; add risk-focused tests with new behavior.
+export default defineConfig({ test: { include: ["test/**/*.test.ts"], passWithNoTests: true } });

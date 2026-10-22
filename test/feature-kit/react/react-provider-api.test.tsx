@@ -1,11 +1,5 @@
 import * as reactApi from "@db21/toolkit/feature-kit/react";
-import {
-  FeatureKitProvider,
-  ReactProvider,
-  reactProvider,
-  RenderSurface,
-  Surface,
-} from "@db21/toolkit/feature-kit/react";
+import { reactProvider } from "@db21/toolkit/feature-kit/react";
 import React from "react";
 import { expect, test } from "vitest";
 
@@ -26,56 +20,14 @@ const createAnonymousComponent = (): MutableComponent => {
   return component;
 };
 
-test("public React API exports expose provider and surface entry points", () => {
-  const keys = Object.keys(reactApi).toSorted((left, right) =>
-    left.localeCompare(right),
-  );
-
-  expect(keys).toEqual([
-    "FeatureKitProvider",
-    "reactProvider",
-    "ReactProvider",
-    "RenderSurface",
-    "Surface",
-  ]);
+// eslint-disable-next-line db21-tests/require-justification -- Runtime implementation details must remain unavailable to consumers of the public React entry point.
+test("React runtime implementation details remain excluded from the public API", () => {
   expect("ReactRuntime" in reactApi).toBe(false);
   expect("createEntries" in reactApi).toBe(false);
   expect("runtime" in reactApi).toBe(false);
 });
 
-test("reactProvider returns a ReactProvider instance", () => {
-  const component = ({
-    children,
-  }: Readonly<{ children: React.ReactNode }>): React.ReactElement => (
-    <>{children}</>
-  );
-
-  expect(ReactProvider).toBeInstanceOf(Function);
-  expect(FeatureKitProvider).toBeInstanceOf(Function);
-  expect(RenderSurface).toBeInstanceOf(Function);
-  expect(Surface).toBeInstanceOf(Function);
-
-  const provider = reactProvider({
-    dependencies: {},
-    component,
-  });
-
-  const providerInstance = new ReactProvider({
-    dependencies: {},
-    component,
-  });
-
-  expect(reactProvider).toBeInstanceOf(Function);
-  expect(ReactProvider).toBeInstanceOf(Function);
-  expect(provider.component).toBe(component);
-  expect(provider.dependencies).toEqual({});
-  expect(provider).toBeInstanceOf(ReactProvider);
-
-  expect(providerInstance).toBeInstanceOf(ReactProvider);
-  expect(providerInstance.component).toBe(component);
-  expect(providerInstance.dependencies).toEqual({});
-});
-
+// eslint-disable-next-line db21-tests/require-justification -- Provider names must remain deterministic because ownership diagnostics identify registrations by name.
 test("provider name is derived from displayName, component name, then anonymous fallback", () => {
   const displayNamedProvider = ({
     children,

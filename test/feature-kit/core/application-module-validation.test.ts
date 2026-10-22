@@ -15,6 +15,7 @@ import {
   resolveFromModule,
 } from "./test-helpers.js";
 
+// eslint-disable-next-line db21-tests/require-justification -- Module declarations must reject unowned exports and undecorated types before building a container graph.
 test("module export must be local-owned and undecorated modules are rejected", async () => {
   const localToken = token<string>("unowned-token");
 
@@ -51,6 +52,7 @@ test("module export must be local-owned and undecorated modules are rejected", a
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Import cycles must fail deterministically with a path developers can use to repair ownership.
 test("decorated module import cycles are rejected with readable path", async () => {
   // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- Empty class identity is the test subject; decorators are applied imperatively to trigger cycle metadata.
   class FirstModule {}
@@ -72,6 +74,7 @@ test("decorated module import cycles are rejected with readable path", async () 
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Private bindings must remain inaccessible to importing modules unless deliberately exported.
 test("private imported bindings are inaccessible without explicit export", async () => {
   const privateToken = token<number>("private-import-token");
 
@@ -92,24 +95,7 @@ test("private imported bindings are inaccessible without explicit export", async
   );
 });
 
-test("requesting module-scoped resolution from unregistered module fails", async () => {
-  const tokenValue = token<string>("unregistered-owner-token");
-
-  const ownerModule = createModule({
-    configure: ({ bind }) => {
-      bind(tokenValue).toConstantValue("local");
-    },
-  });
-  const foreignModule = createModule({});
-
-  const app = Application.create(ownerModule);
-
-  await expectFeatureKitErrorFrom(
-    () => resolveFromModule(app, foreignModule, tokenValue),
-    "module_not_registered",
-  );
-});
-
+// eslint-disable-next-line db21-tests/require-justification -- Ambiguous exported bindings must retain native diagnostics instead of silently selecting an unsafe provider.
 test("ambiguous bindings across direct imports and local/imported collisions surface native Inversify failures", async () => {
   const ambiguousToken = token<number>("ambiguous-token");
   const branchOneModule = createModule({

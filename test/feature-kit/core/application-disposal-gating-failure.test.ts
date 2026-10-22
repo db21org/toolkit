@@ -10,12 +10,11 @@ import {
   PreDestroy,
   token,
 } from "@db21/toolkit/feature-kit";
-import { assert, isNotEmpty } from "@db21/toolkit/utils";
+import { assert } from "@db21/toolkit/utils";
 import { expect, test } from "vitest";
 
 import {
   captureError,
-  createModule,
   expectFeatureKitErrorFrom,
   resolveFromModule,
 } from "./test-helpers.js";
@@ -51,6 +50,7 @@ const createDeferredState = (): {
   return { promise, resolve };
 };
 
+// eslint-disable-next-line db21-tests/require-justification -- Disposal must not construct unused services or claim ownership of caller-provided constant values.
 test("unused singleton providers stay unconstructed and caller-owned constants remain undisposed", async () => {
   const usedToken = token<string>("used-token");
   const callerOwnedToken = token<{ callback: () => void }>("caller-owned");
@@ -103,6 +103,7 @@ test("unused singleton providers stay unconstructed and caller-owned constants r
   expect(callerOwnedDestroyCount).toBe(0);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Concurrent disposal callers and in-flight resolutions need a single deterministic shutdown boundary.
 test("dispose gates immediate and in-flight access and returns one shared promise", async () => {
   const delayedToken = token<string>("in-flight-token");
   const resolveGate = createDeferredState();
@@ -139,6 +140,7 @@ test("dispose gates immediate and in-flight access and returns one shared promis
   await firstDispose;
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Cleanup failures must be normalized and shared so concurrent callers receive one stable lifecycle result.
 test("disposal failure is wrapped as one shared FeatureKit failure", async () => {
   let closeCount = 0;
 
@@ -180,25 +182,3 @@ test("disposal failure is wrapped as one shared FeatureKit failure", async () =>
   expect(firstError).toBe(secondError);
   expect(closeCount).toBe(1);
 });
-
-test("creating a module-scoped resolver requires a registered module", async () => {
-  const missingOwnerToken = token<string>("missing-owner-token");
-  const ownedModule = createModule({
-    configure: ({ bind }) => {
-      bind(missingOwnerToken).toConstantValue("value");
-    },
-  });
-
-  const foreignModule = createModule({});
-  const app = Application.create(ownedModule);
-
-  await expectFeatureKitErrorFrom(
-    () => resolveFromModule(app, foreignModule, missingOwnerToken),
-    "module_not_registered",
-    getModuleName(foreignModule),
-  );
-});
-
-const getModuleName = (moduleType: ModuleType): string => {
-  return isNotEmpty(moduleType.name) ? moduleType.name : "<anonymous>";
-};

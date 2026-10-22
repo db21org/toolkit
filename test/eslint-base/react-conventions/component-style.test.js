@@ -5,6 +5,7 @@ import { expectInvalid, expectValid } from "../helpers/lint-rule.js";
 const ruleName = "react-conventions/component-style";
 const ruleConfig = "error";
 
+// eslint-disable-next-line db21-tests/require-justification -- Directly exported FC components are the supported declaration form and must remain available to React consumers.
 test(`${ruleName}: accepts exported FC arrow components`, async () => {
   await expectValid({
     code: `
@@ -22,6 +23,7 @@ test(`${ruleName}: accepts exported FC arrow components`, async () => {
   });
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- React.FC namespace annotations are equivalent to FC imports and must not be rejected by the style rule.
 test(`${ruleName}: accepts exported React.FC arrow components`, async () => {
   await expectValid({
     code: `
@@ -39,6 +41,7 @@ test(`${ruleName}: accepts exported React.FC arrow components`, async () => {
   });
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- PascalCase function declarations must be reported to preserve the repository const-component declaration convention.
 test(`${ruleName}: rejects PascalCase function declarations`, async () => {
   await expectInvalid({
     code: `
@@ -52,6 +55,7 @@ test(`${ruleName}: rejects PascalCase function declarations`, async () => {
   });
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- A component exported later must be reported because direct export at declaration makes ownership and API visibility explicit.
 test(`${ruleName}: rejects components not exported at declaration time`, async () => {
   await expectInvalid({
     code: `
@@ -69,6 +73,7 @@ test(`${ruleName}: rejects components not exported at declaration time`, async (
   });
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- An unannotated PascalCase arrow function must be reported so component props stay intentionally typed.
 test(`${ruleName}: rejects unannotated components`, async () => {
   await expectInvalid({
     code: "export const Button = () => null;",
