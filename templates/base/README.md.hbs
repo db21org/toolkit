@@ -1,0 +1,52 @@
+# {{projectName}}
+
+Lean workspace based on Amatok, using `@db21/toolkit` conventions.
+Requires Node.js 22.16+ and Corepack/Yarn 4.16.0.
+
+## Setup
+
+```sh
+corepack yarn install
+corepack yarn format
+```
+
+Commit the generated `yarn.lock` before enabling CI. CI uses immutable installs.
+Bootstrap does not install dependencies, initialize Git, or publish anything.
+Templates ship with the toolkit package; generation does not download Amatok.
+
+## Apps
+
+{{#each apps}}
+- `apps/{{directory}}`: run `yarn dev:{{directory}}`.
+{{/each}}
+
+{{#if hasApi}}
+API health endpoint: `/health` on port 3000 (override with `PORT`).
+{{/if}}
+{{#if hasStatic}}
+Astro static site uses port 4321.
+{{/if}}
+{{#if hasSsr}}
+Astro SSR site uses port 4322.
+{{/if}}
+{{#if hasExpo}}
+For Expo native development, run `yarn workspace @{{projectName}}/app ios`
+or `yarn workspace @{{projectName}}/app android` with the appropriate simulator/device.
+Native builds require the platform-specific Expo toolchain; CI builds Expo web only.
+{{/if}}
+
+## Validation
+
+```sh
+yarn format:check
+yarn lint
+yarn check
+yarn architecture:check
+yarn test
+yarn build
+```
+
+Only selected apps and their required integrations are included. Database, auth,
+GraphQL, business integrations and deployment are intentionally absent. Add tests
+alongside new functionality; the initial test checks toolkit integration only.
+Keep local secrets in ignored environment overrides, never in source files.

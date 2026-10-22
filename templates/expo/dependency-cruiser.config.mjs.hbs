@@ -1,0 +1,10 @@
+import { createReactDependencyCruiserConfig } from "@db21/toolkit/feature-kit/conventions/react/dependency-cruiser";
+
+export default createReactDependencyCruiserConfig({
+  allow: ["src/components"],
+  cwd: import.meta.dirname,
+  exclude: ["\\.d\\.ts$", "\\.(?:css|json)$"],
+  moduleRoots: ["src/features", "src/modules"],
+  sourceRoot: "src",
+  tsConfig: "tsconfig.json",
+});

@@ -1,0 +1,15 @@
+import type { FC } from "react";
+import { Text, View } from "react-native";
+
+const applicationName = "{{projectName}}";
+const welcomeMessage = "Your Expo and Feature Kit starter is ready.";
+
+/** Renders the minimal cross-platform starter screen. */
+export const WelcomeScreen: FC = () => {
+  return (
+    <View>
+      <Text>{applicationName}</Text>
+      <Text>{welcomeMessage}</Text>
+    </View>
+  );
+};

@@ -10,6 +10,7 @@ corepack yarn lint
 corepack yarn test
 corepack yarn format:check
 corepack yarn test:pack
+corepack yarn test:bootstrap
 ```
 
 Keep changes focused, document public API changes, and run the relevant checks
@@ -27,9 +28,19 @@ the required hosts, and checks every public entry, CommonJS, declarations, React
 augmentation, and included actions. It may access the dependency registry but
 does not publish.
 
+`test:bootstrap` generates all four app types in an isolated temporary workspace,
+installs the packed toolkit artifact, and runs formatting, lint, type,
+architecture, test, and build checks plus an API health request. It accesses the
+dependency registry and disables dependency lifecycle scripts. Expo JavaScript
+bundles are exported for web, iOS, and Android; native toolchains and devices are
+not exercised. Unit tests cover all 15 nonempty
+app selections and destination safety; `test:pack` checks the installed CLI and
+bundled templates without requiring integration peers.
+
 The npm artifact includes compiled JavaScript, declarations, configurations,
-actions, and documentation. Original TypeScript, tests, and source maps are
-excluded; sources and tests belong in the GitHub repository.
+actions, documentation, and bundled bootstrap templates. Original toolkit
+TypeScript, tests, and source maps are excluded; sources and tests belong in the
+GitHub repository. Templates intentionally include starter source and test files.
 
 ## Known dependency warnings
 

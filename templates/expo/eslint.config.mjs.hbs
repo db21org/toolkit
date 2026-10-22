@@ -1,0 +1,11 @@
+import reactConfig from "@db21/toolkit/eslint/react";
+import { createReactEslintConfig } from "@db21/toolkit/feature-kit/conventions/react/eslint";
+
+// Keep toolkit React and module conventions without optional GraphQL/i18n styling policy.
+export default [
+  ...reactConfig,
+  createReactEslintConfig({
+    cwd: import.meta.dirname,
+    moduleRoots: ["src/features", "src/modules"],
+  }),
+];

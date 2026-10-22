@@ -1,0 +1,10 @@
+import { Module } from "@db21/toolkit/feature-kit";
+
+import { WelcomeModule } from "@/features/welcome";
+import { StarterModule } from "@/modules/starter";
+
+/** Root Feature Kit module for application composition. */
+@Module({
+  imports: [StarterModule, WelcomeModule],
+})
+export class AppModule {}

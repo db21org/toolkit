@@ -1,0 +1,21 @@
+import { Application } from "@db21/toolkit/feature-kit";
+import { FeatureKitProvider } from "@db21/toolkit/feature-kit/react";
+import type { FC, ReactNode } from "react";
+
+import { AppModule } from "@/app.module";
+
+type AppProvidersProps = Readonly<{
+  readonly children: ReactNode;
+}>;
+
+/** Process-owned Feature Kit application singleton. */
+const application = Application.create(AppModule);
+
+/** Provides the Feature Kit application to the route tree. */
+export const AppProviders: FC<AppProvidersProps> = ({ children }) => {
+  return (
+    <FeatureKitProvider application={application} fallback={null}>
+      {children}
+    </FeatureKitProvider>
+  );
+};

@@ -47,6 +47,16 @@ export default defineConfig(() => {
     {
       ...shared,
       entry: {
+        "cli/index": "src/cli/index.ts",
+        "cli/bootstrap": "src/cli/bootstrap.ts",
+      },
+      format: ["esm"],
+      splitting: false,
+      dts: false,
+    },
+    {
+      ...shared,
+      entry: {
         ...runtimeEntries,
         "feature-kit/core/index": "src/feature-kit/core/index.ts",
         "feature-kit/react/index": "src/feature-kit/react/index.ts",
