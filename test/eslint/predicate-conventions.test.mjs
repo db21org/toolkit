@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 
+import { commonPredicateRestrictedSyntax } from "@db21/toolkit/eslint";
 import { ESLint } from "eslint";
 import { test } from "vitest";
-
-import { commonPredicateRestrictedSyntax } from "../../src/eslint/index.mjs";
 
 const eslint = new ESLint({
   ignore: false,

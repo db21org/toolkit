@@ -3,16 +3,15 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
-import { ESLint } from "eslint";
-import typescriptEslint from "typescript-eslint";
-import { test } from "vitest";
-
 import {
   createExpoConfig,
   createExpoFeatureKitConfig,
   expoRestrictedSyntax,
-} from "../../src/eslint/expo.mjs";
-import { createNestConfig } from "../../src/eslint/nest.mjs";
+} from "@db21/toolkit/eslint/expo";
+import { createNestConfig } from "@db21/toolkit/eslint/nest";
+import { ESLint } from "eslint";
+import typescriptEslint from "typescript-eslint";
+import { test } from "vitest";
 
 const appRoot = resolve(import.meta.dirname, "../fixtures/expo");
 const sourceConfig = {
@@ -100,6 +99,7 @@ const expoConfig = createExpoConfig({ cwd: appRoot });
 const expoReactConfig = expoConfig.find((config) =>
   config.files?.includes("src/**/*.tsx"),
 );
+
 assert.ok(expoReactConfig);
 const expoPlugins = Object.assign(
   {},
@@ -250,6 +250,7 @@ test("applies full React documentation rules to Expo TSX", async () => {
 // eslint-disable-next-line db21-tests/require-justification -- Custom source roots, module roots, GraphQL directories, roles, and utility exemptions must remain configurable for nonstandard app layouts.
 test("configures Expo and Nest roots without the default source layout", () => {
   const cwd = mkdtempSync(resolve(tmpdir(), "toolkit-layout-"));
+
   try {
     mkdirSync(resolve(cwd, "lib/domains/catalog"), { recursive: true });
     writeFileSync(
@@ -281,6 +282,7 @@ test("configures Expo and Nest roots without the default source layout", () => {
       cwd,
       "lib/domains/catalog/documents/queries/items.query.graphql",
     );
+
     processor.preprocess("query Items { items { id } }", filePath);
     assert.deepEqual(processor.postprocess([], filePath), []);
     assert.deepEqual(graphqlConfig.files, ["lib/**/*.{gql,graphql}"]);
@@ -293,6 +295,7 @@ test("configures Expo and Nest roots without the default source layout", () => {
       ...layout,
       utilityExemptPaths: ["lib/shared"],
     });
+
     assert.deepEqual(nestConfigs.at(-1).files, [
       "lib/domains/**/*.{ts,tsx,mts,cts}",
     ]);

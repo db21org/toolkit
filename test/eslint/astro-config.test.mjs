@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 
+import astroConfig from "@db21/toolkit/eslint/astro";
 import { ESLint } from "eslint";
 import { test } from "vitest";
-
-import astroConfig from "../../src/eslint/astro.mjs";
 
 const eslint = new ESLint({
   ignore: false,

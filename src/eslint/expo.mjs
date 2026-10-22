@@ -1,10 +1,11 @@
 import { createReactEslintConfig } from "@db21/toolkit/feature-kit/conventions/react/eslint";
+
+import { createFeatureGraphqlPlugin } from "./expo/feature-graphql.mjs";
 import commonConfig, {
   reactConfig,
   reactHookRules,
   typescriptRepositoryRules,
 } from "./index.mjs";
-import { createFeatureGraphqlPlugin } from "./expo/feature-graphql.mjs";
 
 const translatableAttributePattern =
   "^(accessibilityHint|accessibilityLabel|alt|aria-description|aria-label|caption|content|description|emptyMessage|errorMessage|helperText|label|message|placeholder|subtitle|text|title)$";
@@ -85,6 +86,30 @@ export const expoRestrictedSyntax = [
   ...appRestrictedSyntax,
 ];
 
+const createExpoRoles = () => [
+  { case: "kebab", extensions: [".ts"], folder: "schemas", suffix: ".schema" },
+  {
+    case: "pascal",
+    extensions: [".tsx"],
+    folder: "components",
+    recursive: true,
+    suffix: "",
+  },
+  {
+    case: "kebab",
+    extensions: [".ts"],
+    folder: "providers",
+    suffix: ".provider",
+  },
+  {
+    case: "kebab",
+    extensions: [".ts"],
+    folder: "repositories",
+    suffix: ".repository",
+  },
+  { case: "kebab", extensions: [".ts"], folder: "types", suffix: ".type" },
+];
+
 export const createExpoFeatureKitConfig = ({
   cwd,
   sourceRoot = "src",
@@ -93,40 +118,7 @@ export const createExpoFeatureKitConfig = ({
   allowedFolders,
 }) =>
   createReactEslintConfig({
-    additionalRoles: [
-      {
-        case: "kebab",
-        extensions: [".ts"],
-        folder: "schemas",
-        suffix: ".schema",
-      },
-      {
-        case: "pascal",
-        extensions: [".tsx"],
-        folder: "components",
-        recursive: true,
-        suffix: "",
-      },
-      {
-        case: "kebab",
-        extensions: [".ts"],
-        folder: "providers",
-        suffix: ".provider",
-      },
-      {
-        case: "kebab",
-        extensions: [".ts"],
-        folder: "repositories",
-        suffix: ".repository",
-      },
-      {
-        case: "kebab",
-        extensions: [".ts"],
-        folder: "types",
-        suffix: ".type",
-      },
-      ...additionalRoles,
-    ],
+    additionalRoles: [...createExpoRoles(), ...additionalRoles],
     allowedFolders: allowedFolders ?? [
       "cache",
       "components",
@@ -149,6 +141,33 @@ export const createExpoFeatureKitConfig = ({
     cwd,
     moduleRoots,
   });
+
+const createNavigationConfig = (sourceRoot, navigationHook) => [
+  {
+    files: [`${sourceRoot}/**/*.{ts,tsx}`],
+    plugins: reactConfig.plugins,
+    rules: {
+      ...reactHookRules,
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              importNames: ["useRouter"],
+              message: `Use ${navigationHook.name} from ${navigationHook.importSource} as the configured navigation entry point.`,
+              name: "expo-router",
+            },
+          ],
+        },
+      ],
+      "no-restricted-syntax": ["error", ...expoRestrictedSyntax],
+    },
+  },
+  {
+    files: [navigationHook.file],
+    rules: { "no-restricted-imports": "off" },
+  },
+];
 
 export const createExpoConfig = ({
   cwd,
@@ -189,32 +208,7 @@ export const createExpoConfig = ({
       processor: "feature-graphql/conventions",
     },
     featureKitConfig,
-    {
-      files: [`${sourceRoot}/**/*.{ts,tsx}`],
-      plugins: reactConfig.plugins,
-      rules: {
-        ...reactHookRules,
-        "no-restricted-imports": [
-          "error",
-          {
-            paths: [
-              {
-                importNames: ["useRouter"],
-                message: `Use ${navigationHook.name} from ${navigationHook.importSource} as the configured navigation entry point.`,
-                name: "expo-router",
-              },
-            ],
-          },
-        ],
-        "no-restricted-syntax": ["error", ...expoRestrictedSyntax],
-      },
-    },
-    {
-      files: [navigationHook.file],
-      rules: {
-        "no-restricted-imports": "off",
-      },
-    },
+    ...createNavigationConfig(sourceRoot, navigationHook),
     {
       files: [`${sourceRoot}/**/*.tsx`],
       ...reactConfig,

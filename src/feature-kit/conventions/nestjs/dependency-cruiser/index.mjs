@@ -1,7 +1,7 @@
 import {
   createCoreDependencyCruiserConfig,
   discoverFeatureKitModules,
-} from "../../core/dependency-cruiser/index.mjs";
+} from "@db21/toolkit/feature-kit/conventions/core/dependency-cruiser";
 
 const escapeRegularExpression = (value) =>
   value.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -14,17 +14,18 @@ const runtimeRoleTarget = (module, roles) => ({
   preCompilationOnly: false,
 });
 
+const entryPoints = [
+  "controllers",
+  "guards",
+  "loaders",
+  "pipes",
+  "processors",
+  "resolvers",
+];
+
 const createNestjsRules = (modules) =>
   modules.flatMap((module) => {
     const ruleName = module.directory.replaceAll(/[^a-zA-Z0-9]+/g, "-");
-    const entryPoints = [
-      "controllers",
-      "guards",
-      "loaders",
-      "pipes",
-      "processors",
-      "resolvers",
-    ];
 
     return [
       {

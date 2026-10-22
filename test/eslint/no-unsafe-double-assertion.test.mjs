@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 
+import { noUnsafeDoubleAssertionPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint } from "eslint";
 import typescriptEslint from "typescript-eslint";
 import { test } from "vitest";
-
-import { noUnsafeDoubleAssertionPlugin } from "../../src/eslint/plugins/index.mjs";
 
 const targetRule = "db21-types/no-unsafe-double-assertion";
 const eslint = new ESLint({

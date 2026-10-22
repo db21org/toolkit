@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 
+import { preferAwaitedValuesPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint } from "eslint";
 import { test } from "vitest";
-
-import { preferAwaitedValuesPlugin } from "../../src/eslint/plugins/prefer-awaited-values.mjs";
 
 const eslint = new ESLint({
   ignore: false,

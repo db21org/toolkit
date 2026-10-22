@@ -1,6 +1,7 @@
 import test from "node:test";
 
-import { reactComponentRules } from "../../../dist/eslint/base/rules.js";
+import { reactComponentRules } from "#eslint-base/rules";
+
 import { expectInvalid, expectValid } from "../helpers/lint-rule.js";
 
 const ruleName = "jsdoc/no-restricted-syntax";

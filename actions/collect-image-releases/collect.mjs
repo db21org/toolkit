@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { appendFileSync, lstatSync, readFileSync, readdirSync } from "node:fs";
+import { appendFileSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const {
@@ -37,6 +37,7 @@ for (const artifact of readdirSync(directory).toSorted((left, right) =>
     lstatSync(artifactPath).isDirectory(),
     "Expected a receipt artifact directory.",
   );
+
   for (const file of readdirSync(artifactPath).toSorted((left, right) =>
     left.localeCompare(right),
   )) {

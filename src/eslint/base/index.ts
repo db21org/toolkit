@@ -1,2 +1,6 @@
 export { react, reactComponentRules, reactConventionsPlugin } from "./react.js";
-export { recommended } from "./recommended.js";
+export {
+  javascriptRecommended,
+  recommended,
+  typescriptRecommended,
+} from "./recommended.js";

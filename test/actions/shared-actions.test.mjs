@@ -1,9 +1,9 @@
 import { spawnSync } from "node:child_process";
 import {
-  mkdtempSync,
   mkdirSync,
-  readFileSync,
+  mkdtempSync,
   readdirSync,
+  readFileSync,
   rmSync,
   statSync,
   symlinkSync,
@@ -12,6 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, URL } from "node:url";
+
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const actions = fileURLToPath(new URL("../../actions/", import.meta.url));
@@ -107,15 +108,34 @@ const collect = (overrides = {}) => {
   });
 };
 
+const record = (overrides = {}) =>
+  run("record-image-release/record.mjs", {
+    RELEASE_COMPONENT: "api",
+    RELEASE_DIGEST: digest,
+    RELEASE_SOURCE_SHA: sha,
+    GITHUB_RUN_ATTEMPT: "1",
+    ...overrides,
+  });
+
+const invalidReceiptInputs = [
+  ["RELEASE_COMPONENT", "../escape"],
+  ["RELEASE_DIGEST", "latest"],
+  ["RELEASE_SOURCE_SHA", "abc"],
+  ["GITHUB_RUN_ATTEMPT", "0"],
+];
+
+const malformedReceipts = [
+  { component: "api", image: digest, sha: "c".repeat(40) },
+  { component: "other", image: digest, sha },
+  { component: "api", image: "latest", sha },
+  { component: "api", image: digest, sha, extra: true },
+  null,
+];
+
 describe("image release receipts", () => {
   // eslint-disable-next-line db21-tests/require-justification -- Deployment receipts must bind immutable image digests to source commits and isolate repeated workflow attempts.
   it("records the immutable digest and source under an attempt-scoped artifact name", () => {
-    const result = run("record-image-release/record.mjs", {
-      RELEASE_COMPONENT: "api",
-      RELEASE_DIGEST: digest,
-      RELEASE_SOURCE_SHA: sha,
-      GITHUB_RUN_ATTEMPT: "2",
-    });
+    const result = record({ GITHUB_RUN_ATTEMPT: "2" });
 
     expect(result.status).toBe(0);
     expect(output()).toContain("artifact-name=image-release-api-attempt-2\n");
@@ -128,23 +148,15 @@ describe("image release receipts", () => {
     });
   });
   // eslint-disable-next-line db21-tests/require-justification -- Unsafe receipt identifiers or mutable image tags must be rejected before writing release artifacts.
-  it.each([
-    ["RELEASE_COMPONENT", "../escape"],
-    ["RELEASE_DIGEST", "latest"],
-    ["RELEASE_SOURCE_SHA", "abc"],
-    ["GITHUB_RUN_ATTEMPT", "0"],
-  ])("rejects invalid %s before writing a receipt", (key, value) => {
-    const result = run("record-image-release/record.mjs", {
-      RELEASE_COMPONENT: "api",
-      RELEASE_DIGEST: digest,
-      RELEASE_SOURCE_SHA: sha,
-      GITHUB_RUN_ATTEMPT: "1",
-      [key]: value,
-    });
+  it.each(invalidReceiptInputs)(
+    "rejects invalid %s before writing a receipt",
+    (key, value) => {
+      const result = record({ [key]: value });
 
-    expect(result.status).not.toBe(0);
-    expect(readdirSync(directory)).toEqual([]);
-  });
+      expect(result.status).not.toBe(0);
+      expect(readdirSync(directory)).toEqual([]);
+    },
+  );
   // eslint-disable-next-line db21-tests/require-justification -- Failed or partial publication with no receipts must not accidentally schedule deployments for unpublished images.
   it("returns an empty matrix when a partial publication has no receipts", () => {
     expect(collect().status).toBe(0);
@@ -158,16 +170,13 @@ describe("image release receipts", () => {
     expect(JSON.parse(output().slice("images=".length))).toHaveLength(2);
   });
   // eslint-disable-next-line db21-tests/require-justification -- Collection must reject forged source commits, unknown components, mutable tags, and malformed receipt envelopes.
-  it.each([
-    { component: "api", image: digest, sha: "c".repeat(40) },
-    { component: "other", image: digest, sha },
-    { component: "api", image: "latest", sha },
-    { component: "api", image: digest, sha, extra: true },
-    null,
-  ])("rejects forged or malformed receipt %j", (value) => {
-    receipt("one", value);
-    expect(collect().status).not.toBe(0);
-  });
+  it.each(malformedReceipts)(
+    "rejects forged or malformed receipt %j",
+    (value) => {
+      receipt("one", value);
+      expect(collect().status).not.toBe(0);
+    },
+  );
   // eslint-disable-next-line db21-tests/require-justification -- Duplicate component receipts must not choose an arbitrary image for deployment based on artifact traversal order.
   it("rejects duplicate components even with identical receipt filenames", () => {
     receipt("one", { component: "api", image: digest, sha });
@@ -185,18 +194,18 @@ describe("image release receipts", () => {
   });
 });
 
-describe("image build planning", () => {
-  const plan = (overrides = {}) =>
-    run("select-image-builds/select.mjs", {
-      BUILD_COMPONENTS: '["api","web","pipelines"]',
-      BUILD_WORKSPACE_COMPONENTS: '["api","web"]',
-      BUILD_CHANGES: "[]",
-      BUILD_COMPONENT: "all",
-      BUILD_WORKSPACE_GRAPH_CHANGED: "false",
-      GITHUB_EVENT_NAME: "push",
-      ...overrides,
-    });
+const plan = (overrides = {}) =>
+  run("select-image-builds/select.mjs", {
+    BUILD_COMPONENTS: '["api","web","pipelines"]',
+    BUILD_WORKSPACE_COMPONENTS: '["api","web"]',
+    BUILD_CHANGES: "[]",
+    BUILD_COMPONENT: "all",
+    BUILD_WORKSPACE_GRAPH_CHANGED: "false",
+    GITHUB_EVENT_NAME: "push",
+    ...overrides,
+  });
 
+describe("image build planning", () => {
   // eslint-disable-next-line db21-tests/require-justification -- Node dependency graph changes must not trigger unrelated non-Node component publication.
   it("keeps Python outside Node workspace changes unless its own files changed", () => {
     expect(
@@ -255,26 +264,26 @@ describe("image build planning", () => {
   });
 });
 
-describe("deployment submission", () => {
-  const submit = (overrides = {}) =>
-    spawnSync("bash", [join(actions, "submit-deployment/submit.sh")], {
-      env: {
-        ...env,
-        PATH: `${directory}:${process.env.PATH}`,
-        COMPONENT: "api",
-        IMAGE: digest,
-        DEPLOY_CHANNEL: "main",
-        DEPLOY_SEQUENCE: "42",
-        DEPLOY_ATTEMPT: "2",
-        REQUEST_ID: "gha-123-2-api",
-        DEPLOY_DIRECTORY: directory,
-        CF_ACCESS_CLIENT_ID: "example-client",
-        CF_ACCESS_CLIENT_SECRET: 'example-"secret',
-        ...overrides,
-      },
-      encoding: "utf8",
-    });
+const submit = (overrides = {}) =>
+  spawnSync("bash", [join(actions, "submit-deployment/submit.sh")], {
+    env: {
+      ...env,
+      PATH: `${directory}:${process.env.PATH}`,
+      COMPONENT: "api",
+      IMAGE: digest,
+      DEPLOY_CHANNEL: "main",
+      DEPLOY_SEQUENCE: "42",
+      DEPLOY_ATTEMPT: "2",
+      REQUEST_ID: "gha-123-2-api",
+      DEPLOY_DIRECTORY: directory,
+      CF_ACCESS_CLIENT_ID: "example-client",
+      CF_ACCESS_CLIENT_SECRET: 'example-"secret',
+      ...overrides,
+    },
+    encoding: "utf8",
+  });
 
+describe("deployment submission", () => {
   beforeEach(() => {
     writeFileSync(
       join(directory, "make"),

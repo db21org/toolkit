@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 
+import { typescriptRepositoryRules } from "@db21/toolkit/eslint";
 import { ESLint } from "eslint";
 import typescriptEslint from "typescript-eslint";
 import { test } from "vitest";
-
-import { typescriptRepositoryRules } from "../../src/eslint/index.mjs";
 
 const [, ...restrictedSyntax] =
   typescriptRepositoryRules["no-restricted-syntax"];

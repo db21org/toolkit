@@ -27,6 +27,7 @@ const scanDirectory = (cwd, directory, modules) => {
 
   if (moduleFiles.length === 1) {
     const [moduleFile] = moduleFiles;
+
     modules.push({
       directory: normalizeProjectPath(cwd, absoluteDirectory),
       moduleFile,
@@ -83,10 +84,12 @@ export const discoverModules = ({ cwd = process.cwd(), moduleRoots }) => {
   const uniqueModules = [
     ...new Map(modules.map((module) => [module.directory, module])).values(),
   ].toSorted((left, right) => left.directory.localeCompare(right.directory));
+
   assertNoNestedModules(uniqueModules);
   const result = Object.freeze(
     uniqueModules.map((module) => Object.freeze(module)),
   );
+
   discoveryCache.set(cacheKey, result);
 
   return result;

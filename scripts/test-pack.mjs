@@ -89,6 +89,7 @@ try {
     "--apps",
     "api,expo,astro-static,astro-ssr",
   ]);
+
   for (const file of [
     "package.json",
     ".yarnrc.yml",
@@ -100,6 +101,7 @@ try {
   ]) {
     readFileSync(join(temporaryDirectory, "generated-starter", file), "utf8");
   }
+
   consumerManifest.dependencies = {
     ...consumerManifest.dependencies,
     ...dependencies,

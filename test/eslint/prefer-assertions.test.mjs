@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 
+import { preferAssertionsPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint } from "eslint";
 import { test } from "vitest";
-
-import { preferAssertionsPlugin } from "../../src/eslint/plugins/prefer-assertions.mjs";
 
 const eslint = new ESLint({
   ignore: false,

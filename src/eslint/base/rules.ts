@@ -48,7 +48,7 @@ export const reactComponentRules = {
   "react-conventions/one-component-per-file": "error",
 } satisfies Linter.RulesRecord;
 
-export const recommendedRules = {
+const typescriptRules = {
   "@typescript-eslint/consistent-type-assertions": [
     "error",
     { assertionStyle: "as", objectLiteralTypeAssertions: "allow" },
@@ -83,6 +83,24 @@ export const recommendedRules = {
   ],
   "@typescript-eslint/prefer-nullish-coalescing": "error",
   "@typescript-eslint/restrict-template-expressions": "error",
+} satisfies Linter.RulesRecord;
+
+const commonRestrictedSyntax = [
+  {
+    selector:
+      "Program > :not(ImportDeclaration):not(TSImportEqualsDeclaration):not(ExpressionStatement[directive]) ~ :matches(ImportDeclaration, TSImportEqualsDeclaration)",
+    message:
+      "Keep static imports at the top of the file, after any directive prologue and before other statements.",
+  },
+  {
+    selector:
+      "IfStatement > AwaitExpression.test, IfStatement > UnaryExpression.test AwaitExpression, IfStatement > LogicalExpression.test AwaitExpression, IfStatement > BinaryExpression.test AwaitExpression, IfStatement > ConditionalExpression.test AwaitExpression, IfStatement > CallExpression.test AwaitExpression",
+    message:
+      "Do not await inside conditions. Assign awaited values to named constants before the condition.",
+  },
+];
+
+export const commonRules = {
   "brace-style": ["error", "1tbs", { allowSingleLine: false }],
   curly: ["error", "all"],
   "jsdoc/require-jsdoc": [
@@ -118,25 +136,7 @@ export const recommendedRules = {
       ],
     },
   ],
-  "no-restricted-syntax": [
-    "error",
-    {
-      selector: "PrivateIdentifier",
-      message:
-        "Use TypeScript private/protected fields instead of #private names.",
-    },
-    {
-      selector: "PropertyDefinition > Identifier[name=/^[$_]/]",
-      message:
-        "Do not prefix class field names. Use private/protected modifiers for visibility.",
-    },
-    {
-      selector:
-        "IfStatement > AwaitExpression.test, IfStatement > UnaryExpression.test AwaitExpression, IfStatement > LogicalExpression.test AwaitExpression, IfStatement > BinaryExpression.test AwaitExpression, IfStatement > ConditionalExpression.test AwaitExpression, IfStatement > CallExpression.test AwaitExpression",
-      message:
-        "Do not await inside conditions. Assign awaited values to named constants before the condition.",
-    },
-  ],
+  "no-restricted-syntax": ["error", ...commonRestrictedSyntax],
   "padding-line-between-statements": [
     "error",
     { blankLine: "always", prev: ["const", "let", "var"], next: "*" },
@@ -156,4 +156,23 @@ export const recommendedRules = {
   "preserve-caught-error": "off",
   "simple-import-sort/exports": "error",
   "simple-import-sort/imports": "error",
+} satisfies Linter.RulesRecord;
+
+export const recommendedRules = {
+  ...commonRules,
+  ...typescriptRules,
+  "no-restricted-syntax": [
+    "error",
+    ...commonRestrictedSyntax,
+    {
+      selector: "PrivateIdentifier",
+      message:
+        "Use TypeScript private/protected fields instead of #private names.",
+    },
+    {
+      selector: "PropertyDefinition > Identifier[name=/^[$_]/]",
+      message:
+        "Do not prefix class field names. Use private/protected modifiers for visibility.",
+    },
+  ],
 } satisfies Linter.RulesRecord;

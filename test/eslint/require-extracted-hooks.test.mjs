@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 
+import { requireExtractedHooksPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint } from "eslint";
 import typescriptEslint from "typescript-eslint";
 import { test } from "vitest";
-
-import { requireExtractedHooksPlugin } from "../../src/eslint/plugins/index.mjs";
 
 const targetRule = "db21-hooks/require-extracted-hooks";
 const eslint = new ESLint({

@@ -1,20 +1,18 @@
+import nodeAssert from "node:assert/strict";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
-import nodeAssert from "node:assert/strict";
-
-import { assert, isNotEmpty, isEmpty } from "@db21/toolkit/utils";
-import { test } from "vitest";
-
 import {
-  FEATURE_GRAPHQL_SCALAR_MAPPINGS,
   collectUnmappedCustomScalars,
   describeGraphqlFile,
+  FEATURE_GRAPHQL_SCALAR_MAPPINGS,
   findGraphqlFiles,
   validateGraphqlFile,
 } from "@db21/toolkit/eslint/expo/graphql-conventions";
+import { assert, isEmpty, isNotEmpty } from "@db21/toolkit/utils";
+import { test } from "vitest";
 
 const withTempPath = () => {
   const tmp = mkdtempSync(resolve(tmpdir(), "db21-graphql-test-"));
@@ -30,6 +28,7 @@ const withTempPath = () => {
 // eslint-disable-next-line db21-tests/require-justification -- Feature query paths must produce the descriptor consumed by generated GraphQL artifacts; malformed paths must not acquire an owner.
 test("accepts valid feature path and role", () => {
   const { base, resolvePath, cleanup } = withTempPath();
+
   try {
     const filePath = resolvePath(
       "src/features/feed/graphql/queries/list-items.query.gql",
@@ -59,6 +58,7 @@ test("accepts valid feature path and role", () => {
 // eslint-disable-next-line db21-tests/require-justification -- Owner folders must remain kebab-case so GraphQL artifact locations are stable across case-sensitive filesystems.
 test("requires a canonical kebab-case feature segment", () => {
   const { base, resolvePath, cleanup } = withTempPath();
+
   try {
     const issues = validateGraphqlFile({
       appRoot: base,
@@ -83,6 +83,7 @@ test("requires a canonical kebab-case feature segment", () => {
 // eslint-disable-next-line db21-tests/require-justification -- Discovery may find a candidate extension, but validation must reject extensions absent from the configured document contract.
 test("findGraphqlFiles accepts .graphql but validation rejects it", () => {
   const { base, resolvePath, cleanup } = withTempPath();
+
   try {
     const filePath = resolvePath(
       "src/features/feed/graphql/queries/list-items.query.graphql",
@@ -94,6 +95,7 @@ test("findGraphqlFiles accepts .graphql but validation rejects it", () => {
     writeFileSync(filePath, "query ListItems { feed { id } }");
 
     const [locatedPath] = findGraphqlFiles(base);
+
     nodeAssert.equal(locatedPath, filePath);
 
     const issues = validateGraphqlFile({
@@ -117,6 +119,7 @@ test("findGraphqlFiles accepts .graphql but validation rejects it", () => {
 // eslint-disable-next-line db21-tests/require-justification -- A query filename must not hide a mutation because generated operation artifacts depend on the declared role.
 test("flags operation role mismatches", () => {
   const { base, resolvePath, cleanup } = withTempPath();
+
   try {
     const issues = validateGraphqlFile({
       appRoot: base,
@@ -139,6 +142,7 @@ test("flags operation role mismatches", () => {
 // eslint-disable-next-line db21-tests/require-justification -- Folder and suffix roles must agree so consumers can infer operation kind from a document path.
 test("rejects path/suffix role mismatches", () => {
   const { base, resolvePath, cleanup } = withTempPath();
+
   try {
     const issues = validateGraphqlFile({
       appRoot: base,
@@ -163,6 +167,7 @@ test("rejects path/suffix role mismatches", () => {
 // eslint-disable-next-line db21-tests/require-justification -- SDL belongs to schema inputs, not feature operation documents that feed client artifact generation.
 test("rejects SDL definitions in operation documents", () => {
   const { base, resolvePath, cleanup } = withTempPath();
+
   try {
     const issues = validateGraphqlFile({
       appRoot: base,
@@ -185,6 +190,7 @@ test("rejects SDL definitions in operation documents", () => {
 // eslint-disable-next-line db21-tests/require-justification -- Unsupported GraphQL filenames must fail with a path diagnostic instead of silently escaping feature ownership rules.
 test("reports unsupported file roles", () => {
   const { base, resolvePath, cleanup } = withTempPath();
+
   try {
     const issues = validateGraphqlFile({
       appRoot: base,
@@ -207,6 +213,7 @@ test("reports unsupported file roles", () => {
 // eslint-disable-next-line db21-tests/require-justification -- Module-owned operations must receive the same descriptor semantics as feature-owned operations.
 test("accepts GraphQL documents owned by an application module", () => {
   const { base, resolvePath, cleanup } = withTempPath();
+
   try {
     const filePath = resolvePath(
       "src/modules/impressions/graphql/mutations/record-impressions.mutation.gql",
@@ -230,6 +237,7 @@ test("accepts GraphQL documents owned by an application module", () => {
 // eslint-disable-next-line db21-tests/require-justification -- Anonymous operations must be rejected because generated clients require stable operation identifiers.
 test("requires named operations", () => {
   const { base, resolvePath, cleanup } = withTempPath();
+
   try {
     const issues = validateGraphqlFile({
       appRoot: base,
@@ -272,12 +280,14 @@ test("validates custom scalar mappings", () => {
 
   const mappedSchema =
     "scalar Cursor\nscalar DateTime\nscalar Decimal\nscalar ID\n";
+
   assert.true(isEmpty(collectUnmappedCustomScalars(mappedSchema)));
 });
 
 // eslint-disable-next-line db21-tests/require-justification -- Consumer-provided module roots, document folders, and extensions must work together without accepting near-miss paths.
 test("supports consumer document roots, directories, and extensions", () => {
   const { base, resolvePath, cleanup } = withTempPath();
+
   try {
     const layout = {
       moduleRoots: ["lib/domains"],

@@ -14,6 +14,7 @@ export const createFeatureGraphqlPlugin = (appRoot, layout) => ({
       postprocess(_messageLists, filePath) {
         const absolutePath = resolve(filePath);
         const source = sources.get(absolutePath) ?? "";
+
         sources.delete(absolutePath);
 
         return validateGraphqlFile({

@@ -1,4 +1,8 @@
-import { react, recommended } from "@db21/toolkit/eslint/base";
+import {
+  javascriptRecommended,
+  react,
+  typescriptRecommended,
+} from "@db21/toolkit/eslint/base";
 import sonarjs from "eslint-plugin-sonarjs";
 import unicorn from "eslint-plugin-unicorn";
 
@@ -14,17 +18,18 @@ import {
   typescriptFilenameConventionsPlugin,
 } from "./plugins/index.mjs";
 
-const [javascriptRecommended, ...typescriptRecommended] = recommended;
-
-const javascriptFiles = ["**/*.{cjs,js,mjs}"];
+const javascriptFiles = ["**/*.{cjs,js,jsx,mjs}"];
 const typescriptFiles = ["**/*.{ts,tsx,mts,cts}"];
 const sourceFiles = [...javascriptFiles, ...typescriptFiles];
 
-const javascriptRestrictedSyntax = Array.isArray(
-  javascriptRecommended.rules?.["no-restricted-syntax"],
-)
-  ? javascriptRecommended.rules["no-restricted-syntax"].slice(1)
-  : [];
+const javascriptRestrictedSyntax = javascriptRecommended.reduce(
+  (selectors, config) => {
+    const rule = config.rules?.["no-restricted-syntax"];
+
+    return Array.isArray(rule) ? rule.slice(1) : selectors;
+  },
+  [],
+);
 
 export const inheritedRestrictedSyntax = typescriptRecommended.reduce(
   (selectors, config) => {
@@ -173,7 +178,7 @@ export const commonConfig = [
       ".yarn/**",
     ],
   },
-  javascriptRecommended,
+  ...javascriptRecommended,
   {
     files: sourceFiles,
     plugins: {

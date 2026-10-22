@@ -1,8 +1,8 @@
 import { readdirSync } from "node:fs";
 import { basename, extname, relative, resolve, sep } from "node:path";
 
-import { Kind, parse } from "graphql";
 import { isEmpty, isNotDefined } from "@db21/toolkit/utils";
+import { Kind, parse } from "graphql";
 
 const GRAPHQL_ROLE_BY_FOLDER = {
   fragments: "fragment",
@@ -28,6 +28,7 @@ export const describeGraphqlFile = (
   } = {},
 ) => {
   const projectPath = toProjectPath(appRoot, filePath);
+
   for (const root of moduleRoots) {
     const rootPath = resolve(appRoot, root);
     const [owner] = relative(rootPath, resolve(filePath)).split(sep);

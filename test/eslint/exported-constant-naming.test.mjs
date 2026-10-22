@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 
+import { exportedConstantNamingPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint } from "eslint";
 import typescriptEslint from "typescript-eslint";
 import { test } from "vitest";
-
-import { exportedConstantNamingPlugin } from "../../src/eslint/plugins/index.mjs";
 
 const targetRule = "db21-constants/exported-constant-naming";
 const eslint = new ESLint({

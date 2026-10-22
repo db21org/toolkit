@@ -1,6 +1,7 @@
 import test from "node:test";
 
-import { maxLinesRules } from "../../../dist/eslint/base/rules.js";
+import { maxLinesRules } from "#eslint-base/rules";
+
 import { expectInvalid, expectValid } from "../helpers/lint-rule.js";
 
 const ruleName = "max-lines";

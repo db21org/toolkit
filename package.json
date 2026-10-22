@@ -18,6 +18,10 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
+  "imports": {
+    "#eslint-base/*": "./dist/eslint/base/*.js",
+    "#feature-kit-config/*": "./dist/feature-kit/conventions/config/*.mjs"
+  },
   "exports": {
     "./events": {
       "import": {

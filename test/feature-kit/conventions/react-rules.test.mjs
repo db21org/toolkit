@@ -1,20 +1,21 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, test } from "vitest";
 
+import { createReactDependencyCruiserConfig } from "@db21/toolkit/feature-kit/conventions/react/dependency-cruiser";
+import { createReactEslintConfig } from "@db21/toolkit/feature-kit/conventions/react/eslint";
 import { ESLint } from "eslint";
 import typescriptEslint from "typescript-eslint";
+import { afterEach, test } from "vitest";
 
-import { clearModuleDiscoveryCache } from "../../../src/feature-kit/conventions/config/module-discovery.mjs";
-import { createReactDependencyCruiserConfig } from "../../../src/feature-kit/conventions/react/dependency-cruiser/index.mjs";
-import { createReactEslintConfig } from "../../../src/feature-kit/conventions/react/eslint/index.mjs";
+import { clearModuleDiscoveryCache } from "#feature-kit-config/module-discovery";
 
 const temporaryDirectories = [];
 
 const createProject = () => {
   const cwd = mkdtempSync(join(tmpdir(), "feature-kit-react-rules-"));
+
   temporaryDirectories.push(cwd);
 
   return cwd;
@@ -22,6 +23,7 @@ const createProject = () => {
 
 const writeProjectFile = (cwd, path, content = "export {};\n") => {
   const filePath = join(cwd, path);
+
   mkdirSync(join(filePath, ".."), { recursive: true });
   writeFileSync(filePath, content);
 };
@@ -67,9 +69,18 @@ const reactEslintConfig = (cwd) => {
   };
 };
 
+const createReactLinter = (cwd) =>
+  new ESLint({
+    cwd,
+    ignore: false,
+    overrideConfig: [reactEslintConfig(cwd)],
+    overrideConfigFile: true,
+  });
+
 // eslint-disable-next-line db21-tests/require-justification -- React dependency rules must preserve separation between data, render wiring, and UI roles.
 test("extends core dependency rules with render-focused Surface contracts", () => {
   const cwd = createProject();
+
   setupCatalogModule(cwd);
 
   const config = createReactDependencyCruiserConfig({
@@ -80,27 +91,18 @@ test("extends core dependency rules with render-focused Surface contracts", () =
   const names = config.forbidden.map((rule) => rule.name);
 
   assert.ok(names.includes("feature-kit-no-circular"));
-  assert.ok(
-    names.includes("feature-kit-react-src-features-catalog-services-avoid-ui"),
-  );
-  assert.ok(
-    names.includes(
-      "feature-kit-react-src-features-catalog-queries-stay-data-only",
-    ),
-  );
-  assert.ok(
-    names.includes("feature-kit-react-src-features-catalog-hooks-stay-ui-only"),
-  );
-  assert.ok(
-    names.includes(
-      "feature-kit-react-src-features-catalog-surfaces-keep-render-wiring",
-    ),
-  );
-  assert.ok(
-    names.includes(
-      "feature-kit-react-src-features-catalog-react-providers-stay-integration-only",
-    ),
-  );
+
+  for (const suffix of [
+    "services-avoid-ui",
+    "queries-stay-data-only",
+    "hooks-stay-ui-only",
+    "surfaces-keep-render-wiring",
+    "react-providers-stay-integration-only",
+  ]) {
+    assert.ok(
+      names.includes(`feature-kit-react-src-features-catalog-${suffix}`),
+    );
+  }
 
   assert.equal(
     names.includes(
@@ -119,6 +121,7 @@ test("extends core dependency rules with render-focused Surface contracts", () =
 // eslint-disable-next-line db21-tests/require-justification -- Decorated Surface classes need constrained placement so render wiring remains discoverable and governed.
 test("validates Surface placement and decorator-backed filename boundaries", async () => {
   const cwd = createProject();
+
   setupCatalogModule(cwd);
 
   writeProjectFile(
@@ -147,12 +150,7 @@ test("validates Surface placement and decorator-backed filename boundaries", asy
     "export class NoDecorator {}\n",
   );
 
-  const eslint = new ESLint({
-    cwd,
-    ignore: false,
-    overrideConfig: [reactEslintConfig(cwd)],
-    overrideConfigFile: true,
-  });
+  const eslint = createReactLinter(cwd);
   const results = await eslint.lintFiles(["src/**/*.tsx"]);
   const messages = results.flatMap((result) => result.messages);
   const surfaceFilenameMessages = messages.filter(
@@ -164,12 +162,14 @@ test("validates Surface placement and decorator-backed filename boundaries", asy
   const noDecoratorResult = results.find((result) =>
     result.filePath.endsWith("NoDecorator.surface.tsx"),
   );
+
   assert.equal(noDecoratorResult?.messages.length, 0);
 });
 
 // eslint-disable-next-line db21-tests/require-justification -- Surface classes must not import UI platform concerns that bypass DI and component boundaries.
 test("enforces Surface import boundaries and allows DI/component wiring", async () => {
   const cwd = createProject();
+
   setupCatalogModule(cwd);
 
   writeProjectFile(
@@ -219,12 +219,7 @@ test("enforces Surface import boundaries and allows DI/component wiring", async 
       "export class CatalogSurface {}\n",
   );
 
-  const eslint = new ESLint({
-    cwd,
-    ignore: false,
-    overrideConfig: [reactEslintConfig(cwd)],
-    overrideConfigFile: true,
-  });
+  const eslint = createReactLinter(cwd);
   const results = await eslint.lintFiles(["src/**/*.tsx", "src/**/*.ts"]);
   const messages = results.flatMap((result) => result.messages);
   const dependencyMessages = messages.filter(
@@ -237,6 +232,7 @@ test("enforces Surface import boundaries and allows DI/component wiring", async 
 // eslint-disable-next-line db21-tests/require-justification -- Unrecognized presentation folders must remain allowed to avoid imposing unsupported architectural roles.
 test("does not enforce presenters, presentations, or views as framework roles", async () => {
   const cwd = createProject();
+
   setupCatalogModule(cwd);
 
   writeProjectFile(cwd, "src/features/catalog/presenters/Feed.ts");
@@ -244,12 +240,7 @@ test("does not enforce presenters, presentations, or views as framework roles", 
   writeProjectFile(cwd, "src/features/catalog/presentations/Feed.ts");
   writeProjectFile(cwd, "src/features/catalog/views/feed-view.tsx");
 
-  const eslint = new ESLint({
-    cwd,
-    ignore: false,
-    overrideConfig: [reactEslintConfig(cwd)],
-    overrideConfigFile: true,
-  });
+  const eslint = createReactLinter(cwd);
   const results = await eslint.lintFiles(["src/**/*.{ts,tsx}"]);
   const messages = results.flatMap((result) => result.messages);
 
@@ -264,6 +255,7 @@ test("does not enforce presenters, presentations, or views as framework roles", 
 // eslint-disable-next-line db21-tests/require-justification -- Components may use hooks and translations without a policy that blocks legitimate UI composition.
 test("allows both smart and dumb components with no passive-component restriction", async () => {
   const cwd = createProject();
+
   setupCatalogModule(cwd);
 
   writeProjectFile(
@@ -288,12 +280,7 @@ test("allows both smart and dumb components with no passive-component restrictio
     "export const Dumb = () => null;\n",
   );
 
-  const eslint = new ESLint({
-    cwd,
-    ignore: false,
-    overrideConfig: [reactEslintConfig(cwd)],
-    overrideConfigFile: true,
-  });
+  const eslint = createReactLinter(cwd);
   const results = await eslint.lintFiles(["src/**/*.{ts,tsx}"]);
 
   const smartResult = results.find((result) =>
@@ -311,6 +298,7 @@ test("allows both smart and dumb components with no passive-component restrictio
 // eslint-disable-next-line db21-tests/require-justification -- Provider registrations require dedicated filenames so integration boundaries remain enforceable.
 test("keeps react provider boundaries", async () => {
   const cwd = createProject();
+
   setupCatalogModule(cwd);
 
   writeProjectFile(
@@ -324,12 +312,7 @@ test("keeps react provider boundaries", async () => {
     "reactProvider({});\n",
   );
 
-  const eslint = new ESLint({
-    cwd,
-    ignore: false,
-    overrideConfig: [reactEslintConfig(cwd)],
-    overrideConfigFile: true,
-  });
+  const eslint = createReactLinter(cwd);
   const results = await eslint.lintFiles(["src/**/*.tsx"]);
   const messages = results.flatMap((result) => result.messages);
 
@@ -346,18 +329,10 @@ test("keeps react provider boundaries", async () => {
 test("uses explicit lint cwd for react module discovery", async () => {
   const launchCwd = createProject();
   const projectCwd = join(launchCwd, "app");
+
   temporaryDirectories.push(projectCwd);
 
-  writeProjectFile(
-    projectCwd,
-    "src/features/catalog/catalog.module.ts",
-    "export class CatalogModule {}\n",
-  );
-  writeProjectFile(
-    projectCwd,
-    "src/features/catalog/index.ts",
-    'export { CatalogModule } from "./catalog.module.js";\n',
-  );
+  setupCatalogModule(projectCwd);
   writeProjectFile(
     projectCwd,
     "src/features/catalog/services/Product.ts",

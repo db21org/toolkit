@@ -12,7 +12,7 @@ import {
 import {
   discoverModules,
   toPosixPath,
-} from "../../config/module-discovery.mjs";
+} from "#feature-kit-config/module-discovery";
 
 const coreRoles = Object.freeze([
   Object.freeze({
@@ -114,6 +114,7 @@ const validateRoleFile = ({ context, filePath, module, roles }) => {
     !matchesCase(name, role.case)
   ) {
     const extensionList = role.extensions.join(" or ");
+
     context.report({
       loc: { column: 0, line: 1 },
       message: `Files for role "${role.folder}" must live under ${role.folder}/ and use ${role.case}-case names ending in ${expectedSuffix}${extensionList}.`,

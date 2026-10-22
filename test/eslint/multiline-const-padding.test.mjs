@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 
+import { multilineConstPaddingPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint } from "eslint";
 import { test } from "vitest";
-
-import { multilineConstPaddingPlugin } from "../../src/eslint/plugins/multiline-const-padding.mjs";
 
 const eslint = new ESLint({
   fix: true,

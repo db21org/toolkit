@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 
+import { typescriptFilenameConventionsPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint } from "eslint";
 import { test } from "vitest";
-
-import { typescriptFilenameConventionsPlugin } from "../../src/eslint/plugins/typescript-filename-conventions.mjs";
 
 const eslint = new ESLint({
   ignore: false,

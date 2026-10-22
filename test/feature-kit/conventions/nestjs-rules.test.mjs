@@ -1,19 +1,20 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+import { createNestjsDependencyCruiserConfig } from "@db21/toolkit/feature-kit/conventions/nestjs/dependency-cruiser";
+import { createNestjsEslintConfig } from "@db21/toolkit/feature-kit/conventions/nestjs/eslint";
+import { ESLint } from "eslint";
 import { afterEach, test } from "vitest";
 
-import { ESLint } from "eslint";
-
-import { clearModuleDiscoveryCache } from "../../../src/feature-kit/conventions/config/module-discovery.mjs";
-import { createNestjsDependencyCruiserConfig } from "../../../src/feature-kit/conventions/nestjs/dependency-cruiser/index.mjs";
-import { createNestjsEslintConfig } from "../../../src/feature-kit/conventions/nestjs/eslint/index.mjs";
+import { clearModuleDiscoveryCache } from "#feature-kit-config/module-discovery";
 
 const temporaryDirectories = [];
 
 const createProject = () => {
   const cwd = mkdtempSync(join(tmpdir(), "feature-kit-nestjs-rules-"));
+
   temporaryDirectories.push(cwd);
 
   return cwd;
@@ -21,6 +22,7 @@ const createProject = () => {
 
 const writeProjectFile = (cwd, path, content = "export {};\n") => {
   const filePath = join(cwd, path);
+
   mkdirSync(join(filePath, ".."), { recursive: true });
   writeFileSync(filePath, content);
 };
@@ -36,6 +38,7 @@ afterEach(() => {
 // eslint-disable-next-line db21-tests/require-justification -- NestJS role direction rules prevent transport and persistence layers from forming unsafe dependencies.
 test("adds NestJS dependency direction rules", () => {
   const cwd = createProject();
+
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(cwd, "src/features/catalog/index.ts");
 
@@ -67,6 +70,7 @@ test("adds NestJS dependency direction rules", () => {
 // eslint-disable-next-line db21-tests/require-justification -- Role filenames make architectural checks reliable across NestJS feature modules.
 test("enforces NestJS role filenames", async () => {
   const cwd = createProject();
+
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(
     cwd,
@@ -125,6 +129,7 @@ test("enforces NestJS role filenames", async () => {
 // eslint-disable-next-line db21-tests/require-justification -- Restricting module folders prevents ungoverned architectural roles from bypassing policy.
 test("allows only approved NestJS module folders", async () => {
   const cwd = createProject();
+
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(
     cwd,
@@ -163,9 +168,17 @@ test("allows only approved NestJS module folders", async () => {
   );
 });
 
+const violationPaths = (results, ruleId) =>
+  results.flatMap((result) =>
+    result.messages
+      .filter((message) => message.ruleId === ruleId)
+      .map(() => result.filePath),
+  );
+
 // eslint-disable-next-line db21-tests/require-justification -- GraphQL input and output DTO filenames must encode direction for safe boundary use.
 test("requires GraphQL DTO filename direction", async () => {
   const cwd = createProject();
+
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(
     cwd,
@@ -202,21 +215,14 @@ test("requires GraphQL DTO filename direction", async () => {
     overrideConfigFile: true,
   });
   const results = await eslint.lintFiles(["src/**/*.ts"]);
-  const inputViolations = results.flatMap((result) =>
-    result.messages
-      .filter(
-        (message) => message.ruleId === "feature-kit-nestjs/input-dto-filename",
-      )
-      .map(() => result.filePath),
+  const inputViolations = violationPaths(
+    results,
+    "feature-kit-nestjs/input-dto-filename",
   );
 
-  const outputViolations = results.flatMap((result) =>
-    result.messages
-      .filter(
-        (message) =>
-          message.ruleId === "feature-kit-nestjs/output-dto-filename",
-      )
-      .map(() => result.filePath),
+  const outputViolations = violationPaths(
+    results,
+    "feature-kit-nestjs/output-dto-filename",
   );
 
   assert.deepEqual(

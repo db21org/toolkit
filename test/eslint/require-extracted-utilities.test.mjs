@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 
+import { requireExtractedUtilitiesPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint } from "eslint";
 import { test } from "vitest";
-
-import { requireExtractedUtilitiesPlugin } from "../../src/eslint/plugins/require-extracted-utilities.mjs";
 
 const eslint = new ESLint({
   ignore: false,

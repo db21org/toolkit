@@ -1,19 +1,20 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+import { createCoreDependencyCruiserConfig } from "@db21/toolkit/feature-kit/conventions/core/dependency-cruiser";
+import { createCoreEslintConfig } from "@db21/toolkit/feature-kit/conventions/core/eslint";
+import { ESLint } from "eslint";
 import { afterEach, test } from "vitest";
 
-import { ESLint } from "eslint";
-
-import { clearModuleDiscoveryCache } from "../../../src/feature-kit/conventions/config/module-discovery.mjs";
-import { createCoreDependencyCruiserConfig } from "../../../src/feature-kit/conventions/core/dependency-cruiser/index.mjs";
-import { createCoreEslintConfig } from "../../../src/feature-kit/conventions/core/eslint/index.mjs";
+import { clearModuleDiscoveryCache } from "#feature-kit-config/module-discovery";
 
 const temporaryDirectories = [];
 
 const createProject = () => {
   const cwd = mkdtempSync(join(tmpdir(), "feature-kit-core-rules-"));
+
   temporaryDirectories.push(cwd);
 
   return cwd;
@@ -21,6 +22,7 @@ const createProject = () => {
 
 const writeProjectFile = (cwd, path, content = "export {};\n") => {
   const filePath = join(cwd, path);
+
   mkdirSync(join(filePath, ".."), { recursive: true });
   writeFileSync(filePath, content);
 };
@@ -36,6 +38,7 @@ afterEach(() => {
 // eslint-disable-next-line db21-tests/require-justification -- Generated dependency rules must preserve module isolation and one-way shared-code dependencies.
 test("creates isolation and one-way allow-list rules from discovered modules", () => {
   const cwd = createProject();
+
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(cwd, "src/features/catalog/index.ts");
   writeProjectFile(cwd, "src/features/orders/orders.module.ts");
@@ -62,6 +65,7 @@ test("creates isolation and one-way allow-list rules from discovered modules", (
 // eslint-disable-next-line db21-tests/require-justification -- Nested module roots create ambiguous ownership and must be rejected during configuration.
 test("rejects nested recommended module boundaries", () => {
   const cwd = createProject();
+
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(cwd, "src/features/catalog/reviews/reviews.module.ts");
 
@@ -79,6 +83,7 @@ test("rejects nested recommended module boundaries", () => {
 // eslint-disable-next-line db21-tests/require-justification -- Allow-list overlap would let a feature bypass its public API and isolation boundary.
 test("rejects allow-list paths that overlap a module", () => {
   const cwd = createProject();
+
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(cwd, "src/features/catalog/index.ts");
 
@@ -98,6 +103,7 @@ test("rejects allow-list paths that overlap a module", () => {
 test("uses explicit cwd for module discovery when linted from another directory", async () => {
   const launchCwd = createProject();
   const projectCwd = join(launchCwd, "app");
+
   temporaryDirectories.push(projectCwd);
 
   writeProjectFile(
@@ -141,6 +147,7 @@ test("uses explicit cwd for module discovery when linted from another directory"
 // eslint-disable-next-line db21-tests/require-justification -- Module filenames and explicit barrels define enforceable public ownership boundaries.
 test("reports invalid module, barrel, and service naming", async () => {
   const cwd = createProject();
+
   writeProjectFile(
     cwd,
     "src/features/catalog/wrong.module.ts",

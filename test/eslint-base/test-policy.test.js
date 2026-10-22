@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { testPolicyPlugin } from "@db21/toolkit/eslint/plugins";
 import { Linter } from "eslint";
 import tseslint from "typescript-eslint";
-
-import { testPolicyPlugin } from "../../dist/eslint/plugins/index.mjs";
 
 const rule = "db21-tests/require-justification";
 const reasonRule = "db21-tests/require-local-reason";
@@ -14,6 +13,45 @@ const config = {
 };
 const verify = (code) => new Linter().verify(code, config, "example.test.js");
 
+const declarations = [
+  'test("risk", () => {});',
+  'it.only("risk", handler);',
+  'test.todo("risk");',
+  'test.each([1])("risk", handler);',
+  'test.each`value\n${1}`("risk", handler);',
+  'test.skipIf(false)("risk", handler);',
+  'import { test as check } from "vitest"; check("risk", handler);',
+  'import * as suite from "vitest"; suite.it("risk", handler);',
+  'import suite from "node:test"; suite("risk", handler);',
+  'import { it } from "@jest/globals"; it("risk", handler);',
+];
+
+const unrelated = [
+  'describe("suite", () => {});',
+  'const test = () => {}; test("not a test");',
+  'import { test } from "other-library"; test("not a test");',
+  'import * as suite from "vitest"; suite.describe("suite", handler);',
+  "test.each([1]);",
+  "test.skipIf(false);",
+  'const check = /foo/; check.test("foo");',
+];
+
+const explanation = "Regression: expired tokens must never grant access.";
+const rejectedDirectives = [
+  `// eslint-disable-next-line ${rule}`,
+  `// eslint-disable-next-line ${rule} -- coverage`,
+  `/* eslint-disable ${rule} -- ${explanation} */`,
+  `/* eslint ${rule}: off */`,
+  `/* eslint "${rule}": "off" */`,
+  `/* eslint '${rule}': 'warn' */`,
+  `/* eslint ${rule}: 0 */`,
+  `/* eslint ${rule}: 1 */`,
+  `/* eslint ${rule}: ["off"] */`,
+  `/* eslint ${rule}: [1] -- ${explanation} */`,
+  `/* eslint no-alert: error, "${rule}": ["warn"] */`,
+  `/* eslint\n  "${rule}": 0\n*/`,
+];
+
 // eslint-disable-next-line db21-tests/require-justification -- Policy regression: missing test detection or blanket exceptions silently bypass mandatory human review.
 test("test policy detects declarations and validates local exceptions", () => {
   const typescriptMessages = new Linter().verify(
@@ -21,19 +59,9 @@ test("test policy detects declarations and validates local exceptions", () => {
     { ...config, languageOptions: { parser: tseslint.parser } },
     "consumer.js",
   );
+
   assert.deepEqual(typescriptMessages, []);
-  const declarations = [
-    'test("risk", () => {});',
-    'it.only("risk", handler);',
-    'test.todo("risk");',
-    'test.each([1])("risk", handler);',
-    'test.each`value\n${1}`("risk", handler);',
-    'test.skipIf(false)("risk", handler);',
-    'import { test as check } from "vitest"; check("risk", handler);',
-    'import * as suite from "vitest"; suite.it("risk", handler);',
-    'import suite from "node:test"; suite("risk", handler);',
-    'import { it } from "@jest/globals"; it("risk", handler);',
-  ];
+
   for (const code of declarations) {
     assert.deepEqual(
       verify(code).map((message) => message.ruleId),
@@ -41,18 +69,11 @@ test("test policy detects declarations and validates local exceptions", () => {
       code,
     );
   }
-  const unrelated = [
-    'describe("suite", () => {});',
-    'const test = () => {}; test("not a test");',
-    'import { test } from "other-library"; test("not a test");',
-    'import * as suite from "vitest"; suite.describe("suite", handler);',
-    "test.each([1]);",
-    "test.skipIf(false);",
-    'const check = /foo/; check.test("foo");',
-  ];
-  for (const code of unrelated) assert.deepEqual(verify(code), [], code);
 
-  const explanation = "Regression: expired tokens must never grant access.";
+  for (const code of unrelated) {
+    assert.deepEqual(verify(code), [], code);
+  }
+
   assert.deepEqual(
     verify(
       `// eslint-disable-next-line ${rule} -- ${explanation}\ntest("risk", handler);`,
@@ -65,26 +86,16 @@ test("test policy detects declarations and validates local exceptions", () => {
     ),
     [],
   );
-  for (const directive of [
-    `// eslint-disable-next-line ${rule}`,
-    `// eslint-disable-next-line ${rule} -- coverage`,
-    `/* eslint-disable ${rule} -- ${explanation} */`,
-    `/* eslint ${rule}: off */`,
-    `/* eslint "${rule}": "off" */`,
-    `/* eslint '${rule}': 'warn' */`,
-    `/* eslint ${rule}: 0 */`,
-    `/* eslint ${rule}: 1 */`,
-    `/* eslint ${rule}: ["off"] */`,
-    `/* eslint ${rule}: [1] -- ${explanation} */`,
-    `/* eslint no-alert: error, "${rule}": ["warn"] */`,
-    `/* eslint\n  "${rule}": 0\n*/`,
-  ]) {
+
+  for (const directive of rejectedDirectives) {
     const messages = verify(`${directive}\ntest("risk", handler);`);
+
     assert.ok(
       messages.some((message) => message.ruleId === reasonRule),
       directive,
     );
   }
+
   for (const setting of ['"error"', "error", "2", '["error"]', "[2]"]) {
     assert.deepEqual(
       verify(
@@ -94,6 +105,7 @@ test("test policy detects declarations and validates local exceptions", () => {
       setting,
     );
   }
+
   assert.deepEqual(
     verify(
       `// eslint-disable-next-line ${rule} -- ${explanation}\ntest("first", handler);\ntest("second", handler);`,
