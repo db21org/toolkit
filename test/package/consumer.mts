@@ -7,6 +7,11 @@ import { createNestConfig } from "@db21/toolkit/eslint/nest";
 import * as plugins from "@db21/toolkit/eslint/plugins";
 import reactConfig from "@db21/toolkit/eslint/react";
 import {
+  createRegistry,
+  defineEvent,
+  type EventRegistry,
+} from "@db21/toolkit/events";
+import {
   Application,
   Module,
   type ModuleMetadata,
@@ -20,6 +25,30 @@ import { createReactEslintConfig } from "@db21/toolkit/feature-kit/conventions/r
 import { reactProvider } from "@db21/toolkit/feature-kit/react";
 import { createMoney, type Money } from "@db21/toolkit/money";
 import { isDefined, type Maybe } from "@db21/toolkit/utils";
+import { z } from "zod";
+
+const itemCreated = defineEvent(
+  "itemCreated",
+  "item.created",
+  1,
+  z.object({ itemId: z.string() }),
+);
+
+export const eventRegistry: EventRegistry<readonly [typeof itemCreated]> =
+  createRegistry([itemCreated]);
+export const event = eventRegistry.createEvent(
+  eventRegistry.eventTypes.itemCreated,
+  {
+    eventId: "4423fb0f-848d-4e34-a71f-01b609b1e7cf",
+    occurredAt: "2026-08-21T12:00:00.000Z",
+    itemId: "item-1",
+  },
+);
+export const itemId: string = event.itemId;
+// @ts-expect-error Unknown routing keys must not be accepted.
+eventRegistry.safeParseEvent("unknown", {});
+// @ts-expect-error Payload fields remain required in consumer declarations.
+eventRegistry.createEvent("item.created", { eventId: "id", occurredAt: "now" });
 
 export const metadata: ModuleMetadata = {
   reactProviders: [

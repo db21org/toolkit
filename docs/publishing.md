@@ -85,14 +85,24 @@ may be skipped, including pending jobs replaced by GitHub's concurrency queue. I
 the newest commit fails validation, `dev` stays on its previous passing version.
 Disable the workflow in GitHub Actions to pause future publication runs.
 
-## Later stable releases
+## Stable releases
 
-Stable releases remain manual. Update `package.json` to the intended stable SemVer
-version, run the checks, review the tarball and publish with `--tag latest` using
-interactive authentication. An already published version cannot be reused.
-After stable `1.0.1`, main previews automatically use `1.0.2-dev...`.
-Use a minor or major stable release when required by SemVer; the preview patch
-number does not promise that unreviewed main changes are backward-compatible.
+In GitHub Actions, run **📦 Validate and publish npm package** on `main` with
+**channel: stable**. The default channel remains `dev`; pushes still publish only
+dev previews. This uses the existing `publish.yml` trusted publisher.
+
+After validation, the stable job resolves npm `dev` once, downloads that exact
+version with npm, strips its prerelease suffix, and publishes the built artifact
+under `latest`. Only `package.json` version changes; no rebuild or package
+lifecycle scripts run. For example, `1.0.1-dev.42.1.gabcdef123456` becomes `1.0.1`.
+Dev and stable publication share a concurrency group. Registry errors, malformed
+versions, unsafe archives, or versions not newer than `latest` stop the release.
+npm rejects already-published versions. The `dev` tag is unchanged.
+
+No version commit, Git tag, or GitHub release is created. After stable `1.0.1`,
+the next passing main preview uses `1.0.2-dev...`. This flow releases the preview's
+existing base version; minor/major stable versions still require a deliberate
+manual release when SemVer requires one.
 
 The workflow has not been tested against live npm publishing during local setup.
 OIDC authentication can only be verified after the repository and npm publisher

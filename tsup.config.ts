@@ -38,6 +38,7 @@ export default defineConfig(() => {
   };
 
   const runtimeEntries = {
+    "events/index": "src/events/index.ts",
     "utils/index": "src/utils/index.ts",
     "money/index": "src/money/index.ts",
   };

@@ -1,0 +1,43 @@
+import assert from "node:assert/strict";
+
+const stablePattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/u;
+const previewPattern =
+  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-dev\.[1-9]\d*\.[1-9]\d*\.g[a-f\d]{12}$/u;
+
+export const createReleaseVersion = ({ devVersion, latestVersion }) => {
+  const preview = previewPattern.exec(devVersion);
+  const latest = stablePattern.exec(latestVersion);
+
+  assert(preview, "Expected dev to use the toolkit preview version format.");
+  assert(latest, "Expected latest to be a stable major.minor.patch version.");
+
+  const parts = preview.slice(1, 4);
+  const version = parts.join(".");
+  const difference = parts
+    .map((part, index) => BigInt(part) - BigInt(latest[index + 1]))
+    .find((part) => part !== 0n);
+
+  assert((difference ?? 0n) > 0n, "Release version must be newer than latest.");
+
+  return version;
+};
+
+export const validateArchiveEntries = (paths, details) => {
+  assert(
+    paths.includes("package/package.json"),
+    "Expected an npm package archive.",
+  );
+  assert(
+    paths.every(
+      (path) =>
+        path.startsWith("package/") &&
+        !path.includes("\\") &&
+        !path.split("/").includes(".."),
+    ),
+    "Unsafe package archive path.",
+  );
+  assert(
+    details.every((line) => /^[d-]/u.test(line)),
+    "Package archive must contain only files and directories.",
+  );
+};

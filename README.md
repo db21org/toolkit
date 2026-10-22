@@ -52,6 +52,7 @@ There is no root import: use `@db21/toolkit/utils`, not `@db21/toolkit`.
 Install the optional peer dependencies used by your integration:
 
 - **Utilities, money, or Feature Kit core:** no integration peers required.
+- **Domain events:** Zod `^4.4.3`.
 - **Feature Kit React:** React 19; TypeScript projects also need `@types/react`.
 - **ESLint profiles:** ESLint `>=10.4 <11` and TypeScript `>=5 <7`.
 - **Dependency-cruiser conventions:** dependency-cruiser 18.
@@ -70,13 +71,14 @@ side-effect-free in your bundler configuration.
 
 ## Entry points and compatibility
 
-Utilities and money support ESM and CommonJS. Feature Kit and JavaScript tooling
+Utilities, money, and events support ESM and CommonJS. Feature Kit and JavaScript tooling
 entries are ESM-only. Type declarations are included.
 
 | Subpath                                                                                 | Purpose                                                     |
 | --------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | `@db21/toolkit/utils`                                                                   | Assertions, predicates, `Maybe`, and waiting helpers        |
 | `@db21/toolkit/money`                                                                   | Decimal-backed money primitives                             |
+| `@db21/toolkit/events`                                                                  | Versioned event schemas, definitions, and typed registries  |
 | `@db21/toolkit/feature-kit`                                                             | Modular dependency injection and application lifecycle      |
 | `@db21/toolkit/feature-kit/react`                                                       | React providers and Surfaces                                |
 | `@db21/toolkit/feature-kit/conventions/{core,react,nestjs}/{eslint,dependency-cruiser}` | Static module conventions                                   |
@@ -107,6 +109,7 @@ factories when you do not want the entire shared profile. See
 
 - [Utilities](docs/utils.md)
 - [Money policies and conversion behavior](docs/money.md)
+- [Domain events](docs/events.md)
 - [Lint profiles and configurable layouts](docs/lint-profiles.md)
 - [Feature Kit React](docs/feature-kit-react.md)
 - [Module conventions](docs/feature-kit-conventions.md)

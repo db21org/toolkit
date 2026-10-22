@@ -1,10 +1,16 @@
 name: 📦 Validate and publish npm package
 
 on:
-  pull_request:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      channel:
+        description: Publish a dev preview or promote the current npm dev build to stable
+        type: choice
+        options: [dev, stable]
+        default: dev
+        required: true
 
 permissions:
   contents: read
@@ -45,11 +51,12 @@ jobs:
     if: >-
       github.repository == 'db21org/toolkit' &&
       github.ref == 'refs/heads/main' &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      (github.event_name == 'push' ||
+        (github.event_name == 'workflow_dispatch' && inputs.channel == 'dev'))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     concurrency:
-      group: npm-dev
+      group: npm-publication
       cancel-in-progress: false
     permissions:
       contents: read
@@ -89,3 +96,37 @@ jobs:
       - name: 📤 Publish dev preview with OIDC
         if: steps.head.outputs.current == 'true'
         run: npm publish --tag dev --access public
+
+  release:
+    name: 📦 Promote npm dev build to stable
+    needs: validate
+    if: >-
+      github.repository == 'db21org/toolkit' &&
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' && inputs.channel == 'stable'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: npm-publication
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: 📥 Check out release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+          registry-url: https://registry.npmjs.org/
+      - name: 🏷️ Prepare stable artifact from npm dev
+        id: release
+        run: node scripts/prepare-release.mjs
+      - name: 📤 Publish stable artifact with OIDC
+        env:
+          RELEASE_ARCHIVE: ${{ steps.release.outputs.archive }}
+        run: npm publish "$RELEASE_ARCHIVE" --ignore-scripts --tag latest --access public
