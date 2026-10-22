@@ -5,6 +5,7 @@ import { cancel, isCancel, multiselect, outro, text } from "@clack/prompts";
 import { defineCommand, runMain } from "citty";
 
 import { assert, isDefined } from "../utils/index.js";
+import { initAgents } from "./agents.js";
 import { bootstrap } from "./bootstrap.js";
 import { appTypes } from "./bootstrap-options.js";
 
@@ -21,6 +22,33 @@ const command = defineCommand({
     description: "db21 development helpers",
   },
   subCommands: {
+    agents: defineCommand({
+      meta: { description: "Repository agent instructions" },
+      subCommands: {
+        init: defineCommand({
+          meta: {
+            description: "Create or append toolkit test policy in AGENTS.md",
+          },
+          args: {
+            directory: {
+              type: "positional",
+              description: "Existing target repository directory",
+              default: ".",
+              required: false,
+            },
+          },
+          async run({ args }) {
+            const changed = await initAgents(args.directory);
+
+            outro(
+              changed
+                ? "Added toolkit test instructions to AGENTS.md. Toolkit must be installed in target repository for the policy link."
+                : "Toolkit test instructions already present; no files changed.",
+            );
+          },
+        }),
+      },
+    }),
     graph: defineCommand({
       meta: {
         description:

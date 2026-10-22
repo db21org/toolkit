@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import {
   cpSync,
@@ -81,6 +82,23 @@ try {
   run("corepack", ["yarn", "install", "--mode=skip-build"]);
   run("node", ["runtime-only.mjs"]);
   run("corepack", ["yarn", "toolkit", "--help"]);
+  run("corepack", ["yarn", "toolkit", "agents", "init"]);
+  run("corepack", ["yarn", "toolkit", "agents", "init"]);
+  const instructions = readFileSync(
+    join(temporaryDirectory, "AGENTS.md"),
+    "utf8",
+  );
+
+  assert.equal(
+    instructions.split("<!-- db21-toolkit:test-policy -->").length,
+    2,
+    "Packed agent initializer must add exactly one policy section.",
+  );
+
+  readFileSync(
+    join(temporaryDirectory, "node_modules/@db21/toolkit/docs/test-policy.md"),
+    "utf8",
+  );
   run("corepack", [
     "yarn",
     "toolkit",
@@ -92,6 +110,7 @@ try {
 
   for (const file of [
     "package.json",
+    "AGENTS.md",
     ".yarnrc.yml",
     ".github/workflows/validate.yml",
     "apps/api/src/main.ts",

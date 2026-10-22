@@ -130,7 +130,7 @@ const requireJustification = {
     schema: [],
     messages: {
       critical:
-        "Remove unnecessary test or justify critical behavior with eslint-disable-next-line db21-tests/require-justification -- <specific risk or regression>.",
+        "Assess test value before retaining it: concrete failure risk, observable contract, refactor resilience, distinct coverage, and appropriate tools. Retain, consolidate, remove, or defer; never mechanically add exceptions or mirror implementation. Retained tests require a local exception: -- Risk: <failure impact>; Contract: <observable guarantee>. Defer new React rendering tests until browser tooling is available. See @db21/toolkit/docs/test-policy.md.",
     },
   },
   create(context) {
@@ -174,7 +174,7 @@ const requireLocalReason = {
     schema: [],
     messages: {
       reason:
-        "Test exceptions must use eslint-disable-next-line or eslint-disable-line with a -- explanation of the specific risk or regression; blanket test exceptions are forbidden.",
+        "Test exceptions require eslint-disable-next-line or eslint-disable-line with -- Risk: <concrete failure impact>; Contract: <observable guarantee> (at least 10 characters each). Assess each test; do not bulk-rewrite justifications. Blanket exceptions are forbidden. See @db21/toolkit/docs/test-policy.md.",
       inline:
         "Inline ESLint configuration must not disable or downgrade the test justification rule; use a justified local exception for each critical test.",
     },
@@ -203,7 +203,16 @@ const requireLocalReason = {
             continue;
           }
 
-          if (match[1] === "eslint-disable" || reason.trim().length < 20) {
+          const assessment = /^Risk:\s*(.+?);\s*Contract:\s*(.+)$/u.exec(
+            reason.trim(),
+          );
+
+          if (
+            match[1] === "eslint-disable" ||
+            !assessment ||
+            assessment[1].trim().length < 10 ||
+            assessment[2].trim().length < 10
+          ) {
             context.report({ loc: comment.loc, messageId: "reason" });
           }
         }

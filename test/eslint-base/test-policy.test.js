@@ -36,10 +36,16 @@ const unrelated = [
   'const check = /foo/; check.test("foo");',
 ];
 
-const explanation = "Regression: expired tokens must never grant access.";
+const explanation =
+  "Risk: expired tokens permit unauthorized access; Contract: expired credentials never grant access.";
+
 const rejectedDirectives = [
   `// eslint-disable-next-line ${rule}`,
   `// eslint-disable-next-line ${rule} -- coverage`,
+  `// eslint-disable-next-line ${rule} -- Regression: expired tokens must never grant access.`,
+  `// eslint-disable-next-line ${rule} -- Risk: too short; Contract: access must be denied`,
+  `// eslint-disable-next-line ${rule} -- Risk: unauthorized token access; Contract: short`,
+  `// eslint-disable-next-line ${rule} -- Contract: access must be denied; Risk: unauthorized token access`,
   `/* eslint-disable ${rule} -- ${explanation} */`,
   `/* eslint ${rule}: off */`,
   `/* eslint "${rule}": "off" */`,
@@ -52,7 +58,7 @@ const rejectedDirectives = [
   `/* eslint\n  "${rule}": 0\n*/`,
 ];
 
-// eslint-disable-next-line db21-tests/require-justification -- Policy regression: missing test detection or blanket exceptions silently bypass mandatory human review.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: unjustified tests bypass assessment and add maintenance cost; Contract: recognized tests require local risk and contract fields without blanket exceptions.
 test("test policy detects declarations and validates local exceptions", () => {
   const typescriptMessages = new Linter().verify(
     'import assert = require("node:assert/strict"); assert.equal(1, 1);',

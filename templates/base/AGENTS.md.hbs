@@ -1,0 +1,11 @@
+<!-- db21-toolkit:test-policy -->
+## Test value assessment
+
+Before adding or changing tests, read [toolkit test policy](node_modules/@db21/toolkit/docs/test-policy.md). Keep `@db21/toolkit` installed with a node_modules linker so this reference is available; if missing, locate the installed package or ask before installing anything.
+
+- Protect meaningful business, security, integrity, concurrency, compatibility, or infrastructure risks through observable contracts.
+- Tests must survive behavior-preserving refactors. Investigate failures; never mechanically mirror implementation or add exceptions to silence lint.
+- Retain, consolidate, remove, or defer after assessing distinct value and appropriate tools. Skip trivial wrappers, upstream-library retests, and coverage-only assertions.
+- Defer all new React rendering tests, including library/provider contracts, until browser tooling is available. Pure non-rendering business logic remains testable. Do not install Playwright as part of this policy.
+- Each retained test needs a local justification: `Risk: <failure impact>; Contract: <observable guarantee>`. Existing tests require individual review, not bulk deletion or automatic justification.
+<!-- /db21-toolkit:test-policy -->
