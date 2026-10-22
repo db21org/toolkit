@@ -16,6 +16,9 @@ test("rejects expired tokens", () => {
 local exceptions without a description of at least 20 characters. Use
 `eslint-disable-next-line` or `eslint-disable-line` for each declaration, not a
 suite-wide disable. One parameterized declaration needs one justification.
+Inline `/* eslint ... */` configurations must not disable or downgrade the test
+justification rule, including numeric and array severity forms. Keeping it at
+`error` is allowed and still requires a local explanation for each test.
 
 Detection covers `test`/`it` globals in test/spec files and test directories,
 named imports (including aliases), namespace imports from Vitest/Jest/Node test

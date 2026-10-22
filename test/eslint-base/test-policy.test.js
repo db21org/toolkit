@@ -69,11 +69,29 @@ test("test policy detects declarations and validates local exceptions", () => {
     `// eslint-disable-next-line ${rule}`,
     `// eslint-disable-next-line ${rule} -- coverage`,
     `/* eslint-disable ${rule} -- ${explanation} */`,
+    `/* eslint ${rule}: off */`,
+    `/* eslint "${rule}": "off" */`,
+    `/* eslint '${rule}': 'warn' */`,
+    `/* eslint ${rule}: 0 */`,
+    `/* eslint ${rule}: 1 */`,
+    `/* eslint ${rule}: ["off"] */`,
+    `/* eslint ${rule}: [1] -- ${explanation} */`,
+    `/* eslint no-alert: error, "${rule}": ["warn"] */`,
+    `/* eslint\n  "${rule}": 0\n*/`,
   ]) {
     const messages = verify(`${directive}\ntest("risk", handler);`);
     assert.ok(
       messages.some((message) => message.ruleId === reasonRule),
       directive,
+    );
+  }
+  for (const setting of ['"error"', "error", "2", '["error"]', "[2]"]) {
+    assert.deepEqual(
+      verify(
+        `/* eslint "${rule}": ${setting} */\n// eslint-disable-next-line ${rule} -- ${explanation}\ntest("risk", handler);`,
+      ),
+      [],
+      setting,
     );
   }
   assert.deepEqual(

@@ -2,6 +2,21 @@ const TEST_RULE = "db21-tests/require-justification";
 const TEST_MODULES = new Set(["vitest", "@jest/globals", "node:test"]);
 const TEST_NAMES = new Set(["test", "it", "fit", "xit", "xtest"]);
 
+const isInlineDowngrade = (comment) => {
+  if (comment.type !== "Block") return false;
+  const directive = /^\s*eslint\s+([^]*?)(?:\s+--\s[^]*)?\s*$/u.exec(
+    comment.value,
+  );
+  if (!directive) return false;
+  const setting =
+    /(?:^|[,{])\s*["']?db21-tests\/require-justification["']?\s*:\s*(?:\[\s*)?(?:"([^"]*)"|'([^']*)'|([^\s,\]}]+))/u.exec(
+      directive[1],
+    );
+  if (!setting) return false;
+  const severity = setting[1] ?? setting[2] ?? setting[3];
+  return severity !== "error" && Number(severity) !== 2;
+};
+
 const getRoot = (node) => {
   if (node.type === "Identifier") return node;
   if (node.type === "MemberExpression") return getRoot(node.object);
@@ -107,12 +122,18 @@ const requireLocalReason = {
     messages: {
       reason:
         "Test exceptions must use eslint-disable-next-line or eslint-disable-line with a -- explanation of the specific risk or regression; blanket test exceptions are forbidden.",
+      inline:
+        "Inline ESLint configuration must not disable or downgrade the test justification rule; use a justified local exception for each critical test.",
     },
   },
   create(context) {
     return {
       Program() {
         for (const comment of context.sourceCode.getAllComments()) {
+          if (isInlineDowngrade(comment)) {
+            context.report({ loc: comment.loc, messageId: "inline" });
+            continue;
+          }
           const match =
             /^\s*(eslint-disable(?:-next-line|-line)?)\s+([^]*?)\s*$/u.exec(
               comment.value,
