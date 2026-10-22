@@ -122,7 +122,7 @@ export class SparqlReader {
     return `{ ${pattern} } UNION { GRAPH ?graph { ${pattern} } }`;
   }
 
-  private async select(query: string): Promise<Row[]> {
+  private async select(query: string, signal?: AbortSignal): Promise<Row[]> {
     const response = await fetch(this.endpoint, {
       method: "POST",
       redirect: "error",
@@ -131,7 +131,10 @@ export class SparqlReader {
         "content-type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({ query: prefixes + query }),
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.any([
+        AbortSignal.timeout(15_000),
+        ...(isDefined(signal) ? [signal] : []),
+      ]),
     });
 
     assert.true(
@@ -168,12 +171,14 @@ export class SparqlReader {
    * @param mode Overview, class instances, or node neighborhood.
    * @param id Class or node IRI (unused for overview).
    * @param offset Zero-based result offset.
+   * @param signal Cancellation of obsolete browser navigation.
    * @returns A view containing only RDF-derived text and navigation data.
    */
   public async view(
     mode: string,
     id: string,
     offset: number,
+    signal?: AbortSignal,
   ): Promise<GraphView> {
     assert.true(
       Number.isSafeInteger(offset) && offset >= 0,
@@ -181,26 +186,31 @@ export class SparqlReader {
     );
 
     if (mode === "overview") {
-      return this.overview(offset);
+      return this.overview(offset, signal);
     }
 
     iri(id);
 
     if (mode === "class") {
-      return this.instances(id, offset);
+      return this.instances(id, offset, signal);
     }
 
     assert.true(mode === "node", "Unknown graph view.");
 
-    return this.neighborhood(id, offset);
+    return this.neighborhood(id, offset, signal);
   }
 
-  private async overview(offset: number): Promise<GraphView> {
+  private async overview(
+    offset: number,
+    signal?: AbortSignal,
+  ): Promise<GraphView> {
     const page = `LIMIT ${String(pageSize + 1)} OFFSET ${String(offset)}`;
-    const rows = await this
-      .select(`SELECT ?class (COUNT(DISTINCT ?subject) AS ?count) WHERE {
+    const rows = await this.select(
+      `SELECT ?class (COUNT(DISTINCT ?subject) AS ?count) WHERE {
         ${this.scope("?subject rdf:type ?class . FILTER(isIRI(?class))")}
-      } GROUP BY ?class ORDER BY DESC(?count) STR(?class) ${page}`);
+      } GROUP BY ?class ORDER BY DESC(?count) STR(?class) ${page}`,
+      signal,
+    );
 
     return {
       title: "RDF class overview",
@@ -218,14 +228,20 @@ export class SparqlReader {
     };
   }
 
-  private async instances(id: string, offset: number): Promise<GraphView> {
+  private async instances(
+    id: string,
+    offset: number,
+    signal?: AbortSignal,
+  ): Promise<GraphView> {
     const subject = iri(id);
     const page = `LIMIT ${String(pageSize + 1)} OFFSET ${String(offset)}`;
-    const rows = await this
-      .select(`SELECT ?subject (SAMPLE(?name) AS ?label) WHERE {
+    const rows = await this.select(
+      `SELECT ?subject (SAMPLE(?name) AS ?label) WHERE {
         ${this.scope(`?subject rdf:type ${subject} . FILTER(isIRI(?subject))
           OPTIONAL { ?subject rdfs:label ?name . FILTER(isLiteral(?name)) }`)}
-      } GROUP BY ?subject ORDER BY STR(?subject) ${page}`);
+      } GROUP BY ?subject ORDER BY STR(?subject) ${page}`,
+      signal,
+    );
 
     return {
       title: localName(id),
@@ -245,19 +261,28 @@ export class SparqlReader {
     };
   }
 
-  private async neighborhood(id: string, offset: number): Promise<GraphView> {
+  private async neighborhood(
+    id: string,
+    offset: number,
+    signal?: AbortSignal,
+  ): Promise<GraphView> {
     const subject = iri(id);
     const page = `LIMIT ${String(pageSize + 1)} OFFSET ${String(offset)}`;
-    const rows = await this
-      .select(`SELECT DISTINCT ?predicate ?value ?direction ?blank ?datatype ?language ?length WHERE {
-      ${this.scope(`{ ${subject} ?predicate ?other . BIND("out" AS ?direction) }
-        UNION { ?other ?predicate ${subject} . BIND("in" AS ?direction) }
+    const rows = await this.select(
+      `SELECT ?predicate ?value ?direction ?blank ?datatype ?language ?length WHERE {
+        { SELECT DISTINCT ?predicate ?other ?direction WHERE {
+          ${this
+            .scope(`{ ${subject} ?predicate ?other . BIND("out" AS ?direction) }
+            UNION { ?other ?predicate ${subject} . BIND("in" AS ?direction) }`)}
+        } ORDER BY ?direction STR(?predicate) ?other ${page} }
         BIND(isBlank(?other) AS ?blank)
         BIND(IF(isIRI(?other), ?other, COALESCE(SUBSTR(STR(?other), 1, 1800), "[blank node]")) AS ?value)
         BIND(IF(isLiteral(?other), STR(DATATYPE(?other)), "") AS ?datatype)
         BIND(IF(isLiteral(?other), LANG(?other), "") AS ?language)
-        BIND(IF(isLiteral(?other), STRLEN(STR(?other)), 0) AS ?length)`)}
-    } ORDER BY ?direction STR(?predicate) STR(?value) ${page}`);
+        BIND(IF(isLiteral(?other), STRLEN(STR(?other)), 0) AS ?length)
+    } ORDER BY ?direction STR(?predicate) ?other`,
+      signal,
+    );
 
     return {
       title: localName(id),

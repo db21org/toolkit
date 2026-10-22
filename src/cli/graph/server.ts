@@ -67,12 +67,60 @@ const prepareResponse = (
   return true;
 };
 
+const createViewHandler = (
+  reader: SparqlReader,
+): ((url: URL, response: ServerResponse) => Promise<void>) => {
+  let active: AbortController | undefined;
+
+  return async (url: URL, response: ServerResponse): Promise<void> => {
+    active?.abort();
+    const controller = new AbortController();
+
+    active = controller;
+
+    const cancel = (): void => {
+      controller.abort();
+    };
+
+    response.once("close", cancel);
+
+    try {
+      const view = await reader.view(
+        url.searchParams.get("mode") ?? "overview",
+        url.searchParams.get("id") ?? "",
+        Number(url.searchParams.get("offset") ?? 0),
+        controller.signal,
+      );
+
+      if (!controller.signal.aborted) {
+        sendJson(response, 200, view);
+      }
+    } catch (error: unknown) {
+      if (!controller.signal.aborted) {
+        sendJson(response, 400, {
+          error: error instanceof Error ? error.message : "Graph query failed.",
+        });
+      }
+    } finally {
+      response.removeListener("close", cancel);
+
+      if (controller.signal.aborted && !response.destroyed) {
+        response.destroy();
+      }
+
+      if (active === controller) {
+        active = undefined;
+      }
+    }
+  };
+};
+
 const createHandler = (
   options: GraphOptions,
   reader: SparqlReader,
   origin: string,
 ): RequestHandler => {
-  let querying = false;
+  const view = createViewHandler(reader);
   const assets = new Map<string, readonly [string, string]>([
     ["/", ["text/html", graphPage]],
     ["/app.js", ["text/javascript", graphScript]],
@@ -104,33 +152,7 @@ const createHandler = (
     } else if (url.pathname === "/connection") {
       json(200, { endpoint: options.endpoint, graph: options.graph });
     } else if (url.pathname === "/view") {
-      if (querying) {
-        json(429, {
-          error: "A graph query is already running. Try again shortly.",
-        });
-
-        return;
-      }
-
-      querying = true;
-      void reader
-        .view(
-          url.searchParams.get("mode") ?? "overview",
-          url.searchParams.get("id") ?? "",
-          Number(url.searchParams.get("offset") ?? 0),
-        )
-        .then((view) => {
-          json(200, view);
-        })
-        .catch((error: unknown) => {
-          json(400, {
-            error:
-              error instanceof Error ? error.message : "Graph query failed.",
-          });
-        })
-        .finally(() => {
-          querying = false;
-        });
+      void view(url, response);
     } else {
       json(404, { error: "Not found." });
     }
