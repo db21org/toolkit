@@ -21,6 +21,34 @@ const command = defineCommand({
     description: "db21 development helpers",
   },
   subCommands: {
+    graph: defineCommand({
+      meta: {
+        description:
+          "Explore a SPARQL endpoint in a local read-only SVG viewer",
+      },
+      args: {
+        endpoint: {
+          type: "positional",
+          description: "SPARQL query endpoint URL",
+          required: true,
+        },
+        port: {
+          type: "string",
+          description: "Local HTTP port",
+          default: "4319",
+        },
+        graph: { type: "string", description: "Optional named graph IRI" },
+      },
+      async run({ args }) {
+        const { startGraphServer } = await import("./graph/server.js");
+
+        await startGraphServer({
+          endpoint: args.endpoint,
+          port: Number(args.port),
+          ...(isDefined(args.graph) ? { graph: args.graph } : {}),
+        });
+      },
+    }),
     bootstrap: defineCommand({
       meta: {
         description: "Create a toolkit workspace from Amatok-derived starters",

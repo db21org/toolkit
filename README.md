@@ -76,6 +76,39 @@ After generation, run `corepack yarn install` and `corepack yarn format` in the
 workspace. Review and commit `yarn.lock` before CI (which installs immutably).
 See the generated README for app development commands and validation.
 
+## Explore an RDF knowledge graph
+
+Start a local, read-only SVG explorer against a SPARQL query endpoint:
+
+```sh
+toolkit graph http://localhost:17878/query
+# Optional: restrict every query to one named graph, or choose a local port.
+toolkit graph http://localhost:17878/query --graph urn:example:graph --port 4319
+# From this checkout, after building:
+node dist/cli/index.js graph http://localhost:17878/query
+```
+
+Open the printed `http://127.0.0.1:4319` URL. The overview shows classes with
+instances. Click a class, then an instance, then any linked IRI to explore incoming
+and outgoing neighborhoods recursively. Back/forward navigation, direct node IRI
+entry, pagination, zoom and SVG download are included. Hover cards and edges for
+full identifiers, predicates and literal previews. Downloaded SVGs are static
+snapshots; interactive navigation lives in the server UI.
+
+No Novyn vocabulary, external graph libraries or browser CDN is required. Queries
+include default and named graphs unless `--graph` is supplied; historical revisions
+may therefore appear together. The view shows stored RDF connections, not verified
+facts, resolved identities or inferred subject/actor relationships.
+
+The server binds only to `127.0.0.1`, fixes its upstream at startup and exposes no
+query editor or write proxy. Only generated SELECT queries run. Requests time out
+after 15 seconds, responses are bounded to 2 MB, pages contain at most 24 results,
+and literal previews stop at 1,800 characters. Blank nodes are visible in
+neighborhoods but not independently expandable; class instance lists include IRIs
+only. Large-store class counts can still be expensive. Authenticated endpoints,
+RDF file loading and public/multi-user hosting are not supported. Use a trusted
+endpoint, keep this local, and stop with Ctrl+C.
+
 ## Integration requirements
 
 Install the optional peer dependencies used by your integration:
