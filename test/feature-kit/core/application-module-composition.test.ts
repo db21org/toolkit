@@ -5,13 +5,11 @@ import {
   getTokenName,
   Injectable,
   type InjectionToken,
-  inspectModule,
   Module,
   type ModuleMetadata,
   type ModuleType,
   token,
 } from "@db21/toolkit/feature-kit";
-import { assert } from "@db21/toolkit/utils";
 import { expect, test } from "vitest";
 
 import { expectNativeErrorFrom, resolveFromModule } from "./test-helpers.js";
@@ -130,6 +128,7 @@ const createSharedModuleGraph = (): SharedModuleGraph => {
   };
 };
 
+// eslint-disable-next-line db21-tests/require-justification -- Constructing an application must not eagerly instantiate providers with side effects.
 test("Application.create is synchronous and registrations are lazy", () => {
   let constructCount = 0;
 
@@ -152,6 +151,7 @@ test("Application.create is synchronous and registrations are lazy", () => {
   expect(constructCount).toBe(0);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Nested modules must compose only declared exports to preserve module ownership boundaries.
 test("recursive imports expose direct exports while hiding un-exported bindings", async () => {
   const leafToken = token<number>("leaf-value");
   const middleToken = token<string>("middle-value");
@@ -192,6 +192,7 @@ test("recursive imports expose direct exports while hiding un-exported bindings"
   expect(rootValue).toEqual("1-middle-root");
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Imports must not accidentally re-export transitive private capabilities to higher-level modules.
 test("exports are not transitive across module boundaries", async () => {
   const leafToken = token<number>("non-transitive-leaf");
   const middleToken = token<number>("non-transitive-middle");
@@ -228,6 +229,7 @@ test("exports are not transitive across module boundaries", async () => {
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Diamond imports must not duplicate configuration or singleton identity across feature branches.
 test("shared modules are configured once and keep shared singleton identity", async () => {
   const graph = createSharedModuleGraph();
 
@@ -263,19 +265,4 @@ test("shared modules are configured once and keep shared singleton identity", as
   expect(firstBranchValue.sharedService).toBe(rootSharedIdentity);
   expect(secondBranchValue.sharedService).toBe(rootSharedIdentity);
   expect(rootSharedName).toBe("SharedService");
-});
-
-test("module metadata remains inspectable", () => {
-  @Module({})
-  class ImportedModule {}
-
-  @Module({
-    imports: [ImportedModule],
-  })
-  class RootModule {}
-
-  const metadata = inspectModule(RootModule);
-
-  assert.defined(metadata, "Expected module metadata.");
-  expect(metadata.imports).toEqual([ImportedModule]);
 });

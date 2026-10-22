@@ -45,6 +45,13 @@ export const lintRule = async ({
   });
 
   const [result] = await eslint.lintText(code, { filePath: filename });
+  const fatalMessages = result.messages.filter((message) => message.fatal);
+
+  assert.deepEqual(
+    fatalMessages,
+    [],
+    "The fixture must parse successfully before its rule result is asserted.",
+  );
 
   return result.messages.filter((message) => message.ruleId === ruleName);
 };

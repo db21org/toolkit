@@ -67,6 +67,7 @@ const reactEslintConfig = (cwd) => {
   };
 };
 
+// eslint-disable-next-line db21-tests/require-justification -- React dependency rules must preserve separation between data, render wiring, and UI roles.
 test("extends core dependency rules with render-focused Surface contracts", () => {
   const cwd = createProject();
   setupCatalogModule(cwd);
@@ -115,6 +116,7 @@ test("extends core dependency rules with render-focused Surface contracts", () =
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Decorated Surface classes need constrained placement so render wiring remains discoverable and governed.
 test("validates Surface placement and decorator-backed filename boundaries", async () => {
   const cwd = createProject();
   setupCatalogModule(cwd);
@@ -165,6 +167,7 @@ test("validates Surface placement and decorator-backed filename boundaries", asy
   assert.equal(noDecoratorResult?.messages.length, 0);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Surface classes must not import UI platform concerns that bypass DI and component boundaries.
 test("enforces Surface import boundaries and allows DI/component wiring", async () => {
   const cwd = createProject();
   setupCatalogModule(cwd);
@@ -231,6 +234,7 @@ test("enforces Surface import boundaries and allows DI/component wiring", async 
   assert.equal(dependencyMessages.length, 6);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Unrecognized presentation folders must remain allowed to avoid imposing unsupported architectural roles.
 test("does not enforce presenters, presentations, or views as framework roles", async () => {
   const cwd = createProject();
   setupCatalogModule(cwd);
@@ -257,6 +261,7 @@ test("does not enforce presenters, presentations, or views as framework roles", 
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Components may use hooks and translations without a policy that blocks legitimate UI composition.
 test("allows both smart and dumb components with no passive-component restriction", async () => {
   const cwd = createProject();
   setupCatalogModule(cwd);
@@ -303,6 +308,7 @@ test("allows both smart and dumb components with no passive-component restrictio
   assert.equal(dumbResult?.messages.length, 0);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Provider registrations require dedicated filenames so integration boundaries remain enforceable.
 test("keeps react provider boundaries", async () => {
   const cwd = createProject();
   setupCatalogModule(cwd);
@@ -336,6 +342,7 @@ test("keeps react provider boundaries", async () => {
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- React module discovery must use configured cwd when lint is launched outside the project.
 test("uses explicit lint cwd for react module discovery", async () => {
   const launchCwd = createProject();
   const projectCwd = join(launchCwd, "app");

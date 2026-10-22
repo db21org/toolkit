@@ -33,6 +33,7 @@ afterEach(() => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- NestJS role direction rules prevent transport and persistence layers from forming unsafe dependencies.
 test("adds NestJS dependency direction rules", () => {
   const cwd = createProject();
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
@@ -63,6 +64,7 @@ test("adds NestJS dependency direction rules", () => {
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Role filenames make architectural checks reliable across NestJS feature modules.
 test("enforces NestJS role filenames", async () => {
   const cwd = createProject();
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
@@ -120,6 +122,7 @@ test("enforces NestJS role filenames", async () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Restricting module folders prevents ungoverned architectural roles from bypassing policy.
 test("allows only approved NestJS module folders", async () => {
   const cwd = createProject();
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
@@ -160,6 +163,7 @@ test("allows only approved NestJS module folders", async () => {
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- GraphQL input and output DTO filenames must encode direction for safe boundary use.
 test("requires GraphQL DTO filename direction", async () => {
   const cwd = createProject();
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");

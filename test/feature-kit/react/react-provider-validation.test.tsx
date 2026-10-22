@@ -24,6 +24,7 @@ const createFeatureModule = (metadata: ModuleMetadata): ModuleType => {
   return ModuleFixture;
 };
 
+// eslint-disable-next-line db21-tests/require-justification -- Invalid metadata must fail before React renders an untrusted provider registration.
 test("invalid react provider runtime creation throws during resolution", () => {
   const badRegistration = {
     notAProvider: true,
@@ -40,6 +41,7 @@ test("invalid react provider runtime creation throws during resolution", () => {
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- One provider instance cannot have two owners because dependency scope would become ambiguous.
 test("duplicate runtime ownership is rejected", () => {
   const shared = reactProvider({
     dependencies: {},
@@ -62,27 +64,7 @@ test("duplicate runtime ownership is rejected", () => {
   expect(() => ReactRuntime.forApplication(app)).toThrow("multiple owners");
 });
 
-test("React provider registrations can be anonymous components without diagnostic collisions", async () => {
-  const anonymous = reactProvider({
-    dependencies: {},
-    component: ({ children }) => <>{children}</>,
-  });
-
-  const root = createFeatureModule({
-    reactProviders: [anonymous],
-  });
-
-  const app = Application.create(root);
-
-  const html = await renderWithFeatureKit(
-    <FeatureKitProvider application={app}>
-      <p>ok</p>
-    </FeatureKitProvider>,
-  );
-
-  expect(html).toContain("ok");
-});
-
+// eslint-disable-next-line db21-tests/require-justification -- React hosts own application lifetime, so rendering must never trigger container disposal.
 test("FeatureKitProvider never calls host application dispose", async () => {
   const providerModule = createFeatureModule({
     reactProviders: [

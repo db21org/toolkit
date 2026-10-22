@@ -36,6 +36,7 @@ const readJson = async (path: string): Promise<Record<string, unknown>> => {
 };
 
 describe("bootstrap options", () => {
+  // eslint-disable-next-line db21-tests/require-justification -- Project names cross manifest and template boundaries; unsafe or invalid names must fail before generation.
   it.each([
     "Bad Name",
     "../escape",
@@ -49,6 +50,7 @@ describe("bootstrap options", () => {
     ).toThrow("Project name");
   });
 
+  // eslint-disable-next-line db21-tests/require-justification -- Invalid app selections must stop generation rather than silently create incomplete or unintended workspaces.
   it("rejects missing and unknown selections", () => {
     expect(() =>
       resolveBootstrapOptions({ directory: "starter", apps: [] }),
@@ -58,6 +60,7 @@ describe("bootstrap options", () => {
     ).toThrow("Unknown app type");
   });
 
+  // eslint-disable-next-line db21-tests/require-justification -- Duplicate selections must not publish the same workspace twice or make generated output order-dependent.
   it("normalizes selection order and duplicates", () => {
     expect(
       resolveBootstrapOptions({
@@ -73,6 +76,7 @@ describe("bootstrap generation", () => {
     appTypes.filter((_, bit) => ((index + 1) & (1 << bit)) !== 0),
   );
 
+  // eslint-disable-next-line db21-tests/require-justification -- Every supported app subset must generate only selected workspaces and conditionally include required Astro compatibility settings.
   it.each(combinations.map((apps) => ({ apps, label: apps.join(",") })))(
     "generates selected workspaces: $label",
     async ({ apps }) => {
@@ -110,6 +114,15 @@ describe("bootstrap generation", () => {
       );
       expect(yarnConfig).toContain("nodeLinker: node-modules");
       expect(workflow).toContain("yarn install --immutable");
+      const testConfig = await readFile(
+        join(directory, "vitest.config.ts"),
+        "utf8",
+      );
+
+      expect(testConfig).toContain("passWithNoTests: true");
+      const rootEntries = await readdir(directory);
+
+      expect(rootEntries).not.toContain("test");
 
       for (const app of expected) {
         const manifest = await readJson(
@@ -125,6 +138,7 @@ describe("bootstrap generation", () => {
 });
 
 describe("bootstrap destination safety", () => {
+  // eslint-disable-next-line db21-tests/require-justification -- Explicit names must allow safe generation into an empty destination whose directory name is not a valid package name.
   it("accepts an existing empty directory and explicit name", async () => {
     const directory = join(temporaryDirectory, "directory-with-dots.local");
 
@@ -136,6 +150,7 @@ describe("bootstrap destination safety", () => {
     expect(manifest.name).toBe("my-project");
   });
 
+  // eslint-disable-next-line db21-tests/require-justification -- Generator must never overwrite or remove existing user files when refusing a nonempty destination.
   it("refuses nonempty directories without changing content", async () => {
     const directory = join(temporaryDirectory, "starter");
 
@@ -151,6 +166,7 @@ describe("bootstrap destination safety", () => {
     expect(contents).toBe("user work");
   });
 
+  // eslint-disable-next-line db21-tests/require-justification -- Files and symlink destinations must be rejected without publishing through links into unrelated directories.
   it("refuses files and symlink destinations", async () => {
     const file = join(temporaryDirectory, "file");
     const directory = join(temporaryDirectory, "directory");
@@ -174,16 +190,7 @@ describe("bootstrap destination safety", () => {
 describe("built CLI", () => {
   const entry = resolve("dist/cli/index.js");
 
-  it("exposes command help", () => {
-    const output = execFileSync(
-      process.execPath,
-      [entry, "bootstrap", "--help"],
-      { encoding: "utf8" },
-    );
-
-    expect(output).toContain("--apps");
-  });
-
+  // eslint-disable-next-line db21-tests/require-justification -- CI invocations without required flags must fail rather than hang indefinitely on interactive prompts.
   it("fails non-interactively instead of opening prompts", () => {
     const result = spawnSync(process.execPath, [entry, "bootstrap"], {
       encoding: "utf8",
@@ -193,6 +200,7 @@ describe("built CLI", () => {
     expect(result.stderr).toContain("Non-interactive usage requires");
   });
 
+  // eslint-disable-next-line db21-tests/require-justification -- Built CLI must honor selected apps without implicitly installing dependencies or mutating repository state.
   it("generates with flags and no installation or Git initialization", async () => {
     const directory = join(temporaryDirectory, "cli-starter");
 

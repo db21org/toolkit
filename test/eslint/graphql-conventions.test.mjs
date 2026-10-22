@@ -27,6 +27,7 @@ const withTempPath = () => {
   };
 };
 
+// eslint-disable-next-line db21-tests/require-justification -- Feature query paths must produce the descriptor consumed by generated GraphQL artifacts; malformed paths must not acquire an owner.
 test("accepts valid feature path and role", () => {
   const { base, resolvePath, cleanup } = withTempPath();
   try {
@@ -55,6 +56,7 @@ test("accepts valid feature path and role", () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Owner folders must remain kebab-case so GraphQL artifact locations are stable across case-sensitive filesystems.
 test("requires a canonical kebab-case feature segment", () => {
   const { base, resolvePath, cleanup } = withTempPath();
   try {
@@ -78,6 +80,7 @@ test("requires a canonical kebab-case feature segment", () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Discovery may find a candidate extension, but validation must reject extensions absent from the configured document contract.
 test("findGraphqlFiles accepts .graphql but validation rejects it", () => {
   const { base, resolvePath, cleanup } = withTempPath();
   try {
@@ -111,6 +114,7 @@ test("findGraphqlFiles accepts .graphql but validation rejects it", () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- A query filename must not hide a mutation because generated operation artifacts depend on the declared role.
 test("flags operation role mismatches", () => {
   const { base, resolvePath, cleanup } = withTempPath();
   try {
@@ -132,6 +136,7 @@ test("flags operation role mismatches", () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Folder and suffix roles must agree so consumers can infer operation kind from a document path.
 test("rejects path/suffix role mismatches", () => {
   const { base, resolvePath, cleanup } = withTempPath();
   try {
@@ -155,6 +160,7 @@ test("rejects path/suffix role mismatches", () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- SDL belongs to schema inputs, not feature operation documents that feed client artifact generation.
 test("rejects SDL definitions in operation documents", () => {
   const { base, resolvePath, cleanup } = withTempPath();
   try {
@@ -176,6 +182,7 @@ test("rejects SDL definitions in operation documents", () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Unsupported GraphQL filenames must fail with a path diagnostic instead of silently escaping feature ownership rules.
 test("reports unsupported file roles", () => {
   const { base, resolvePath, cleanup } = withTempPath();
   try {
@@ -197,6 +204,7 @@ test("reports unsupported file roles", () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Module-owned operations must receive the same descriptor semantics as feature-owned operations.
 test("accepts GraphQL documents owned by an application module", () => {
   const { base, resolvePath, cleanup } = withTempPath();
   try {
@@ -219,6 +227,7 @@ test("accepts GraphQL documents owned by an application module", () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Anonymous operations must be rejected because generated clients require stable operation identifiers.
 test("requires named operations", () => {
   const { base, resolvePath, cleanup } = withTempPath();
   try {
@@ -240,6 +249,7 @@ test("requires named operations", () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Only declared scalar mappings may suppress schema failures; the preset mapping must remain compatible with generated TypeScript types.
 test("validates custom scalar mappings", () => {
   const schema = "scalar Cursor\nscalar External\n";
 
@@ -265,6 +275,7 @@ test("validates custom scalar mappings", () => {
   assert.true(isEmpty(collectUnmappedCustomScalars(mappedSchema)));
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Consumer-provided module roots, document folders, and extensions must work together without accepting near-miss paths.
 test("supports consumer document roots, directories, and extensions", () => {
   const { base, resolvePath, cleanup } = withTempPath();
   try {
@@ -311,6 +322,7 @@ test("supports consumer document roots, directories, and extensions", () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Replacing scalar mappings must not retain preset entries implicitly, which would conceal unmapped schema types.
 test("uses replacement scalar mappings without implicit preset mappings", () => {
   const schema = "scalar Cursor\nscalar External\nscalar toString\n";
 

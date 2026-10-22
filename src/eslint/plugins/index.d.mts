@@ -8,3 +8,4 @@ export const preferAwaitedValuesPlugin: ESLint.Plugin;
 export const requireExtractedHooksPlugin: ESLint.Plugin;
 export const requireExtractedUtilitiesPlugin: ESLint.Plugin;
 export const typescriptFilenameConventionsPlugin: ESLint.Plugin;
+export const testPolicyPlugin: ESLint.Plugin;

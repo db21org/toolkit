@@ -15,7 +15,20 @@ import {
 import { createNestConfig } from "../../src/eslint/nest.mjs";
 
 const appRoot = resolve(import.meta.dirname, "../fixtures/expo");
-test("supports a consumer-owned navigation hook without changing restrictions", () => {
+const sourceConfig = {
+  files: ["**/*.{ts,tsx,mts,cts}"],
+  languageOptions: {
+    parser: typescriptEslint.parser,
+    parserOptions: {
+      ecmaFeatures: { jsx: true },
+      ecmaVersion: "latest",
+      sourceType: "module",
+    },
+  },
+};
+
+// eslint-disable-next-line db21-tests/require-justification -- Configured navigation must block Expo Router imports while allowing the consumer-owned replacement hook.
+test("allows a configured navigation hook while rejecting Expo Router", async () => {
   const configs = createExpoConfig({
     cwd: appRoot,
     navigationHook: {
@@ -30,32 +43,37 @@ test("supports a consumer-owned navigation hook without changing restrictions", 
       config.files?.includes("src/**/*.{ts,tsx}") &&
       Array.isArray(config.rules?.["no-restricted-imports"]),
   );
-  const [, restriction] = restrictionConfig.rules["no-restricted-imports"];
 
-  assert.deepEqual(restriction.paths[0].importNames, ["useRouter"]);
-  assert.match(
-    restriction.paths[0].message,
-    /useNavigation from @\/navigation/u,
+  const configuredEslint = new ESLint({
+    ignore: false,
+    overrideConfig: [sourceConfig, restrictionConfig],
+    overrideConfigFile: true,
+  });
+  const filePath = "src/features/feed/components/Feed.tsx";
+  const [allowed, restricted] = await Promise.all([
+    configuredEslint.lintText(
+      'import { useNavigation } from "@/navigation";\nuseNavigation();',
+      { filePath },
+    ),
+    configuredEslint.lintText(
+      'import { useRouter } from "expo-router";\nuseRouter();',
+      { filePath },
+    ),
+  ]);
+
+  assert.equal(
+    allowed[0].messages.some(
+      (message) => message.ruleId === "no-restricted-imports",
+    ),
+    false,
   );
   assert.equal(
-    configs.some((config) =>
-      config.files?.includes("src/navigation/use-navigation.hook.ts"),
+    restricted[0].messages.some(
+      (message) => message.ruleId === "no-restricted-imports",
     ),
     true,
   );
 });
-
-const sourceConfig = {
-  files: ["**/*.{ts,tsx,mts,cts}"],
-  languageOptions: {
-    parser: typescriptEslint.parser,
-    parserOptions: {
-      ecmaFeatures: { jsx: true },
-      ecmaVersion: "latest",
-      sourceType: "module",
-    },
-  },
-};
 
 const restrictedSyntaxEslint = new ESLint({
   ignore: false,
@@ -79,10 +97,6 @@ const roleEslint = new ESLint({
 });
 
 const expoConfig = createExpoConfig({ cwd: appRoot });
-const expoGraphqlConfig = expoConfig.find((config) =>
-  config.files?.includes("src/**/*.{gql,graphql}"),
-);
-
 const expoReactConfig = expoConfig.find((config) =>
   config.files?.includes("src/**/*.tsx"),
 );
@@ -122,11 +136,7 @@ const assertRejected = async (source, expectedMessage, filePath) => {
   assert.match(messages[0].message, expectedMessage);
 };
 
-test("wires GraphQL conventions into Expo source files", () => {
-  assert.equal(expoGraphqlConfig?.processor, "feature-graphql/conventions");
-  assert.ok(expoGraphqlConfig.plugins?.["feature-graphql"]);
-});
-
+// eslint-disable-next-line db21-tests/require-justification -- JSX null ternaries must be rejected so conditional native rendering uses the established boolean-and convention.
 test("requires boolean-and rendering instead of JSX null ternaries", async () => {
   await assertRejected(
     "const value = <>{visible ? <View /> : null}</>;",
@@ -140,6 +150,7 @@ test("requires boolean-and rendering instead of JSX null ternaries", async () =>
   assert.deepEqual(messages, []);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Visible JSX text and accessibility labels must require translation so localized Expo screens do not ship hardcoded copy.
 test("rejects representative hardcoded user-facing JSX strings", async () => {
   const cases = [
     "const value = <Text>Hello</Text>;",
@@ -153,6 +164,7 @@ test("rejects representative hardcoded user-facing JSX strings", async () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- JSX space expressions must be rejected because layout spacing belongs in styling rather than text-node artifacts.
 test("rejects JSX space expressions", async () => {
   await assertRejected(
     'const value = <Text>{" "}</Text>;',
@@ -160,6 +172,7 @@ test("rejects JSX space expressions", async () => {
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Expo query types must use Maybe so mobile API boundaries do not reintroduce raw null unions.
 test("requires Maybe for explicit null unions", async () => {
   await assertRejected(
     "type Value = string | null;",
@@ -175,6 +188,7 @@ test("requires Maybe for explicit null unions", async () => {
   assert.deepEqual(messages, []);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- NativeWind must remain the default while an in-place disable preserves the narrow runtime-style escape hatch.
 test("requires NativeWind unless a style prop has an in-place exception", async () => {
   await assertRejected(
     "const value = <View style={frameStyle} />;",
@@ -191,6 +205,7 @@ test("requires NativeWind unless a style prop has an in-place exception", async 
   assert.deepEqual(messages, []);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Feature indexes must not re-export generated GraphQL documents, preserving generated artifacts as feature-private implementation details.
 test("keeps generated GraphQL artifacts feature-private", async () => {
   await assertRejected(
     'export { FeedProductsDocument } from "../generated/graphql";',
@@ -199,6 +214,7 @@ test("keeps generated GraphQL artifacts feature-private", async () => {
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Component and provider paths must obey feature-kit roles so misplaced Expo files do not evade architecture conventions.
 test("enforces Expo component and provider file roles", async () => {
   const paths = [
     "src/features/feed/components/lint-helper.ts",
@@ -218,6 +234,7 @@ test("enforces Expo component and provider file roles", async () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Expo TSX must inherit React documentation requirements so exported screens do not lose public API descriptions.
 test("applies full React documentation rules to Expo TSX", async () => {
   const [result] = await reactDocumentationEslint.lintText(
     "export const Undocumented = (): null => null;",
@@ -230,6 +247,7 @@ test("applies full React documentation rules to Expo TSX", async () => {
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Custom source roots, module roots, GraphQL directories, roles, and utility exemptions must remain configurable for nonstandard app layouts.
 test("configures Expo and Nest roots without the default source layout", () => {
   const cwd = mkdtempSync(resolve(tmpdir(), "toolkit-layout-"));
   try {

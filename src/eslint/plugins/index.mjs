@@ -6,3 +6,4 @@ export { preferAwaitedValuesPlugin } from "./prefer-awaited-values.mjs";
 export { requireExtractedHooksPlugin } from "./require-extracted-hooks.mjs";
 export { requireExtractedUtilitiesPlugin } from "./require-extracted-utilities.mjs";
 export { typescriptFilenameConventionsPlugin } from "./typescript-filename-conventions.mjs";
+export { testPolicyPlugin } from "./test-policy.mjs";

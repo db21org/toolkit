@@ -23,6 +23,7 @@ const lint = async (source) => {
   return result.messages;
 };
 
+// eslint-disable-next-line db21-tests/require-justification -- Throw-only guards must suggest assertion helpers so failure messages and presence checks use the shared test contract.
 test("rejects if statements whose only behavior is throwing", async () => {
   const cases = [
     [
@@ -45,6 +46,7 @@ test("rejects if statements whose only behavior is throwing", async () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Boolean wrappers around isDefined and isNotDefined must map to presence assertions instead of obscuring their intent.
 test("rejects boolean assertions around shared defined predicates", async () => {
   const cases = [
     ["assert.false(isDefined(value), 'failed');", "assert.notDefined"],
@@ -61,6 +63,7 @@ test("rejects boolean assertions around shared defined predicates", async () => 
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Guards with cleanup work must remain valid because replacing them with an assertion would drop required side effects.
 test("allows guards that perform additional behavior", async () => {
   const messages = await lint(
     "if (invalid) { cleanup(); throw new Error('failed'); }",
@@ -69,6 +72,7 @@ test("allows guards that perform additional behavior", async () => {
   assert.deepEqual(messages, []);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- If/else control flow must remain valid because an assertion cannot preserve the recovery branch.
 test("allows if/else control flow", async () => {
   const messages = await lint(
     "if (invalid) { throw new Error('failed'); } else { recover(); }",

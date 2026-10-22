@@ -26,6 +26,7 @@ const lint = async (source) => {
   );
 };
 
+// eslint-disable-next-line db21-tests/require-justification -- Length-versus-zero comparisons must be rejected in either operand order so callers use the shared emptiness predicates.
 test("rejects relational zero-length comparisons", async () => {
   for (const source of [
     "const result = values.length > 0;",
@@ -40,6 +41,7 @@ test("rejects relational zero-length comparisons", async () => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- The approved isNotEmpty predicate must remain accepted as the safe replacement for manual length checks.
 test("allows shared emptiness predicates", async () => {
   const messages = await lint("const result = isNotEmpty(values);");
 

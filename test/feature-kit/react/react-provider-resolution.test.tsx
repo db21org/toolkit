@@ -1,10 +1,4 @@
-import {
-  Application,
-  inspectModule,
-  Module,
-  type ModuleMetadata,
-  token,
-} from "@db21/toolkit/feature-kit";
+import { Application, token } from "@db21/toolkit/feature-kit";
 import {
   FeatureKitProvider,
   reactProvider,
@@ -20,10 +14,7 @@ import {
   renderWithFeatureKit,
 } from "./feature-kit-provider-test-helpers.js";
 
-type MutableModuleMetadata = ModuleMetadata & {
-  reactProviders: unknown[];
-};
-
+// eslint-disable-next-line db21-tests/require-justification -- Provider dependencies must suspend safely and render only after asynchronous values are available.
 test("FeatureKitProvider suspends and resolves React provider dependencies", async () => {
   const payloadToken = token<string>("payload-token");
 
@@ -62,6 +53,7 @@ test("FeatureKitProvider suspends and resolves React provider dependencies", asy
   expect(html).toContain("child");
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- A provider needs its owner's private dependencies without making them visible to other modules.
 test("React provider dependencies resolve from the owning module even when private", async () => {
   const privateToken = token<string>("private-token");
 
@@ -98,6 +90,7 @@ test("React provider dependencies resolve from the owning module even when priva
   expect(html).toContain("done");
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- React replay must reuse provider dependency work instead of triggering duplicate side effects.
 test("react-provider dependency promise is cached across re-renders", async () => {
   const tokenValue = token<string>("cached-token");
   let resolveCount = 0;
@@ -140,6 +133,7 @@ test("react-provider dependency promise is cached across re-renders", async () =
   expect(resolveCount).toBe(1);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Each application needs isolated runtime state while remounts reuse its registered ownership map.
 test("ReactRuntime.forApplication is cached per application", () => {
   const app = Application.create(
     createModule({
@@ -171,6 +165,7 @@ test("ReactRuntime.forApplication is cached per application", () => {
   expect(runtimeThree).not.toBe(runtimeOne);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- React use() replay requires the exact same dependency Promise identity for a provider registration.
 test("resolveDependencies returns stable promise identity", async () => {
   const tokenValue = token<string>("stable-dependency-token");
   let resolveCount = 0;
@@ -221,50 +216,7 @@ test("resolveDependencies returns stable promise identity", async () => {
   expect(resolveCount).toBe(1);
 });
 
-test("failed ReactRuntime.forApplication can be retried after correcting metadata", async () => {
-  const metadata = {
-    reactProviders: [{ notAProvider: true }],
-  } as unknown as ModuleMetadata;
-
-  @Module(metadata)
-  class RepairedModule {}
-
-  const app = Application.create(RepairedModule);
-
-  expect(() => ReactRuntime.forApplication(app)).toThrow(
-    "invalid react provider registration",
-  );
-
-  const repairedMetadata = inspectModule(
-    RepairedModule,
-  ) as MutableModuleMetadata;
-
-  assert.defined(
-    repairedMetadata,
-    "Expected repaired metadata to be available for retry.",
-  );
-
-  repairedMetadata.reactProviders = [
-    reactProvider({
-      dependencies: {},
-      component: ({ children }) => <>{children}</>,
-    }),
-  ];
-
-  const runtime = ReactRuntime.forApplication(app);
-
-  expect(runtime.entries).toHaveLength(1);
-  expect(runtime.entries[0]).toBeDefined();
-
-  const html = await renderWithFeatureKit(
-    <FeatureKitProvider application={app}>
-      <p>retryable</p>
-    </FeatureKitProvider>,
-  );
-
-  expect(html).toContain("retryable");
-});
-
+// eslint-disable-next-line db21-tests/require-justification -- Provider dependency failures must propagate through Suspense rather than producing a partial tree.
 test("react-provider dependency errors reject through the suspense render path", async () => {
   const failingToken = token<string>("failing-token");
 

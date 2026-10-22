@@ -21,6 +21,7 @@ const createTestModule = (metadata: ModuleMetadata): ModuleType => {
   return ModuleFixture;
 };
 
+// eslint-disable-next-line db21-tests/require-justification -- Application disposal must invoke both decorator and explicit factory cleanup for owned singletons.
 test("explicit factory onDeactivation cleanup runs during disposal", async () => {
   const ownedFactoryToken = token<{ destroy: () => void }>("factory-owned");
   const classDisposed: string[] = [];
@@ -61,16 +62,13 @@ test("explicit factory onDeactivation cleanup runs during disposal", async () =>
   expect(firstService).toBe(secondService);
   expect(firstFactory).toBe(secondFactory);
 
-  const firstDispose = app.dispose();
-  const secondDispose = app.dispose();
-
-  expect(firstDispose).toBe(secondDispose);
-  await firstDispose;
+  await app.dispose();
 
   expect(classDisposed).toEqual(["class"]);
   expect(factoryDisposed).toEqual(["factory"]);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Asynchronous initialization and teardown must complete before services become usable or disposal resolves.
 test("async PostConstruct and PreDestroy methods are honored", async () => {
   const initGate = createDeferredState();
   const destroyGate = createDeferredState();
@@ -120,6 +118,7 @@ test("async PostConstruct and PreDestroy methods are honored", async () => {
   expect(lifecycleLog).toEqual(["initialized", "destroyed"]);
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Dependents must release imported resources before their providers are torn down.
 test("importer resources dispose before imported module resources", async () => {
   const lifecycleLog: string[] = [];
 

@@ -26,6 +26,7 @@ const lint = async (source, filePath) => {
   return result.messages.filter((message) => message.ruleId === targetRule);
 };
 
+// eslint-disable-next-line db21-tests/require-justification -- Custom hooks declared beside a TSX component must be extracted so component files retain a single UI responsibility.
 test("rejects custom hook declarations in TSX component files", async () => {
   const messages = await lint(
     [
@@ -41,6 +42,7 @@ test("rejects custom hook declarations in TSX component files", async () => {
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Dedicated hook modules, imports, ordinary helpers, and test fixtures must remain exempt from the component-file extraction rule.
 test("allows hook modules, imported hooks, and ordinary component helpers", async () => {
   const fixtures = [
     [

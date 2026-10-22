@@ -20,12 +20,14 @@ import {
 const devVersion = "1.0.1-dev.42.1.gabcdef123456";
 
 describe("stable release version", () => {
+  // eslint-disable-next-line db21-tests/require-justification -- Stable promotion must strip the full CI suffix while preserving the preview artifact's intended release version.
   it("removes the complete toolkit prerelease suffix", () => {
     expect(createReleaseVersion({ devVersion, latestVersion: "1.0.0" })).toBe(
       "1.0.1",
     );
   });
 
+  // eslint-disable-next-line db21-tests/require-justification -- Promotion must refuse arbitrary or malformed versions instead of publishing an unintended stable artifact.
   it.each([
     "1.0.1",
     "1.0.1-beta.1",
@@ -38,6 +40,7 @@ describe("stable release version", () => {
     ).toThrow("toolkit preview version format");
   });
 
+  // eslint-disable-next-line db21-tests/require-justification -- Stable promotion must never reuse or move latest backward across patch, minor, or major boundaries.
   it.each(["1.0.1", "1.0.2", "1.1.0", "2.0.0"])(
     "rejects release not newer than %s",
     (latestVersion) => {
@@ -47,6 +50,7 @@ describe("stable release version", () => {
     },
   );
 
+  // eslint-disable-next-line db21-tests/require-justification -- Lexical comparison would reject legitimate multi-digit patch releases such as ten following nine.
   it("compares numeric version segments rather than strings", () => {
     expect(
       createReleaseVersion({
@@ -56,6 +60,7 @@ describe("stable release version", () => {
     ).toBe("1.0.10");
   });
 
+  // eslint-disable-next-line db21-tests/require-justification -- Unexpected latest tag versions must stop promotion rather than bypass the monotonic stable-version guard.
   it("rejects malformed latest", () => {
     expect(() =>
       createReleaseVersion({ devVersion, latestVersion: "1.0.0-dev.1" }),
@@ -64,6 +69,7 @@ describe("stable release version", () => {
 });
 
 describe("release archive paths", () => {
+  // eslint-disable-next-line db21-tests/require-justification -- Archive safety validation must allow ordinary package files and directories so valid promotion remains possible.
   it("accepts regular npm package entries", () => {
     expect(() =>
       validateArchiveEntries(
@@ -73,6 +79,7 @@ describe("release archive paths", () => {
     ).not.toThrow();
   });
 
+  // eslint-disable-next-line db21-tests/require-justification -- Downloaded archives must not escape their extraction directory through absolute paths or traversal components.
   it.each([
     "../outside",
     "package/../../outside",
@@ -87,6 +94,7 @@ describe("release archive paths", () => {
     ).toThrow("Unsafe package archive path");
   });
 
+  // eslint-disable-next-line db21-tests/require-justification -- Symlink and hardlink archive entries must be rejected before extraction can redirect writes outside staging.
   it.each(["lrwxr-xr-x link", "hrw-r--r-- link"])(
     "rejects links: %s",
     (entry) => {
@@ -145,6 +153,7 @@ if (args[0] === "view") {
   return { archive, binary, manifest };
 };
 
+// eslint-disable-next-line db21-tests/require-justification -- Promotion must preserve built bytes and dotfiles without executing package lifecycle scripts or rebuilding the dev artifact.
 it("promotes the built archive offline, changing only manifest version", () => {
   const directory = mkdtempSync(join(tmpdir(), "toolkit-release-test-"));
 

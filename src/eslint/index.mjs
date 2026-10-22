@@ -9,6 +9,7 @@ import {
   preferAssertionsPlugin,
   preferAwaitedValuesPlugin,
   requireExtractedHooksPlugin,
+  testPolicyPlugin,
   typescriptFilenameConventionsPlugin,
 } from "./plugins/index.mjs";
 
@@ -174,8 +175,13 @@ export const commonConfig = [
   javascriptRecommended,
   {
     files: sourceFiles,
-    plugins: { sonarjs, unicorn },
-    rules: { ...sonarRules, ...unicornRules },
+    plugins: { sonarjs, unicorn, "db21-tests": testPolicyPlugin },
+    rules: {
+      ...sonarRules,
+      ...unicornRules,
+      "db21-tests/require-justification": "error",
+      "db21-tests/require-local-reason": "error",
+    },
   },
   {
     files: ["**/src/generated/**/*.{cjs,js,mjs,ts,tsx,mts,cts}"],

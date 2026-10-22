@@ -11,6 +11,7 @@ const eslint = new ESLint({
   overrideConfigFile: true,
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Astro frontmatter must receive the TypeScript assertion policy so template failures cannot bypass repository safety checks.
 test("applies repository TypeScript rules to Astro frontmatter", async () => {
   const source = `---
 if (invalid) {

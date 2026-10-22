@@ -24,6 +24,7 @@ import {
   renderWithFeatureKit,
 } from "./feature-kit-provider-test-helpers.js";
 
+// eslint-disable-next-line db21-tests/require-justification -- Surface registration must reject classes that cannot render a valid React result.
 test("@Surface() registration enforces runtime constructor contracts", () => {
   class MissingRenderSurface {
     public marker = true;
@@ -34,6 +35,7 @@ test("@Surface() registration enforces runtime constructor contracts", () => {
   }).toThrow("Cannot register a Surface class without a render method.");
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- A Surface with multiple owners would resolve dependencies from an ambiguous module scope.
 test("React runtime rejects duplicate surface owners", () => {
   @Surface()
   class SharedSurface {
@@ -59,6 +61,7 @@ test("React runtime rejects duplicate surface owners", () => {
   expect(() => ReactRuntime.forApplication(app)).toThrow("multiple owners");
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Module metadata must not construct arbitrary undecorated classes as trusted Surfaces.
 test("React runtime rejects undecorated surface registrations", () => {
   class UndecoratedSurface {
     public render(_props: EmptySurfaceProps): React.ReactElement {
@@ -113,6 +116,7 @@ type LabeledSurfaceRenderProps = RenderSurfaceProps<typeof LabeledSurface>;
 type ZeroSurfaceRenderProps = RenderSurfaceProps<typeof ZeroSurface>;
 
 // Ensure RenderSurface infers nested render props and exact surface prop shapes.
+// eslint-disable-next-line db21-tests/require-justification -- RenderSurface type contracts prevent callers from omitting required or passing invalid nested props.
 test("RenderSurfaceProps requires surface-specific nested props with exact shape", () => {
   const assertLabeledSurfaceProps = (
     props: LabeledSurfaceRenderProps,
@@ -168,36 +172,23 @@ test("RenderSurfaceProps requires surface-specific nested props with exact shape
   expect(invalidZeroSurfaceProps).toBeDefined();
 });
 
-test("<RenderSurface /> renders owner-scoped zero-input surfaces", async () => {
-  const module = createModule({
-    surfaces: [ZeroSurface],
-  });
+// eslint-disable-next-line db21-tests/require-justification -- Managed Surfaces must resolve from their owner whether they accept no props or required nested props.
+test("<RenderSurface /> renders owner-scoped surfaces with and without nested props", async () => {
+  const module = createModule({ surfaces: [LabeledSurface, ZeroSurface] });
   const app = Application.create(module);
 
   const html = await renderWithFeatureKit(
     <FeatureKitProvider application={app}>
       <RenderSurface surface={ZeroSurface} />
-    </FeatureKitProvider>,
-  );
-
-  expect(html).toContain("zero");
-});
-
-test("<RenderSurface /> renders owner-scoped surfaces and infers nested props", async () => {
-  const module = createModule({
-    surfaces: [LabeledSurface],
-  });
-  const app = Application.create(module);
-
-  const html = await renderWithFeatureKit(
-    <FeatureKitProvider application={app}>
       <RenderSurface surface={LabeledSurface} props={{ showLabel: true }} />
     </FeatureKitProvider>,
   );
 
+  expect(html).toContain("zero");
   expect(html).toContain("label");
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Sync Surfaces must render without Suspense fallback when all construction dependencies are synchronous.
 test("<RenderSurface /> renders synchronous surfaces without fallback", () => {
   const module = createModule({
     surfaces: [SynchronousSurface],
@@ -214,12 +205,14 @@ test("<RenderSurface /> renders synchronous surfaces without fallback", () => {
   expect(html).not.toContain("loading");
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Direct Surfaces support dependency-free rendering outside an application provider during migration.
 test("<RenderSurface /> renders direct surfaces without a provider", () => {
   const html = renderToString(<RenderSurface surface={DirectSurface} />);
 
   expect(html).toContain("direct");
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Direct Surfaces bypass DI and therefore cannot accept dependencies or be registered in a module.
 test("direct Surfaces reject constructor dependencies and module registration", () => {
   class DirectSurfaceWithDependency {
     public constructor(private readonly value: string) {}
@@ -244,6 +237,7 @@ test("direct Surfaces reject constructor dependencies and module registration", 
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Sync Surface rendering must reject asynchronous dependencies rather than silently suspending.
 test("synchronous Surface rejects asynchronous dependencies", async () => {
   const payloadToken = token<string>("sync-surface-async-payload");
 
@@ -279,6 +273,7 @@ test("synchronous Surface rejects asynchronous dependencies", async () => {
   ).rejects.toThrow();
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Managed Surfaces require both a provider runtime and an explicit application registration.
 test("<RenderSurface /> rejects usage outside provider and for unregistered surfaces", async () => {
   await expect(
     renderWithFeatureKit(
@@ -306,6 +301,7 @@ test("<RenderSurface /> rejects usage outside provider and for unregistered surf
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Asynchronous Surface construction must suspend once and reuse the constructed instance across renders.
 test("Surface async dependency construction uses FeatureKitProvider async rendering", async () => {
   const payloadToken = token<string>("async-payload");
   let allowResolution = false;

@@ -33,6 +33,7 @@ afterEach(() => {
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Generated dependency rules must preserve module isolation and one-way shared-code dependencies.
 test("creates isolation and one-way allow-list rules from discovered modules", () => {
   const cwd = createProject();
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
@@ -58,6 +59,7 @@ test("creates isolation and one-way allow-list rules from discovered modules", (
   assert.ok(names.includes("feature-kit-src-shared-stays-module-agnostic"));
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Nested module roots create ambiguous ownership and must be rejected during configuration.
 test("rejects nested recommended module boundaries", () => {
   const cwd = createProject();
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
@@ -74,6 +76,7 @@ test("rejects nested recommended module boundaries", () => {
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Allow-list overlap would let a feature bypass its public API and isolation boundary.
 test("rejects allow-list paths that overlap a module", () => {
   const cwd = createProject();
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
@@ -91,6 +94,7 @@ test("rejects allow-list paths that overlap a module", () => {
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Configured project cwd must control discovery when lint runs from a workspace parent.
 test("uses explicit cwd for module discovery when linted from another directory", async () => {
   const launchCwd = createProject();
   const projectCwd = join(launchCwd, "app");
@@ -134,6 +138,7 @@ test("uses explicit cwd for module discovery when linted from another directory"
   );
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Module filenames and explicit barrels define enforceable public ownership boundaries.
 test("reports invalid module, barrel, and service naming", async () => {
   const cwd = createProject();
   writeProjectFile(
