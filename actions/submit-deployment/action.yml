@@ -34,6 +34,7 @@ runs:
     - name: 🚀 Submit deployment through platform API
       shell: bash
       env:
+        DEPLOY_MODE: image
         COMPONENT: ${{ inputs.component }}
         IMAGE: ${{ inputs.image }}
         DEPLOY_CHANNEL: ${{ inputs.channel }}

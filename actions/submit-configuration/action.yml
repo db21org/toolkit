@@ -1,0 +1,48 @@
+name: Submit deployment configuration
+description: Apply changed deployment declarations without publishing images; workload updates retain normal rollout checks.
+inputs:
+  component:
+    description: Component with deploy-COMPONENT and configuration-status-COMPONENT Make targets.
+    required: true
+  channel:
+    description: Configuration workflow ordering channel (one sequence producer).
+    default: configuration
+  sequence:
+    description: Configuration workflow run number.
+    required: true
+  attempt:
+    description: Configuration workflow attempt number.
+    required: true
+  request-id:
+    description: Stable idempotency key reused for retries.
+    required: true
+  directory:
+    description: Directory containing the consumer Makefile.
+    default: .
+  apply-timeout:
+    description: Maximum apply polling duration in seconds (1-3600); status Make target must also bound its HTTP calls.
+    default: "120"
+  access-client-id:
+    description: Cloudflare Access service token client ID.
+    required: true
+  access-client-secret:
+    description: Cloudflare Access service token secret.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Apply configuration through platform API
+      shell: bash
+      env:
+        DEPLOY_MODE: configuration
+        IMAGE: ""
+        COMPONENT: ${{ inputs.component }}
+        DEPLOY_CHANNEL: ${{ inputs.channel }}
+        DEPLOY_SEQUENCE: ${{ inputs.sequence }}
+        DEPLOY_ATTEMPT: ${{ inputs.attempt }}
+        REQUEST_ID: ${{ inputs.request-id }}
+        DEPLOY_DIRECTORY: ${{ inputs.directory }}
+        APPLY_TIMEOUT: ${{ inputs.apply-timeout }}
+        CF_ACCESS_CLIENT_ID: ${{ inputs.access-client-id }}
+        CF_ACCESS_CLIENT_SECRET: ${{ inputs.access-client-secret }}
+      run: bash "$GITHUB_ACTION_PATH/../submit-deployment/submit.sh"

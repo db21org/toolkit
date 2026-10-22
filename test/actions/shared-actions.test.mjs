@@ -37,6 +37,58 @@ const run = (script, overrides) =>
     encoding: "utf8",
   });
 const output = () => readFileSync(env.GITHUB_OUTPUT, "utf8");
+
+describe("changed deployment selection", () => {
+  const select = (before = "") => {
+    mkdirSync(join(directory, "deploy"), { recursive: true });
+    for (const name of ["namespace.yaml", "api.yaml", "admin.yml"]) {
+      writeFileSync(join(directory, "deploy", name), "declaration");
+    }
+    return spawnSync(
+      process.execPath,
+      [join(actions, "changed-deployments/select.mjs")],
+      {
+        cwd: directory,
+        env: { ...env, BEFORE: before, PATH: `${directory}:${env.PATH}` },
+        encoding: "utf8",
+      },
+    );
+  };
+
+  // eslint-disable-next-line db21-tests/require-justification -- Initial/manual runs must include every application but never submit namespace setup as an independent release.
+  it("selects all existing applications without a base revision", () => {
+    expect(select().status).toBe(0);
+    expect(output()).toBe('components=["admin","api"]\n');
+  });
+
+  // eslint-disable-next-line db21-tests/require-justification -- Push diffs must isolate changed/new files while namespace edits fan out and unrelated nested files stay excluded.
+  it.each([
+    ["deploy/api.yaml", '["api"]'],
+    ["deploy/namespace.yaml", '["admin","api"]'],
+    ["README.md", "[]"],
+  ])("selects applications for %s", (file, expected) => {
+    writeFileSync(
+      join(directory, "git"),
+      `#!/bin/bash\nprintf '%s\\0' '${file}'\n`,
+      { mode: 0o700 },
+    );
+    expect(select(sha).status).toBe(0);
+    expect(output()).toBe(`components=${expected}\n`);
+  });
+
+  // eslint-disable-next-line db21-tests/require-justification -- Missing declarations must not be interpreted as permission to delete infrastructure or silently omit ownership handoff.
+  it("rejects deleted or renamed deployment declarations", () => {
+    writeFileSync(
+      join(directory, "git"),
+      "#!/bin/bash\nprintf 'deploy/removed.yaml\\0'\n",
+      { mode: 0o700 },
+    );
+    const result = select(sha);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("explicit ownership and teardown review");
+  });
+});
+
 const receipt = (artifact, value) => {
   const path = join(directory, "receipts", artifact);
 
@@ -268,6 +320,122 @@ describe("deployment submission", () => {
     { DEPLOY_CHANNEL: "bad\nchannel" },
   ])("rejects unsafe deployment input %j", (overrides) => {
     expect(submit(overrides).status).not.toBe(0);
+    expect(readdirSync(directory)).toEqual(["make"]);
+  });
+
+  const configure = (overrides = {}) =>
+    submit({
+      DEPLOY_MODE: "configuration",
+      IMAGE: "",
+      APPLY_TIMEOUT: "10",
+      ...overrides,
+    });
+
+  const configurationMake = () =>
+    writeFileSync(
+      join(directory, "make"),
+      `#!/bin/bash
+set -eu
+printf '%s\\n' "\${!#}" >> "$RUNNER_TEMP/calls"
+case "\${!#}" in
+  deploy-api)
+    cp "$DEPLOY_CURL_CONFIG" "$RUNNER_TEMP/captured"
+    test -z "$IMAGE"
+    if [[ "\${FAKE_SUBMIT:-}" == Superseded ]]; then
+      printf '{"phase":"Superseded"}'
+    else
+      printf '{"id":"release-${"a".repeat(40)}"}'
+    fi ;;
+  configuration-status-api)
+    cp "$DEPLOY_CURL_CONFIG" "$RUNNER_TEMP/status-config"
+    test "$DEPLOYMENT_ID" = "release-${"a".repeat(40)}"
+    if [[ "\${FAKE_INITIAL_404:-}" == true && ! -f "$RUNNER_TEMP/retried" ]]; then
+      touch "$RUNNER_TEMP/retried"
+      exit 22
+    fi
+    printf '{"configurationPhase":"%s","capabilityReadiness":"Pending"}' "\${FAKE_PHASE:-Applied}" ;;
+  *) exit 1 ;;
+esac
+`,
+      { mode: 0o700 },
+    );
+
+  // eslint-disable-next-line db21-tests/require-justification -- Capability CI must finish on apply even with pending external verification, remove multipart fields before GET polling, and clean Access credentials.
+  it("applies configuration without an image or readiness gate", () => {
+    configurationMake();
+    const result = configure();
+
+    expect(result.status).toBe(0);
+    expect(readFileSync(join(directory, "calls"), "utf8")).toBe(
+      "deploy-api\nconfiguration-status-api\n",
+    );
+    expect(readFileSync(join(directory, "captured"), "utf8")).toContain(
+      'form-string = "mode=configuration"',
+    );
+    expect(
+      readFileSync(join(directory, "status-config"), "utf8"),
+    ).not.toContain("form-string");
+    expect(readFileSync(env.GITHUB_STEP_SUMMARY, "utf8")).toContain(
+      "Applied. Capability readiness: `Pending`",
+    );
+    expect(result.stdout + result.stderr).not.toContain('example-"secret');
+    expect(
+      readdirSync(directory).some((name) =>
+        name.startsWith("deployment-access."),
+      ),
+    ).toBe(false);
+    expect(statSync(join(directory, "captured")).mode & 0o777).toBe(0o600);
+  });
+  // eslint-disable-next-line db21-tests/require-justification -- A superseded configuration must not poll a nonexistent release or claim it was applied.
+  it("stops after superseded admission without polling", () => {
+    configurationMake();
+    expect(configure({ FAKE_SUBMIT: "Superseded" }).status).toBe(0);
+    expect(readFileSync(join(directory, "calls"), "utf8")).toBe("deploy-api\n");
+    expect(readFileSync(env.GITHUB_STEP_SUMMARY, "utf8")).toContain(
+      "Superseded",
+    );
+  });
+  // eslint-disable-next-line db21-tests/require-justification -- Apply failures must fail CI rather than being mistaken for successful asynchronous capability provisioning.
+  it.each(["Failed", "Error", "Rejected"])(
+    "fails CI on configuration apply %s",
+    (phase) => {
+      configurationMake();
+      expect(configure({ FAKE_PHASE: phase }).status).toBe(1);
+      expect(
+        readdirSync(directory).some((name) =>
+          name.startsWith("deployment-access."),
+        ),
+      ).toBe(false);
+    },
+  );
+  // eslint-disable-next-line db21-tests/require-justification -- Durable receipts appear asynchronously; an initial 404 must not turn accepted configuration into a false deployment failure.
+  it("retries the short receipt materialization window", () => {
+    configurationMake();
+    expect(configure({ FAKE_INITIAL_404: "true" }).status).toBe(0);
+    expect(
+      readFileSync(join(directory, "calls"), "utf8").split("\n"),
+    ).toHaveLength(4);
+  });
+  // eslint-disable-next-line db21-tests/require-justification -- A stuck apply must terminate within a bounded polling budget and remove its private credentials.
+  it("times out a pending configuration apply", () => {
+    configurationMake();
+    const result = configure({ FAKE_PHASE: "Pending", APPLY_TIMEOUT: "1" });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("Configuration apply timed out");
+    expect(
+      readdirSync(directory).some((name) =>
+        name.startsWith("deployment-access."),
+      ),
+    ).toBe(false);
+  });
+  // eslint-disable-next-line db21-tests/require-justification -- Image-bearing configuration or an unbounded timeout must be rejected before any credentials or deployment state are created.
+  it.each([
+    { IMAGE: digest },
+    { APPLY_TIMEOUT: "0" },
+    { APPLY_TIMEOUT: "3601" },
+  ])("rejects invalid configuration input %j", (overrides) => {
+    expect(configure(overrides).status).not.toBe(0);
     expect(readdirSync(directory)).toEqual(["make"]);
   });
 });

@@ -82,3 +82,50 @@ writes credentials only into a mode-0600 temporary config, and removes that conf
 on success or failure. Do not print that file or enable shell tracing. Submission
 success is not rollout confirmation. The action does not enable retries, broaden
 deployment scope, or apply infrastructure directly.
+
+## Deployment file changes without image publication
+
+`changed-deployments` emits `components`, a JSON filename-stem array from changed/new
+`deploy/*.yaml` and `deploy/*.yml` files. Inputs: `before` (previous push commit;
+empty/all-zero selects all), `after` (`HEAD`), `directory` (`deploy`). Checkout both
+revisions with `fetch-depth: 0`. Namespace file changes select every application;
+manual/initial runs select all. Deletions/renames fail for explicit ownership and
+teardown review, never implicit infrastructure deletion. Use the output as a job
+matrix and skip it when the array is empty. Component names need lowercase DNS labels.
+
+`submit-configuration` uses the same private Access config, idempotency and ordering
+contract, but never builds, publishes or submits an image. Inputs: `component`,
+`sequence`, `attempt`, `request-id`, `access-client-id`, `access-client-secret`;
+optional `channel` (`configuration`), `directory` (`.`), `apply-timeout` (`120` seconds,
+range 1–3600). Use this configuration workflow's run number/attempt as the single
+sequence producer for its Application/channel, not an image publication counter.
+Keep its channel distinct from image publication's independent sequence producer.
+
+The consumer implements two Make targets, each printing **only API JSON**:
+
+- Existing `deploy-COMPONENT`: POST the complete namespace/bootstrap/target Application
+  bundle, using `REQUEST_ID` and `DEPLOY_CURL_CONFIG`. The config already supplies
+  multipart `mode=configuration`, `channel`, `sequence`, `attempt`; do not duplicate
+  these fields or supply nonempty `image`/`repository`. `IMAGE` is empty.
+- `configuration-status-COMPONENT`: GET the receipt for `DEPLOYMENT_ID`, using
+  `DEPLOY_CURL_CONFIG` (now containing only auth headers). Bound each HTTP call;
+  polling retries transient status errors, including the initial receipt 404.
+
+It succeeds on `configurationPhase: Applied`, reports `capabilityReadiness`
+separately, fails on apply failures or polling timeout, and treats `Superseded` as
+a successful no-op. External destination verification or resource provisioning is
+not a CI gate. The apply timeout bounds polling between HTTP calls; use a job
+timeout as an overall bound, and inspect the receipt after an uncertain outcome.
+
+Reuse existing deployment files and Applications; no capability list is maintained
+by this action or the API. Installed KubeVela definitions validate components.
+The platform keeps its supported declaration kinds, not arbitrary Kubernetes apply.
+Workload declaration changes reuse the last successful immutable digest and wait
+for normal migrations/rollout. First workload releases still require an image.
+Image-free Applications finish after apply; existing admission still blocks updates
+over unfinished or failed Applications until completion/operator recovery.
+Install a compatible adapter/template first,
+then pin this action to a reviewed toolkit commit. The cluster repository's
+`examples/consumer-configuration` supplies a file-detection consumer workflow,
+Make targets and PostgreSQL/email capability declarations. It requires no cluster
+credentials and makes no changes to existing image publication workflows.

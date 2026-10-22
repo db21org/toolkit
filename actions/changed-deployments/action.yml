@@ -1,0 +1,26 @@
+name: Changed deployment declarations
+description: Select existing deployment files changed by a push, including every application when namespace setup changes.
+inputs:
+  before:
+    description: Previous commit; empty or all zeroes selects every application.
+    default: ''
+  after:
+    description: Commit to compare against.
+    default: HEAD
+  directory:
+    description: Repository-relative deployment directory.
+    default: deploy
+outputs:
+  components:
+    description: JSON array of deployment filename stems, excluding namespace.
+    value: ${{ steps.select.outputs.components }}
+runs:
+  using: composite
+  steps:
+    - id: select
+      shell: bash
+      env:
+        BEFORE: ${{ inputs.before }}
+        AFTER: ${{ inputs.after }}
+        DEPLOY_DIRECTORY: ${{ inputs.directory }}
+      run: node "$GITHUB_ACTION_PATH/select.mjs"
