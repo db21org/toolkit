@@ -8,6 +8,7 @@ import {
   noUnsafeDoubleAssertionPlugin,
   preferAssertionsPlugin,
   preferAwaitedValuesPlugin,
+  rawSqlPolicyPlugin,
   requireExtractedHooksPlugin,
   testPolicyPlugin,
   typescriptFilenameConventionsPlugin,
@@ -175,10 +176,17 @@ export const commonConfig = [
   javascriptRecommended,
   {
     files: sourceFiles,
-    plugins: { sonarjs, unicorn, "db21-tests": testPolicyPlugin },
+    plugins: {
+      sonarjs,
+      unicorn,
+      "db21-sql": rawSqlPolicyPlugin,
+      "db21-tests": testPolicyPlugin,
+    },
     rules: {
       ...sonarRules,
       ...unicornRules,
+      "db21-sql/require-justification": "error",
+      "db21-sql/require-local-reason": "error",
       "db21-tests/require-justification": "error",
       "db21-tests/require-local-reason": "error",
     },

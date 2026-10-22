@@ -173,6 +173,7 @@ factories when you do not want the entire shared profile. See
 - [Money policies and conversion behavior](docs/money.md)
 - [Domain events](docs/events.md)
 - [Lint profiles and configurable layouts](docs/lint-profiles.md)
+- [Raw SQL justification policy](docs/raw-sql-policy.md)
 - [Feature Kit React](docs/feature-kit-react.md)
 - [Module conventions](docs/feature-kit-conventions.md)
 - [Base ESLint rules](docs/eslint-base-rules.md)
