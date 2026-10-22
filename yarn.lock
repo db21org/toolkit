@@ -202,6 +202,8 @@ __metadata:
       optional: true
     zod:
       optional: true
+  bin:
+    toolkit: ./dist/cli/index.js
   languageName: unknown
   linkType: soft
 
