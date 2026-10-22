@@ -1,0 +1,7 @@
+import { Module } from "@nestjs/common";
+
+import { HealthModule } from "./features/health/index.js";
+
+/** Composes application features through their public entry points. */
+@Module({ imports: [HealthModule] })
+export class AppModule {}

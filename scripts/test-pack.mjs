@@ -80,6 +80,26 @@ try {
   );
   run("corepack", ["yarn", "install", "--mode=skip-build"]);
   run("node", ["runtime-only.mjs"]);
+  run("corepack", ["yarn", "toolkit", "--help"]);
+  run("corepack", [
+    "yarn",
+    "toolkit",
+    "bootstrap",
+    "generated-starter",
+    "--apps",
+    "api,expo,astro-static,astro-ssr",
+  ]);
+  for (const file of [
+    "package.json",
+    ".yarnrc.yml",
+    ".github/workflows/validate.yml",
+    "apps/api/src/main.ts",
+    "apps/app/app.json",
+    "apps/landing/astro.config.mjs",
+    "apps/site/astro.config.mjs",
+  ]) {
+    readFileSync(join(temporaryDirectory, "generated-starter", file), "utf8");
+  }
   consumerManifest.dependencies = {
     ...consumerManifest.dependencies,
     ...dependencies,

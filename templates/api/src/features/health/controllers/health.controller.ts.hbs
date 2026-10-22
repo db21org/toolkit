@@ -1,0 +1,14 @@
+import { Controller, Get } from "@nestjs/common";
+
+/** Exposes process liveness without probing external services. */
+@Controller("health")
+export class HealthController {
+  /**
+   * Returns process liveness without external readiness checks.
+   * @returns A successful liveness status.
+   */
+  @Get()
+  public getStatus(): { status: string } {
+    return { status: "ok" };
+  }
+}

@@ -1,0 +1,8 @@
+import { createNestjsDependencyCruiserConfig } from "@db21/toolkit/feature-kit/conventions/nestjs/dependency-cruiser";
+
+export default createNestjsDependencyCruiserConfig({
+  cwd: import.meta.dirname,
+  moduleRoots: ["src/features", "src/modules"],
+  sourceRoot: "src",
+  tsConfig: "tsconfig.json",
+});

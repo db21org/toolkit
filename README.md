@@ -47,6 +47,35 @@ Extend a TypeScript preset:
 
 There is no root import: use `@db21/toolkit/utils`, not `@db21/toolkit`.
 
+## Bootstrap a workspace
+
+The `toolkit` executable includes an interactive `bootstrap` helper:
+
+```sh
+yarn dlx @db21/toolkit bootstrap
+# Non-interactive:
+yarn dlx @db21/toolkit bootstrap ./my-project --apps api,expo,astro-static,astro-ssr
+```
+
+App types: `api` (NestJS), `expo` (web/iOS/Android), `astro-static` (`apps/landing`),
+and `astro-ssr` (`apps/site`). Expo lives in `apps/app`. Select any nonempty subset.
+Use `--name my-project` to override the name inferred from the destination.
+Names must be lowercase kebab-case, starting with a letter.
+
+Bundled Amatok-derived starters include Yarn/Turbo, strict TypeScript, toolkit
+lint and architecture checks, Prettier, editor settings, and validation-only
+GitHub CI. Only selected apps and their dependencies are generated; no business
+integrations or deployment setup. Templates do not fetch Amatok at runtime.
+
+Destination must be new or empty; its parent must already exist. Files and symlink
+destinations are rejected. Existing files are never overwritten, including files
+created concurrently during publication. If publication fails midway, generated
+files remain for inspection. Bootstrap never installs dependencies or changes Git.
+
+After generation, run `corepack yarn install` and `corepack yarn format` in the
+workspace. Review and commit `yarn.lock` before CI (which installs immutably).
+See the generated README for app development commands and validation.
+
 ## Integration requirements
 
 Install the optional peer dependencies used by your integration:

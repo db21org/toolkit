@@ -1,0 +1,7 @@
+import { Module } from "@nestjs/common";
+
+import { HealthController } from "./controllers/health.controller.js";
+
+/** Owns the health HTTP entry point. */
+@Module({ controllers: [HealthController] })
+export class HealthModule {}

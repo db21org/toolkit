@@ -1,0 +1,26 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Pinned toolkit action; npm package versions remain controlled by yarn.lock.
+      - uses: db21org/toolkit/actions/setup-yarn@4ea68d1fb71442e70041cf02789c1cfe09611b3b
+      - run: yarn install --immutable
+      - run: yarn format:check
+      - run: yarn lint
+      - run: yarn check
+      - run: yarn architecture:check
+      - run: yarn test
+      - run: yarn build
