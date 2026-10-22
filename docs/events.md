@@ -32,11 +32,12 @@ const result = safeParseEvent(eventTypes.itemCreated, event);
   ISO datetime `occurredAt`, nonempty string `type`, and positive integer `version`.
 - `defineEvent(name, type, version, payloadSchema)` returns a frozen
   `EventDefinition` containing the payload and complete strict event schemas.
-  Payloads use `z.object(...)`; object refinements are retained. Reserve envelope
-  field names for metadata. Payload object schemas must accept envelope fields
-  during validation; do not use strict payload objects.
+  Payloads use Zod object schemas; object refinements are retained and payload
+  transforms run once per parse. Only payload fields reach the payload schema,
+  so strict payload objects are supported. Reserve envelope field names for metadata.
 - `createRegistry(definitions)` returns a frozen typed `EventRegistry` and frozen
-  `eventTypes` mapping. Names must be unique. Use one definition per routing key;
+  `eventTypes` mapping. It snapshots the definitions array. Names must be unique,
+  including prototype-sensitive names such as `__proto__`. Use one definition per routing key;
   lookup selects the first matching type, not a type/version pair.
 - `createEvent(type, input)` validates caller-supplied IDs/timestamps and payload,
   supplying the registered type/version. It does not generate metadata or publish.

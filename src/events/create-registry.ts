@@ -54,7 +54,10 @@ const createEventTypes = <TDefinitions extends readonly EventDefinition[]>(
       Object.hasOwn(eventTypes, definition.name),
       `Duplicate event name: ${definition.name}`,
     );
-    eventTypes[definition.name] = definition.type;
+    Object.defineProperty(eventTypes, definition.name, {
+      value: definition.type,
+      enumerable: true,
+    });
   }
 
   return Object.freeze(eventTypes) as EventTypes<TDefinitions>;
@@ -81,13 +84,15 @@ export const createRegistry = <
 >(
   definitions: TDefinitions,
 ): EventRegistry<TDefinitions> => {
+  const registeredDefinitions = Object.freeze([...definitions]);
+
   return Object.freeze({
     createEvent<TType extends TDefinitions[number]["type"]>(
       type: TType,
       input: EventInput<TDefinitions, TType>,
     ): EventOutput<TDefinitions, TType> {
       const definition = findEventDefinition(
-        definitions,
+        registeredDefinitions,
         type,
       ) as EventDefinitionFor<TDefinitions, TType>;
 
@@ -97,13 +102,13 @@ export const createRegistry = <
         version: definition.version,
       }) as EventOutput<TDefinitions, TType>;
     },
-    eventTypes: createEventTypes(definitions),
+    eventTypes: createEventTypes(registeredDefinitions),
     safeParseEvent<TType extends TDefinitions[number]["type"]>(
       type: TType,
       input: unknown,
     ): z.ZodSafeParseResult<EventOutput<TDefinitions, TType>> {
       const definition = findEventDefinition(
-        definitions,
+        registeredDefinitions,
         type,
       ) as EventDefinitionFor<TDefinitions, TType>;
 

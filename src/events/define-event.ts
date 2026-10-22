@@ -35,34 +35,46 @@ export const defineEvent = <
   payloadSchema: z.ZodObject<TPayloadShape>,
 ): EventDefinition<TName, TType, TVersion, z.ZodObject<TPayloadShape>> => {
   type Event = DomainEvent & z.output<typeof payloadSchema>;
+  const payloadFields = Object.fromEntries(
+    Object.keys(payloadSchema.shape).map((key) => [
+      key,
+      z.unknown().optional(),
+    ]),
+  );
 
-  const inputSchema = z
-    .strictObject({
-      ...payloadSchema.shape,
-      eventId: domainEventSchema.shape.eventId,
-      occurredAt: domainEventSchema.shape.occurredAt,
-      type: z.literal(type),
-      version: z.literal(version),
-    })
-    .superRefine((input, context) => {
-      const result = payloadSchema.safeParse(input);
+  const inputSchema = z.strictObject({
+    ...payloadFields,
+    eventId: domainEventSchema.shape.eventId,
+    occurredAt: domainEventSchema.shape.occurredAt,
+    type: z.literal(type),
+    version: z.literal(version),
+  });
 
-      if (!result.success) {
-        for (const issue of result.error.issues) {
-          context.addIssue({
-            code: "custom",
-            message: issue.message,
-            path: issue.path,
-          });
-        }
+  const schema = inputSchema.transform((input, context): Event => {
+    const {
+      eventId,
+      occurredAt,
+      type: eventType,
+      version: eventVersion,
+      ...payloadInput
+    } = input;
+    const result = payloadSchema.safeParse(payloadInput);
+
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        context.addIssue({ ...issue });
       }
-    });
 
-  const schema = inputSchema.transform((input): Event => {
-    const envelope = domainEventSchema.parse(input);
-    const payload = payloadSchema.parse(input);
+      return z.NEVER;
+    }
 
-    return { ...payload, ...envelope, type, version };
+    return {
+      ...result.data,
+      eventId,
+      occurredAt,
+      type: eventType,
+      version: eventVersion,
+    };
   });
 
   return Object.freeze({ name, payloadSchema, schema, type, version });
