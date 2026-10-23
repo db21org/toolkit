@@ -4,7 +4,7 @@ import type { Maybe } from "@db21/toolkit/utils";
 import { assert } from "@db21/toolkit/utils";
 import { test } from "vitest";
 
-// eslint-disable-next-line db21-tests/require-justification -- Assertion signatures must narrow caller inputs, not only values TypeScript already knows are defined.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: assertion type declarations stop narrowing real caller inputs after a refactor; Contract: asserting a possibly nullish parameter allows subsequent number operations without casts.
 test("narrows nullish caller inputs to defined values", () => {
   const formatDefined = (value: Maybe<number> | undefined): string => {
     assert.defined(value, "Expected a defined value.");
@@ -15,7 +15,7 @@ test("narrows nullish caller inputs to defined values", () => {
   nodeAssert.equal(formatDefined(1), "1");
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Runtime invariant failures must reject invalid values and preserve caller-provided error identity and diagnostics.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: invariant checks accept invalid state or replace caller-provided error identity; Contract: assertions accept valid values, reject invalid values and preserve supplied error objects and string diagnostics.
 test("throws strings as errors and preserves error instances", () => {
   const expected = new TypeError("Expected failure.");
 

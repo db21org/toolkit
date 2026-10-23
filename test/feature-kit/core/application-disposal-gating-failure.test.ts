@@ -50,7 +50,7 @@ const createDeferredState = (): {
   return { promise, resolve };
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Disposal must not construct unused services or claim ownership of caller-provided constant values.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: disposal can construct unused services or destroy values owned by callers; Contract: shutdown neither activates unused providers nor disposes caller-provided constants.
 test("unused singleton providers stay unconstructed and caller-owned constants remain undisposed", async () => {
   const usedToken = token<string>("used-token");
   const callerOwnedToken = token<{ callback: () => void }>("caller-owned");
@@ -103,7 +103,7 @@ test("unused singleton providers stay unconstructed and caller-owned constants r
   expect(callerOwnedDestroyCount).toBe(0);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Concurrent disposal callers and in-flight resolutions need a single deterministic shutdown boundary.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: concurrent shutdown and resolution can create multiple lifecycle boundaries with inconsistent access; Contract: callers share one disposal result and in-flight resolution is gated.
 test("dispose gates immediate and in-flight access and returns one shared promise", async () => {
   const delayedToken = token<string>("in-flight-token");
   const resolveGate = createDeferredState();
@@ -140,7 +140,7 @@ test("dispose gates immediate and in-flight access and returns one shared promis
   await firstDispose;
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Cleanup failures must be normalized and shared so concurrent callers receive one stable lifecycle result.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: cleanup failures can leave concurrent callers with divergent lifecycle outcomes; Contract: concurrent disposal callers receive the same normalized cleanup failure.
 test("disposal failure is wrapped as one shared FeatureKit failure", async () => {
   let closeCount = 0;
 

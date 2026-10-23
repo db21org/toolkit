@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 
+import { preferAwaitedValuesPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint } from "eslint";
 import { test } from "vitest";
-
-import { preferAwaitedValuesPlugin } from "../../src/eslint/plugins/prefer-awaited-values.mjs";
 
 const eslint = new ESLint({
   ignore: false,
@@ -24,7 +23,7 @@ const lint = async (statement) => {
   return result.messages;
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Awaited call arguments must be named first so asynchronous values can be inspected before they enter another API.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: asynchronous values enter APIs without an inspectable named boundary; Contract: awaited call arguments report the argument diagnostic.
 test("rejects awaited values nested in function arguments", async () => {
   const cases = [
     "consume(await load());",
@@ -42,7 +41,7 @@ test("rejects awaited values nested in function arguments", async () => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Awaited return expressions must be named first so return paths do not conceal asynchronous work.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: return paths conceal asynchronous work and values; Contract: awaited return expressions report the return diagnostic.
 test("rejects awaited values nested in returned expressions", async () => {
   const cases = [
     "return await load();",
@@ -58,7 +57,7 @@ test("rejects awaited values nested in returned expressions", async () => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- A named awaited value passed onward or returned is the prescribed safe form and must remain lint-clean.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: the prescribed named-await form is rejected and encourages hidden awaits; Contract: named values may be passed onward and returned lint-clean.
 test("allows named awaited values in calls and returns", async () => {
   const messages = await lint(
     "const value = await load(); consume(value); return value;",
@@ -67,7 +66,7 @@ test("allows named awaited values in calls and returns", async () => {
   assert.deepEqual(messages, []);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Awaits inside nested callbacks belong to that callback and must not be misclassified as outer call arguments.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: callback-local awaits are falsely attributed to their outer call; Contract: a nested callback await remains lint-clean.
 test("does not treat awaits inside callback functions as outer call arguments", async () => {
   const messages = await lint(
     "consume(async () => { const value = await load(); return value; });",
@@ -76,7 +75,7 @@ test("does not treat awaits inside callback functions as outer call arguments", 
   assert.deepEqual(messages, []);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- A callback return-await still hides its own awaited value and must remain reportable at the nested function boundary.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: nested return-await expressions evade the rule at their own function boundary; Contract: a callback return-await reports the return diagnostic.
 test("still rejects return await inside a callback function", async () => {
   const messages = await lint("consume(async () => { return await load(); });");
 
@@ -84,7 +83,7 @@ test("still rejects return await inside a callback function", async () => {
   assert.equal(messages[0].messageId, "return");
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Await expressions outside calls and returns are intentionally allowed so arrays and local composition are not over-restricted.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: the rule over-restricts valid local asynchronous composition; Contract: array-contained awaits remain lint-clean.
 test("allows awaited values outside calls and returns", async () => {
   const messages = await lint(
     "const values = [await first(), await second()];",

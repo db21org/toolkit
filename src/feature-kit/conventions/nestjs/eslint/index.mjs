@@ -1,4 +1,4 @@
-import { createCoreEslintConfig } from "../../core/eslint/index.mjs";
+import { createCoreEslintConfig } from "@db21/toolkit/feature-kit/conventions/core/eslint";
 
 const dtoFolderPattern = /(?:^|\/)dto\//u;
 const inputDtoPattern =

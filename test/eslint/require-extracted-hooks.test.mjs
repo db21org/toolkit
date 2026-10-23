@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 
+import { requireExtractedHooksPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint } from "eslint";
 import typescriptEslint from "typescript-eslint";
 import { test } from "vitest";
-
-import { requireExtractedHooksPlugin } from "../../src/eslint/plugins/index.mjs";
 
 const targetRule = "db21-hooks/require-extracted-hooks";
 const eslint = new ESLint({
@@ -26,7 +25,7 @@ const lint = async (source, filePath) => {
   return result.messages.filter((message) => message.ruleId === targetRule);
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Custom hooks declared beside a TSX component must be extracted so component files retain a single UI responsibility.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: component files accumulate reusable hook logic and lose a focused UI boundary; Contract: local custom hook declarations in TSX report extraction errors.
 test("rejects custom hook declarations in TSX component files", async () => {
   const messages = await lint(
     [
@@ -42,7 +41,7 @@ test("rejects custom hook declarations in TSX component files", async () => {
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Dedicated hook modules, imports, ordinary helpers, and test fixtures must remain exempt from the component-file extraction rule.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: valid hook modules, imports, helpers, and fixtures are falsely required to extract; Contract: representative exempt paths and declarations remain lint-clean.
 test("allows hook modules, imported hooks, and ordinary component helpers", async () => {
   const fixtures = [
     [

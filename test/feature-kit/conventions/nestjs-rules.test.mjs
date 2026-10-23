@@ -1,19 +1,22 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+import { createNestjsDependencyCruiserConfig } from "@db21/toolkit/feature-kit/conventions/nestjs/dependency-cruiser";
+import { createNestjsEslintConfig } from "@db21/toolkit/feature-kit/conventions/nestjs/eslint";
+import { ESLint } from "eslint";
 import { afterEach, test } from "vitest";
 
-import { ESLint } from "eslint";
+import { clearModuleDiscoveryCache } from "#feature-kit-config/module-discovery";
 
-import { clearModuleDiscoveryCache } from "../../../src/feature-kit/conventions/config/module-discovery.mjs";
-import { createNestjsDependencyCruiserConfig } from "../../../src/feature-kit/conventions/nestjs/dependency-cruiser/index.mjs";
-import { createNestjsEslintConfig } from "../../../src/feature-kit/conventions/nestjs/eslint/index.mjs";
+import { assertDependencyCruiserGraph } from "./dependency-cruiser-test-helpers.mjs";
 
 const temporaryDirectories = [];
 
 const createProject = () => {
   const cwd = mkdtempSync(join(tmpdir(), "feature-kit-nestjs-rules-"));
+
   temporaryDirectories.push(cwd);
 
   return cwd;
@@ -21,6 +24,7 @@ const createProject = () => {
 
 const writeProjectFile = (cwd, path, content = "export {};\n") => {
   const filePath = join(cwd, path);
+
   mkdirSync(join(filePath, ".."), { recursive: true });
   writeFileSync(filePath, content);
 };
@@ -33,40 +37,57 @@ afterEach(() => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- NestJS role direction rules prevent transport and persistence layers from forming unsafe dependencies.
-test("adds NestJS dependency direction rules", () => {
+// eslint-disable-next-line db21-tests/require-justification -- Risk: persistence code can depend on orchestration services, creating reverse dependencies and unsafe lifecycle coupling; Contract: dependency-cruiser accepts downward dependencies and rejects repository-to-service imports.
+test("enforces NestJS dependency direction rules", async () => {
   const cwd = createProject();
+
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(cwd, "src/features/catalog/index.ts");
+  writeProjectFile(
+    cwd,
+    "src/features/catalog/services/catalog.service.ts",
+    "export {};\n",
+  );
+  writeProjectFile(
+    cwd,
+    "src/features/catalog/controllers/catalog.controller.ts",
+    'import "../services/catalog.service.js";\n',
+  );
+  writeProjectFile(
+    cwd,
+    "src/features/catalog/repositories/catalog.repository.ts",
+    'import "../services/catalog.service.js";\n',
+  );
+  writeProjectFile(
+    cwd,
+    "tsconfig.json",
+    '{ "compilerOptions": { "module": "NodeNext", "moduleResolution": "NodeNext" } }\n',
+  );
 
   const config = createNestjsDependencyCruiserConfig({
     cwd,
     moduleRoots: ["src/features"],
     sourceRoot: "src",
+    tsConfig: "tsconfig.json",
   });
-  const names = config.forbidden.map((rule) => rule.name);
 
-  assert.ok(names.includes("feature-kit-no-circular"));
-  assert.ok(
-    names.includes(
-      "feature-kit-nestjs-src-features-catalog-internals-avoid-entry-points",
-    ),
-  );
-  assert.ok(
-    names.includes(
-      "feature-kit-nestjs-src-features-catalog-repositories-avoid-services",
-    ),
-  );
-  assert.ok(
-    names.includes(
-      "feature-kit-nestjs-src-features-catalog-passive-types-stay-passive",
-    ),
-  );
+  await assertDependencyCruiserGraph({
+    allowed: ["src/features/catalog/controllers/catalog.controller.ts"],
+    config,
+    cwd,
+    rejected: [
+      {
+        file: "src/features/catalog/repositories/catalog.repository.ts",
+        rule: /feature-kit-nestjs-src-features-catalog-repositories-avoid-services/u,
+      },
+    ],
+  });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Role filenames make architectural checks reliable across NestJS feature modules.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: unrecognized role filenames leave NestJS architectural files outside their governing conventions; Contract: linting reports every supported role with an invalid filename.
 test("enforces NestJS role filenames", async () => {
   const cwd = createProject();
+
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(
     cwd,
@@ -122,9 +143,10 @@ test("enforces NestJS role filenames", async () => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Restricting module folders prevents ungoverned architectural roles from bypassing policy.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: unsupported module folders evade NestJS role conventions and conceal transport or persistence behavior; Contract: linting identifies each unapproved folder while accepting approved folders.
 test("allows only approved NestJS module folders", async () => {
   const cwd = createProject();
+
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(
     cwd,
@@ -163,9 +185,17 @@ test("allows only approved NestJS module folders", async () => {
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- GraphQL input and output DTO filenames must encode direction for safe boundary use.
+const violationPaths = (results, ruleId) =>
+  results.flatMap((result) =>
+    result.messages
+      .filter((message) => message.ruleId === ruleId)
+      .map(() => result.filePath),
+  );
+
+// eslint-disable-next-line db21-tests/require-justification -- Risk: ambiguous GraphQL DTO names can blur request and response boundary direction; Contract: linting reports input and output decorators whose filenames lack the corresponding suffix.
 test("requires GraphQL DTO filename direction", async () => {
   const cwd = createProject();
+
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(
     cwd,
@@ -202,21 +232,14 @@ test("requires GraphQL DTO filename direction", async () => {
     overrideConfigFile: true,
   });
   const results = await eslint.lintFiles(["src/**/*.ts"]);
-  const inputViolations = results.flatMap((result) =>
-    result.messages
-      .filter(
-        (message) => message.ruleId === "feature-kit-nestjs/input-dto-filename",
-      )
-      .map(() => result.filePath),
+  const inputViolations = violationPaths(
+    results,
+    "feature-kit-nestjs/input-dto-filename",
   );
 
-  const outputViolations = results.flatMap((result) =>
-    result.messages
-      .filter(
-        (message) =>
-          message.ruleId === "feature-kit-nestjs/output-dto-filename",
-      )
-      .map(() => result.filePath),
+  const outputViolations = violationPaths(
+    results,
+    "feature-kit-nestjs/output-dto-filename",
   );
 
   assert.deepEqual(

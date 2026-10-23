@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 
+import { typescriptRepositoryRules } from "@db21/toolkit/eslint";
 import { ESLint } from "eslint";
 import typescriptEslint from "typescript-eslint";
 import { test } from "vitest";
-
-import { typescriptRepositoryRules } from "../../src/eslint/index.mjs";
 
 const [, ...restrictedSyntax] =
   typescriptRepositoryRules["no-restricted-syntax"];
@@ -23,7 +22,7 @@ const eslint = new ESLint({
   overrideConfigFile: true,
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Explicit null unions must be redirected to the shared Maybe abstraction so repository APIs retain one absence representation.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: public APIs drift between incompatible absence representations; Contract: explicit null unions report the Maybe convention.
 test("requires Maybe for explicit null unions", async () => {
   const [result] = await eslint.lintText("type Value = number | null;", {
     filePath: "fixture.ts",
@@ -33,7 +32,7 @@ test("requires Maybe for explicit null unions", async () => {
   assert.match(result.messages[0].message, /Use Maybe<T>/u);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- The sanctioned Maybe wrapper must remain valid so the null-union restriction has a practical safe alternative.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: the null-union policy has no usable compliant alternative; Contract: the shared Maybe wrapper remains lint-clean.
 test("allows the shared Maybe type", async () => {
   const [result] = await eslint.lintText("type Value = Maybe<number>;", {
     filePath: "fixture.ts",

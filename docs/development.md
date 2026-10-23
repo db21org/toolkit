@@ -1,5 +1,15 @@
 # Development
 
+Shared ESLint base rules cover `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`, `.mts`, and
+`.cts`: braces, statement spacing, import sorting, size limits, and applicable
+JSDoc rules stay consistent. Type-aware checks and TypeScript-only conventions
+remain scoped to TypeScript; JavaScript can use native `#private` fields. Framework
+presets add their own scoped rules. Generated files and explicit profile overrides
+retain their existing exceptions.
+
+Static imports must precede other statements; comments, shebangs, and directive
+prologues such as `"use client"` may come first. Dynamic imports are unaffected.
+
 Requires Node.js 22.16+ and Yarn 4.16, as declared in `package.json`.
 Run these commands from the repository root:
 

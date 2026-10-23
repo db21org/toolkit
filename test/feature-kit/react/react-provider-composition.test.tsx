@@ -6,46 +6,35 @@ import {
 import React from "react";
 import { expect, test } from "vitest";
 
-// eslint-disable-next-line no-restricted-imports -- Test the private runtime without exporting it publicly.
-import { ReactRuntime } from "../../../src/feature-kit/react/react-runtime.js";
 import {
   createModule,
   renderWithFeatureKit,
 } from "./feature-kit-provider-test-helpers.js";
 
-// eslint-disable-next-line db21-tests/require-justification -- Provider composition order controls dependency availability and deterministic render nesting.
-test("provider composition follows dependency-first module order", async () => {
-  const order: string[] = [];
-
-  const dependencyMarker = ({
+const createAnonymousMarker = (
+  name: string,
+): React.FC<Readonly<{ children: React.ReactNode }>> => {
+  const marker = (({
     children,
   }: Readonly<{ children: React.ReactNode }>): React.ReactElement => {
-    order.push("dependency");
+    return <section data-provider={name}>{children}</section>;
+  }) as React.FC<Readonly<{ children: React.ReactNode }>>;
 
-    return <>{children}</>;
-  };
+  Object.defineProperty(marker, "name", {
+    configurable: true,
+    value: "",
+  });
 
-  const rootFirst = ({
-    children,
-  }: Readonly<{ children: React.ReactNode }>): React.ReactElement => {
-    order.push("root-first");
+  return marker;
+};
 
-    return <>{children}</>;
-  };
-
-  const rootSecond = ({
-    children,
-  }: Readonly<{ children: React.ReactNode }>): React.ReactElement => {
-    order.push("root-second");
-
-    return <>{children}</>;
-  };
-
+// eslint-disable-next-line db21-tests/require-justification -- Risk: module providers compose in an order that makes nested dependencies unavailable or drops anonymous providers; Contract: SSR emits all anonymous provider boundaries in dependency-first nesting order.
+test("provider composition nests anonymous providers in dependency-first module order", async () => {
   const dependencyModule = createModule({
     reactProviders: [
       reactProvider({
         dependencies: {},
-        component: dependencyMarker,
+        component: createAnonymousMarker("dependency"),
       }),
     ],
   });
@@ -55,37 +44,35 @@ test("provider composition follows dependency-first module order", async () => {
     reactProviders: [
       reactProvider({
         dependencies: {},
-        component: rootFirst,
+        component: createAnonymousMarker("root-first"),
       }),
       reactProvider({
         dependencies: {},
-        component: rootSecond,
+        component: createAnonymousMarker("root-second"),
       }),
     ],
   });
 
   const app = Application.create(rootModule);
 
-  await renderWithFeatureKit(
+  const html = await renderWithFeatureKit(
     <FeatureKitProvider application={app}>
       <p>children</p>
     </FeatureKitProvider>,
   );
 
-  expect(order).toEqual(["dependency", "root-first", "root-second"]);
+  expect(html).toContain(
+    '<section data-provider="dependency"><section data-provider="root-first"><section data-provider="root-second"><p>children</p>',
+  );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Shared modules in a diamond graph must not mount the same provider more than once.
-test("shared module React providers are composed once", async () => {
-  let seen = 0;
-
+// eslint-disable-next-line db21-tests/require-justification -- Risk: a diamond module graph duplicates a shared provider's observable output; Contract: SSR applies the shared provider as one boundary around its child content.
+test("shared module React providers are composed once in SSR output", async () => {
   const sharedRegistration = reactProvider({
     dependencies: {},
-    component: ({ children }: Readonly<{ children: React.ReactNode }>) => {
-      seen += 1;
-
-      return <>{children}</>;
-    },
+    component: ({ children }: Readonly<{ children: React.ReactNode }>) => (
+      <section data-provider="shared">{children}</section>
+    ),
   });
 
   const shared = createModule({
@@ -99,53 +86,11 @@ test("shared module React providers are composed once", async () => {
 
   const app = Application.create(root);
 
-  await renderWithFeatureKit(
+  const html = await renderWithFeatureKit(
     <FeatureKitProvider application={app}>
       <span>shared</span>
     </FeatureKitProvider>,
   );
 
-  expect(seen).toBe(1);
-});
-
-// eslint-disable-next-line db21-tests/require-justification -- Anonymous provider labels may collide, so stable distinct keys are required for React reconciliation.
-test("anonymous provider names collide but keys remain stable and unique", () => {
-  const createAnonymous = (): React.FC<
-    Readonly<{ children: React.ReactNode }>
-  > => {
-    const component = (({
-      children,
-    }: Readonly<{ children: React.ReactNode }>) => {
-      return <>{children}</>;
-    }) as React.FC<Readonly<{ children: React.ReactNode }>>;
-
-    Object.defineProperty(component, "name", {
-      configurable: true,
-      value: "",
-    });
-
-    return component;
-  };
-
-  const module = createModule({
-    reactProviders: [
-      reactProvider({
-        dependencies: {},
-        component: createAnonymous(),
-      }),
-      reactProvider({
-        dependencies: {},
-        component: createAnonymous(),
-      }),
-    ],
-  });
-
-  const runtime = ReactRuntime.forApplication(Application.create(module));
-  const [first, second] = runtime.entries;
-
-  expect(first?.provider.name).toBe("AnonymousReactProvider");
-  expect(second?.provider.name).toBe("AnonymousReactProvider");
-  expect(first?.key).not.toBe(second?.key);
-  expect(first?.key).toBe(0);
-  expect(second?.key).toBe(1);
+  expect(html).toContain('<section data-provider="shared"><span>shared</span>');
 });

@@ -36,7 +36,7 @@ const readJson = async (path: string): Promise<Record<string, unknown>> => {
 };
 
 describe("bootstrap options", () => {
-  // eslint-disable-next-line db21-tests/require-justification -- Project names cross manifest and template boundaries; unsafe or invalid names must fail before generation.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: project names inject template content or invalid package identifiers; Contract: malformed names fail option validation before workspace generation.
   it.each([
     "Bad Name",
     "../escape",
@@ -50,7 +50,7 @@ describe("bootstrap options", () => {
     ).toThrow("Project name");
   });
 
-  // eslint-disable-next-line db21-tests/require-justification -- Invalid app selections must stop generation rather than silently create incomplete or unintended workspaces.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: invalid selections generate incomplete or unintended applications; Contract: empty and unknown app selections fail with actionable validation errors.
   it("rejects missing and unknown selections", () => {
     expect(() =>
       resolveBootstrapOptions({ directory: "starter", apps: [] }),
@@ -60,7 +60,7 @@ describe("bootstrap options", () => {
     ).toThrow("Unknown app type");
   });
 
-  // eslint-disable-next-line db21-tests/require-justification -- Duplicate selections must not publish the same workspace twice or make generated output order-dependent.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: duplicate selections publish conflicting workspace files; Contract: selection normalization deduplicates apps into the documented deterministic order.
   it("normalizes selection order and duplicates", () => {
     expect(
       resolveBootstrapOptions({
@@ -76,7 +76,7 @@ describe("bootstrap generation", () => {
     appTypes.filter((_, bit) => ((index + 1) & (1 << bit)) !== 0),
   );
 
-  // eslint-disable-next-line db21-tests/require-justification -- Every supported app subset must generate only selected workspaces and conditionally include required Astro compatibility settings.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: a supported app combination omits required files or adds unwanted frameworks; Contract: all 15 subsets generate only selected workspaces with conditional compatibility settings and no placeholder tests.
   it.each(combinations.map((apps) => ({ apps, label: apps.join(",") })))(
     "generates selected workspaces: $label",
     async ({ apps }) => {
@@ -138,7 +138,7 @@ describe("bootstrap generation", () => {
 });
 
 describe("bootstrap destination safety", () => {
-  // eslint-disable-next-line db21-tests/require-justification -- Explicit names must allow safe generation into an empty destination whose directory name is not a valid package name.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: valid empty destinations become unusable because their directory names are not package identifiers; Contract: an explicit valid name controls the generated manifest without renaming the destination.
   it("accepts an existing empty directory and explicit name", async () => {
     const directory = join(temporaryDirectory, "directory-with-dots.local");
 
@@ -150,7 +150,7 @@ describe("bootstrap destination safety", () => {
     expect(manifest.name).toBe("my-project");
   });
 
-  // eslint-disable-next-line db21-tests/require-justification -- Generator must never overwrite or remove existing user files when refusing a nonempty destination.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: bootstrapping destroys existing user work; Contract: refusing a nonempty destination preserves both its file list and original file contents.
   it("refuses nonempty directories without changing content", async () => {
     const directory = join(temporaryDirectory, "starter");
 
@@ -166,7 +166,7 @@ describe("bootstrap destination safety", () => {
     expect(contents).toBe("user work");
   });
 
-  // eslint-disable-next-line db21-tests/require-justification -- Files and symlink destinations must be rejected without publishing through links into unrelated directories.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: publication follows a destination symlink into unrelated user data; Contract: file and symlink destinations are rejected and the linked directory remains empty.
   it("refuses files and symlink destinations", async () => {
     const file = join(temporaryDirectory, "file");
     const directory = join(temporaryDirectory, "directory");
@@ -190,7 +190,7 @@ describe("bootstrap destination safety", () => {
 describe("built CLI", () => {
   const entry = resolve("dist/cli/index.js");
 
-  // eslint-disable-next-line db21-tests/require-justification -- CI invocations without required flags must fail rather than hang indefinitely on interactive prompts.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: CI bootstrap jobs hang waiting for unavailable terminal input; Contract: the built executable fails noninteractive invocations missing required flags instead of prompting.
   it("fails non-interactively instead of opening prompts", () => {
     const result = spawnSync(process.execPath, [entry, "bootstrap"], {
       encoding: "utf8",
@@ -200,7 +200,7 @@ describe("built CLI", () => {
     expect(result.stderr).toContain("Non-interactive usage requires");
   });
 
-  // eslint-disable-next-line db21-tests/require-justification -- Built CLI must honor selected apps without implicitly installing dependencies or mutating repository state.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: CLI argument wiring creates unwanted apps or silently installs dependencies and initializes Git; Contract: flagged execution generates exactly the requested apps without node_modules or a Git repository.
   it("generates with flags and no installation or Git initialization", async () => {
     const directory = join(temporaryDirectory, "cli-starter");
 

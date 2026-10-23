@@ -3,7 +3,7 @@ import { assert, isNotDefined } from "@db21/toolkit/utils";
 import {
   discoverModules,
   normalizeProjectPath,
-} from "../../config/module-discovery.mjs";
+} from "#feature-kit-config/module-discovery";
 
 const escapeRegularExpression = (value) =>
   value.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -147,6 +147,7 @@ export const createCoreDependencyCruiserConfig = ({
   const modules = discoverModules({ cwd, moduleRoots });
   const normalizedAllow = allow.map((path) => normalizeProjectPath(cwd, path));
   const normalizedSourceRoot = normalizeProjectPath(cwd, sourceRoot);
+
   assertModulesInsideSourceRoot(modules, normalizedSourceRoot);
   assertAllowListIsShared(normalizedAllow, modules);
 
@@ -175,4 +176,4 @@ export const createCoreDependencyCruiserConfig = ({
 };
 
 export const coreDependencyCruiserRules = Object.freeze(sharedForbiddenRules);
-export { discoverModules as discoverFeatureKitModules } from "../../config/module-discovery.mjs";
+export { discoverModules as discoverFeatureKitModules } from "#feature-kit-config/module-discovery";

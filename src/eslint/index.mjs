@@ -1,4 +1,8 @@
-import { react, recommended } from "@db21/toolkit/eslint/base";
+import {
+  javascriptRecommended,
+  react,
+  typescriptRecommended,
+} from "@db21/toolkit/eslint/base";
 import sonarjs from "eslint-plugin-sonarjs";
 import unicorn from "eslint-plugin-unicorn";
 
@@ -8,22 +12,24 @@ import {
   noUnsafeDoubleAssertionPlugin,
   preferAssertionsPlugin,
   preferAwaitedValuesPlugin,
+  rawSqlPolicyPlugin,
   requireExtractedHooksPlugin,
   testPolicyPlugin,
   typescriptFilenameConventionsPlugin,
 } from "./plugins/index.mjs";
 
-const [javascriptRecommended, ...typescriptRecommended] = recommended;
-
-const javascriptFiles = ["**/*.{cjs,js,mjs}"];
+const javascriptFiles = ["**/*.{cjs,js,jsx,mjs}"];
 const typescriptFiles = ["**/*.{ts,tsx,mts,cts}"];
 const sourceFiles = [...javascriptFiles, ...typescriptFiles];
 
-const javascriptRestrictedSyntax = Array.isArray(
-  javascriptRecommended.rules?.["no-restricted-syntax"],
-)
-  ? javascriptRecommended.rules["no-restricted-syntax"].slice(1)
-  : [];
+const javascriptRestrictedSyntax = javascriptRecommended.reduce(
+  (selectors, config) => {
+    const rule = config.rules?.["no-restricted-syntax"];
+
+    return Array.isArray(rule) ? rule.slice(1) : selectors;
+  },
+  [],
+);
 
 export const inheritedRestrictedSyntax = typescriptRecommended.reduce(
   (selectors, config) => {
@@ -172,19 +178,27 @@ export const commonConfig = [
       ".yarn/**",
     ],
   },
-  javascriptRecommended,
+  ...javascriptRecommended,
   {
     files: sourceFiles,
-    plugins: { sonarjs, unicorn, "db21-tests": testPolicyPlugin },
+    processor: "db21-sql/policy-guard",
+    plugins: {
+      sonarjs,
+      unicorn,
+      "db21-sql": rawSqlPolicyPlugin,
+      "db21-tests": testPolicyPlugin,
+    },
     rules: {
       ...sonarRules,
       ...unicornRules,
+      "db21-sql/require-justification": "error",
+      "db21-sql/require-local-reason": "error",
       "db21-tests/require-justification": "error",
       "db21-tests/require-local-reason": "error",
     },
   },
   {
-    files: ["**/src/generated/**/*.{cjs,js,mjs,ts,tsx,mts,cts}"],
+    files: ["**/src/generated/**/*.{cjs,js,jsx,mjs,ts,tsx,mts,cts}"],
     rules: { "unicorn/no-abusive-eslint-disable": "off" },
   },
   {

@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 
+import { requireExtractedUtilitiesPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint } from "eslint";
 import { test } from "vitest";
-
-import { requireExtractedUtilitiesPlugin } from "../../src/eslint/plugins/require-extracted-utilities.mjs";
 
 const eslint = new ESLint({
   ignore: false,
@@ -25,7 +24,7 @@ const lint = async (source, filePath) => {
   return result.messages;
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Private module-scope transforms must be extracted so reusable business logic is discoverable and receives focused coverage.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: reusable module transforms remain hidden beside unrelated code; Contract: private top-level function values report extraction errors.
 test("rejects private module-scope function values", async () => {
   const messages = await lint(
     [
@@ -46,7 +45,7 @@ test("rejects private module-scope function values", async () => {
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Utility folders, tests, entrypoints, modules, and the shared package need explicit exemptions because extraction adds no boundary there.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: extraction policy blocks helpers already at an appropriate ownership boundary; Contract: utilities, tests, entrypoints, modules, and shared helpers remain lint-clean.
 test("allows extracted, test, entrypoint, module, and shared utility helpers", async () => {
   const source = "const normalizeMoney = (value) => value;";
   const filePaths = [
@@ -64,7 +63,7 @@ test("allows extracted, test, entrypoint, module, and shared utility helpers", a
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Exported APIs and nested callbacks are already scoped by their owner and must not be mistaken for hidden reusable utilities.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: exported APIs and callbacks are falsely treated as hidden reusable utilities; Contract: exports and nested callbacks remain lint-clean.
 test("allows exported APIs and nested callbacks", async () => {
   const messages = await lint(
     [
@@ -78,7 +77,7 @@ test("allows exported APIs and nested callbacks", async () => {
   assert.deepEqual(messages, []);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Configured utility exemptions must honor directory boundaries so similarly named sibling paths cannot bypass extraction.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: similarly named sibling directories bypass a configured utility exemption; Contract: only the exact exempt directory remains lint-clean.
 test("supports replacement utility exemptions with directory boundaries", async () => {
   const configuredEslint = new ESLint({
     ignore: false,

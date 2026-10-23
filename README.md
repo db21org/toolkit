@@ -47,6 +47,25 @@ Extend a TypeScript preset:
 
 There is no root import: use `@db21/toolkit/utils`, not `@db21/toolkit`.
 
+## Initialize agent instructions
+
+With toolkit installed in the target repository:
+
+```sh
+yarn toolkit agents init
+# Or target another existing repository:
+yarn toolkit agents init ../my-project
+```
+
+Creates `AGENTS.md` or appends a marked test-assessment section, preserving existing
+instructions. Repeated runs do not duplicate or replace that section. Its policy
+link requires `node_modules/@db21/toolkit/docs/test-policy.md` in the target repo.
+No dependency installation or ESLint configuration changes are performed.
+Concurrent initializers serialize through `AGENTS.md.toolkit.lock`; an already
+marked read-only file needs no write access. A crashed initializer may leave a
+lock: verify no initializer is running before removing that file and retrying.
+See [test policy and examples](docs/test-policy.md).
+
 ## Bootstrap a workspace
 
 The `toolkit` executable includes an interactive `bootstrap` helper:
@@ -173,6 +192,8 @@ factories when you do not want the entire shared profile. See
 - [Money policies and conversion behavior](docs/money.md)
 - [Domain events](docs/events.md)
 - [Lint profiles and configurable layouts](docs/lint-profiles.md)
+- [Raw SQL justification policy](docs/raw-sql-policy.md)
+- [Test value assessment and agent instructions](docs/test-policy.md)
 - [Feature Kit React](docs/feature-kit-react.md)
 - [Module conventions](docs/feature-kit-conventions.md)
 - [Base ESLint rules](docs/eslint-base-rules.md)

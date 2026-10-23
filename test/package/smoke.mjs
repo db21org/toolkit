@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { URL } from "node:url";
 
 import { createRegistry, defineEvent } from "@db21/toolkit/events";
-import { Application, Module, inspectModule } from "@db21/toolkit/feature-kit";
+import { Application, inspectModule, Module } from "@db21/toolkit/feature-kit";
 import { reactProvider } from "@db21/toolkit/feature-kit/react";
 import { createMoney, serializeMoney } from "@db21/toolkit/money";
 import { isEmpty } from "@db21/toolkit/utils";
@@ -28,6 +28,7 @@ for (const events of [
   assert.deepEqual(event, { ...metadata, type: "system.ping", version: 1 });
   assert.equal(registry.safeParseEvent("system.ping", event).success, true);
 }
+
 const exports = JSON.parse(
   readFileSync(new URL("./exports.json", import.meta.url), "utf8"),
 );
@@ -68,6 +69,7 @@ const provider = reactProvider({
   dependencies: {},
   component: ({ children }) => children,
 });
+
 class ConsumerModule {}
 
 Module({ reactProviders: [provider] })(ConsumerModule);
@@ -103,6 +105,7 @@ for (const path of [
     `Missing packed file: ${path}`,
   );
 }
+
 assert.equal(existsSync(join(packageRoot, "src")), false);
 assert.equal(existsSync(join(packageRoot, "test")), false);
 

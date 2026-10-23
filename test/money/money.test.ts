@@ -19,27 +19,27 @@ const money = (amount: string, currency: string): Money => {
   return value;
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Shared Decimal precision must retain monetary digits beyond the upstream default twenty-digit precision.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: default decimal precision silently discards significant monetary digits; Contract: toolkit arithmetic preserves an independently calculated result beyond upstream's twenty-digit default.
 test("configures decimal precision for large monetary amounts", () => {
   expect(new Decimal("9007199254740993.000001").times("1.5").toString()).toBe(
     "13510798882111489.5000015",
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Transport normalization must preserve exact decimal text while rejecting negative and exponent-form amounts.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: monetary transport normalization loses precision or accepts unsupported amount forms; Contract: trimming preserves exact decimal digits while negative and exponent inputs are rejected.
 test("normalizes decimal strings without losing precision", () => {
   expect(normalizeMoneyAmount(" 12.340000 ")).toBe("12.340000");
   expect(normalizeMoneyAmount("-1")).toBeUndefined();
   expect(normalizeMoneyAmount("1e3")).toBeUndefined();
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Currency normalization must reject malformed transport identifiers before they enter Money values.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: malformed currency identifiers enter monetary values and misroute conversion; Contract: normalization trims and uppercases three-letter codes but rejects incomplete codes.
 test("normalizes three-letter currency codes", () => {
   expect(normalizeCurrency(" usd ")).toBe("USD");
   expect(normalizeCurrency("US")).toBeUndefined();
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Money formatting must not coerce large decimal strings through lossy binary numbers before localization.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: localization rounds large monetary values through lossy binary numbers; Contract: formatting preserves independently specified large-amount cents and creation normalizes currency without changing amount.
 test("creates and localizes Money values", () => {
   expect(formatMoney(money("1234.5", "USD"), "en-US")).toBe("$1,234.50");
   expect(formatMoney(money("90071992547409.91", "USD"), "en-US")).toBe(
@@ -49,7 +49,7 @@ test("creates and localizes Money values", () => {
   expect(createMoney("1234.5", "usd")?.currency).toBe("USD");
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Cross-currency conversion must use one base coherently and preserve original currency when a required rate is missing.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: incoherent rate arithmetic or missing rates misstate converted money; Contract: conversion through one snapshot base returns the independently calculated amount and leaves the source unchanged when rates are unavailable.
 test("converts Money through a coherent decimal rate snapshot", () => {
   const snapshot = {
     baseCurrency: "EUR",
@@ -67,7 +67,7 @@ test("converts Money through a coherent decimal rate snapshot", () => {
   expect(unchanged.currency).toBe("CNY");
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Untrusted exchange-rate snapshots must reject zero rates that would make source-to-base division invalid.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: an untrusted zero exchange rate makes source-to-base division invalid; Contract: snapshot deserialization preserves valid transport values and rejects zero rates.
 test("validates serialized exchange-rate snapshots", () => {
   expect(
     deserializeExchangeRateSnapshot({

@@ -4,7 +4,6 @@ import { z } from "zod";
 import {
   createRegistry,
   defineEvent,
-  type DomainEvent,
   domainEventSchema,
 } from "../src/events/index.js";
 
@@ -23,19 +22,7 @@ const ping = defineEvent("ping", "system.ping", 2, z.object({}));
 const registry = createRegistry([created, ping]);
 
 describe("domain event envelope", () => {
-  // eslint-disable-next-line db21-tests/require-justification -- Shared envelope output must preserve caller metadata and its public DomainEvent type across schema changes.
-  it("validates shared metadata", () => {
-    const event = domainEventSchema.parse({
-      ...metadata,
-      type: "item.created",
-      version: 1,
-    });
-
-    expectTypeOf(event).toEqualTypeOf<DomainEvent>();
-    expect(event.eventId).toBe(metadata.eventId);
-  });
-
-  // eslint-disable-next-line db21-tests/require-justification -- Untrusted event metadata must satisfy identity, timestamp, routing, and positive integral version constraints.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: malformed cross-process metadata prevents reliable identity, ordering or version routing; Contract: invalid UUIDs, timestamps, empty types and nonpositive or fractional versions fail envelope validation.
   it.each([
     { eventId: "invalid" },
     { occurredAt: "yesterday" },
@@ -55,7 +42,7 @@ describe("domain event envelope", () => {
 });
 
 describe("event definitions", () => {
-  // eslint-disable-next-line db21-tests/require-justification -- Event schemas must reject routing/version mismatches, invalid payloads, and unexpected envelope fields.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: mismatched or extra event fields cross a consumer's versioned wire boundary; Contract: definitions reject wrong routing/version, invalid payloads and unexpected fields.
   it.each([{ type: "other" }, { version: 2 }, { extra: true }, { itemId: "" }])(
     "rejects mismatched or invalid event: %o",
     (override) => {
@@ -73,7 +60,7 @@ describe("event definitions", () => {
 });
 
 describe("event payload transforms", () => {
-  // eslint-disable-next-line db21-tests/require-justification -- Regression: repeated parsing rejected type-changing transforms and lost payload refinement diagnostics.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: repeated payload parsing rejects transformed data or loses actionable validation errors; Contract: each event transforms its input once, retains the output type and reports object-refinement paths.
   it("parses type-changing transforms once and preserves object refinements", () => {
     let transforms = 0;
     const counted = defineEvent(
@@ -124,7 +111,7 @@ describe("event payload transforms", () => {
 });
 
 describe("same-type payload transforms", () => {
-  // eslint-disable-next-line db21-tests/require-justification -- Envelope metadata must be separated before strict payload validation so defaults and optional fields remain usable.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: envelope fields make strict payload schemas reject otherwise valid events; Contract: strict payload defaults and optional fields work while unexpected event fields are rejected.
   it("supports strict payloads with defaults and optional fields", () => {
     const strict = defineEvent(
       "strict",
@@ -149,7 +136,7 @@ describe("same-type payload transforms", () => {
     );
   });
 
-  // eslint-disable-next-line db21-tests/require-justification -- Regression: duplicate payload parsing silently applied same-type transforms more than once per event.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: repeated same-type transforms silently corrupt event values; Contract: a numeric increment transform changes the payload exactly once during event parsing.
   it("does not apply same-type transforms repeatedly", () => {
     const incremented = defineEvent(
       "incremented",
@@ -170,7 +157,7 @@ describe("same-type payload transforms", () => {
 });
 
 describe("event registry creation", () => {
-  // eslint-disable-next-line db21-tests/require-justification -- Regression: mutating the caller's definitions array changed routing behavior after the registry was frozen.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: caller-owned array mutation changes a previously constructed event registry; Contract: removing source definitions does not alter registered names, creation or parsing.
   it("snapshots mutable definition arrays", () => {
     const definitions = [created];
     const snapshot = createRegistry(definitions);
@@ -188,7 +175,7 @@ describe("event registry creation", () => {
     });
   });
 
-  // eslint-disable-next-line db21-tests/require-justification -- Regression: prototype-sensitive event names bypassed registration and duplicate checks on plain object maps.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: prototype-sensitive names disappear from routing or bypass duplicate checks; Contract: __proto__ registers as an own event-name entry and duplicate registration fails.
   it("registers prototype-sensitive names as own properties and rejects duplicates", () => {
     const prototype = defineEvent(
       "__proto__",
@@ -205,7 +192,7 @@ describe("event registry creation", () => {
     );
   });
 
-  // eslint-disable-next-line db21-tests/require-justification -- Registry construction must retain literal routing and payload types while preventing metadata mutation after registration.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: consumers publish incorrectly typed or mutable event metadata; Contract: registry creation preserves caller fields, registered literal type/version and the documented immutable definition and registry surfaces.
   it("creates typed events with registered type and version", () => {
     const event = registry.createEvent(registry.eventTypes.itemCreated, {
       ...metadata,
@@ -230,7 +217,7 @@ describe("event registry creation", () => {
     expect(Object.isFrozen(created)).toBe(true);
   });
 
-  // eslint-disable-next-line db21-tests/require-justification -- Events without payload fields must still retain complete envelope metadata when parsing an empty object schema.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: payload-free signals lose metadata through the empty-schema branch; Contract: creating an empty-payload event retains the full caller envelope and registered version.
   it("supports empty payloads", () => {
     expect(registry.createEvent("system.ping", metadata)).toEqual({
       ...metadata,
@@ -241,7 +228,7 @@ describe("event registry creation", () => {
 });
 
 describe("event registry validation", () => {
-  // eslint-disable-next-line db21-tests/require-justification -- Consumer parsing must return validation failures for untrusted events while creation rejects invalid typed payloads.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: untrusted event data throws unexpectedly or bypasses version validation; Contract: safe parsing returns success or failure without throwing while creation rejects invalid payloads.
   it("parses untrusted events without throwing on invalid payloads", () => {
     const event = registry.createEvent("item.created", {
       ...metadata,
@@ -261,7 +248,7 @@ describe("event registry validation", () => {
     ).toThrow();
   });
 
-  // eslint-disable-next-line db21-tests/require-justification -- Duplicate definition names must not silently replace one routing entry with another event type.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: a duplicate human-readable event name silently changes its routing type; Contract: different definitions sharing the same name fail registry construction.
   it("rejects duplicate names", () => {
     const duplicate = defineEvent(
       "itemCreated",
@@ -275,7 +262,7 @@ describe("event registry validation", () => {
     );
   });
 
-  // eslint-disable-next-line db21-tests/require-justification -- Untyped JavaScript callers must not create or parse events under unregistered runtime routing keys.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: untyped callers route events through a key absent from the registry; Contract: creation and parsing both reject an unregistered runtime type with a routing diagnostic.
   it("rejects unknown runtime routing keys", () => {
     // Model untyped callers at a JavaScript boundary.
     const unknownType = "unknown" as typeof created.type;

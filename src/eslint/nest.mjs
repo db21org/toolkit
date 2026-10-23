@@ -1,5 +1,6 @@
 import { createNestjsEslintConfig } from "@db21/toolkit/feature-kit/conventions/nestjs/eslint";
 import { isNotDefined } from "@db21/toolkit/utils";
+
 import commonConfig from "./index.mjs";
 import { requireExtractedUtilitiesPlugin } from "./plugins/index.mjs";
 

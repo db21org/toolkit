@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 
+import astroConfig from "@db21/toolkit/eslint/astro";
 import { ESLint } from "eslint";
 import { test } from "vitest";
-
-import astroConfig from "../../src/eslint/astro.mjs";
 
 const eslint = new ESLint({
   ignore: false,
@@ -11,7 +10,7 @@ const eslint = new ESLint({
   overrideConfigFile: true,
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Astro frontmatter must receive the TypeScript assertion policy so template failures cannot bypass repository safety checks.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: Astro frontmatter bypasses the repository assertion safety policy; Contract: an invalid frontmatter guard reports the assertion rule.
 test("applies repository TypeScript rules to Astro frontmatter", async () => {
   const source = `---
 if (invalid) {

@@ -75,6 +75,7 @@ try {
     "Unexpected npm archive filename.",
   );
   const archive = join(directory, packed.filename);
+
   validateArchiveEntries(
     run("tar", ["-tzf", archive]).trimEnd().split("\n"),
     run("tar", ["-tvzf", archive]).trimEnd().split("\n"),
@@ -112,5 +113,6 @@ try {
   );
 } catch (error) {
   rmSync(directory, { recursive: true, force: true });
+
   throw error;
 }

@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -37,4 +38,3 @@ writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(
   `Prepared ${manifest.name}@${manifest.version} for the dev dist-tag.`,
 );
-import assert from "node:assert/strict";

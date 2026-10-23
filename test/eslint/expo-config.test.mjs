@@ -1,18 +1,21 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-
-import { ESLint } from "eslint";
-import typescriptEslint from "typescript-eslint";
-import { test } from "vitest";
 
 import {
   createExpoConfig,
   createExpoFeatureKitConfig,
   expoRestrictedSyntax,
-} from "../../src/eslint/expo.mjs";
-import { createNestConfig } from "../../src/eslint/nest.mjs";
+} from "@db21/toolkit/eslint/expo";
+import { ESLint } from "eslint";
+import typescriptEslint from "typescript-eslint";
+import { test } from "vitest";
+
+import {
+  createCustomLayoutEslints,
+  utilitySource,
+} from "./expo-layout-helpers.mjs";
 
 const appRoot = resolve(import.meta.dirname, "../fixtures/expo");
 const sourceConfig = {
@@ -27,7 +30,7 @@ const sourceConfig = {
   },
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Configured navigation must block Expo Router imports while allowing the consumer-owned replacement hook.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: screens bypass the app navigation boundary or cannot use its approved hook; Contract: Expo Router imports fail while the configured hook remains lint-clean.
 test("allows a configured navigation hook while rejecting Expo Router", async () => {
   const configs = createExpoConfig({
     cwd: appRoot,
@@ -100,6 +103,7 @@ const expoConfig = createExpoConfig({ cwd: appRoot });
 const expoReactConfig = expoConfig.find((config) =>
   config.files?.includes("src/**/*.tsx"),
 );
+
 assert.ok(expoReactConfig);
 const expoPlugins = Object.assign(
   {},
@@ -136,7 +140,13 @@ const assertRejected = async (source, expectedMessage, filePath) => {
   assert.match(messages[0].message, expectedMessage);
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- JSX null ternaries must be rejected so conditional native rendering uses the established boolean-and convention.
+const lintResult = async (eslint, source, filePath) => {
+  const [result] = await eslint.lintText(source, { filePath });
+
+  return result;
+};
+
+// eslint-disable-next-line db21-tests/require-justification -- Risk: native screens diverge into unsupported conditional-rendering forms; Contract: JSX null ternaries fail and boolean-and rendering passes.
 test("requires boolean-and rendering instead of JSX null ternaries", async () => {
   await assertRejected(
     "const value = <>{visible ? <View /> : null}</>;",
@@ -150,7 +160,7 @@ test("requires boolean-and rendering instead of JSX null ternaries", async () =>
   assert.deepEqual(messages, []);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Visible JSX text and accessibility labels must require translation so localized Expo screens do not ship hardcoded copy.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: localized mobile screens ship untranslated visible or accessible copy; Contract: representative hardcoded JSX text and labels produce lint errors.
 test("rejects representative hardcoded user-facing JSX strings", async () => {
   const cases = [
     "const value = <Text>Hello</Text>;",
@@ -164,7 +174,7 @@ test("rejects representative hardcoded user-facing JSX strings", async () => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- JSX space expressions must be rejected because layout spacing belongs in styling rather than text-node artifacts.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: text-node spacing produces fragile native layouts; Contract: a JSX space expression is rejected by the Expo syntax policy.
 test("rejects JSX space expressions", async () => {
   await assertRejected(
     'const value = <Text>{" "}</Text>;',
@@ -172,7 +182,7 @@ test("rejects JSX space expressions", async () => {
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Expo query types must use Maybe so mobile API boundaries do not reintroduce raw null unions.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: mobile query APIs reintroduce incompatible raw null unions; Contract: explicit null unions fail while Maybe values pass.
 test("requires Maybe for explicit null unions", async () => {
   await assertRejected(
     "type Value = string | null;",
@@ -188,7 +198,7 @@ test("requires Maybe for explicit null unions", async () => {
   assert.deepEqual(messages, []);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- NativeWind must remain the default while an in-place disable preserves the narrow runtime-style escape hatch.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: ad hoc native styles bypass the shared styling system without review; Contract: style props fail unless a local justified exception suppresses them.
 test("requires NativeWind unless a style prop has an in-place exception", async () => {
   await assertRejected(
     "const value = <View style={frameStyle} />;",
@@ -205,7 +215,7 @@ test("requires NativeWind unless a style prop has an in-place exception", async 
   assert.deepEqual(messages, []);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Feature indexes must not re-export generated GraphQL documents, preserving generated artifacts as feature-private implementation details.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: generated GraphQL internals become accidental feature public APIs; Contract: index re-exports from generated artifacts are rejected.
 test("keeps generated GraphQL artifacts feature-private", async () => {
   await assertRejected(
     'export { FeedProductsDocument } from "../generated/graphql";',
@@ -214,7 +224,7 @@ test("keeps generated GraphQL artifacts feature-private", async () => {
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Component and provider paths must obey feature-kit roles so misplaced Expo files do not evade architecture conventions.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: misplaced components and providers evade feature ownership conventions; Contract: invalid Expo role paths report module-conventions errors.
 test("enforces Expo component and provider file roles", async () => {
   const paths = [
     "src/features/feed/components/lint-helper.ts",
@@ -234,7 +244,7 @@ test("enforces Expo component and provider file roles", async () => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Expo TSX must inherit React documentation requirements so exported screens do not lose public API descriptions.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: exported Expo screens lose their required public API documentation; Contract: an undocumented TSX export reports the React JSDoc rule.
 test("applies full React documentation rules to Expo TSX", async () => {
   const [result] = await reactDocumentationEslint.lintText(
     "export const Undocumented = (): null => null;",
@@ -247,58 +257,56 @@ test("applies full React documentation rules to Expo TSX", async () => {
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Custom source roots, module roots, GraphQL directories, roles, and utility exemptions must remain configurable for nonstandard app layouts.
-test("configures Expo and Nest roots without the default source layout", () => {
+// eslint-disable-next-line db21-tests/require-justification -- Risk: nonstandard application layouts lose role, utility, or GraphQL ownership enforcement; Contract: configured lib roots lint valid custom roles and GraphQL paths while rejecting a non-exempt utility.
+test("enforces Expo and Nest conventions for a custom source layout", async () => {
   const cwd = mkdtempSync(resolve(tmpdir(), "toolkit-layout-"));
+
   try {
-    mkdirSync(resolve(cwd, "lib/domains/catalog"), { recursive: true });
-    writeFileSync(
-      resolve(cwd, "lib/domains/catalog/catalog.module.ts"),
-      "export {};",
-    );
-    const layout = { cwd, sourceRoot: "lib", moduleRoots: ["lib/domains"] };
-    const expoConfigs = createExpoConfig({
-      ...layout,
-      allowedFolders: ["services", "adapters"],
-      additionalRoles: [
-        {
-          folder: "adapters",
-          suffix: ".adapter",
-          extensions: [".ts"],
-          case: "kebab",
-        },
-      ],
-      graphql: {
-        graphqlDirectory: "documents",
-        documentExtensions: ["graphql"],
-      },
-    });
-    const graphqlConfig = expoConfigs.find((config) => config.processor);
-    const processor =
-      graphqlConfig.plugins["feature-graphql"].processors.conventions;
+    const { expoEslint, nestEslint } = createCustomLayoutEslints(cwd);
 
-    const filePath = resolve(
-      cwd,
-      "lib/domains/catalog/documents/queries/items.query.graphql",
-    );
-    processor.preprocess("query Items { items { id } }", filePath);
-    assert.deepEqual(processor.postprocess([], filePath), []);
-    assert.deepEqual(graphqlConfig.files, ["lib/**/*.{gql,graphql}"]);
+    const [adapterResult, misplacedAdapterResult, graphqlResult] =
+      await Promise.all([
+        lintResult(
+          expoEslint,
+          "export const CATALOG_ADAPTER = 1;\n",
+          "lib/domains/catalog/adapters/catalog.adapter.ts",
+        ),
+        lintResult(
+          expoEslint,
+          "export const CATALOG_ADAPTER = 1;\n",
+          "lib/domains/catalog/misc/catalog.adapter.ts",
+        ),
+        lintResult(
+          expoEslint,
+          "query Items { items { id } }",
+          "lib/domains/catalog/documents/queries/items.query.graphql",
+        ),
+      ]);
+
+    assert.deepEqual(adapterResult.messages, []);
+    const [misplacedMessage] = misplacedAdapterResult.messages;
+
     assert.equal(
-      expoConfigs.some((config) => config.files?.includes("lib/**/*.tsx")),
-      true,
+      misplacedMessage.ruleId,
+      "feature-kit-core/module-conventions",
     );
+    assert.equal(
+      misplacedMessage.message,
+      'Files for role "adapters" must live under adapters/ and use kebab-case names ending in .adapter.ts.',
+    );
+    assert.deepEqual(graphqlResult.messages, []);
 
-    const nestConfigs = createNestConfig({
-      ...layout,
-      utilityExemptPaths: ["lib/shared"],
-    });
-    assert.deepEqual(nestConfigs.at(-1).files, [
-      "lib/domains/**/*.{ts,tsx,mts,cts}",
+    const [exemptResult, nonExemptResult] = await Promise.all([
+      lintResult(nestEslint, utilitySource, "lib/shared/normalize.ts"),
+      lintResult(nestEslint, utilitySource, "lib/domains/catalog/normalize.ts"),
     ]);
-    assert.deepEqual(
-      nestConfigs.at(-2).rules["db21-utilities/require-extracted-utilities"],
-      ["error", { exemptPaths: ["lib/shared"] }],
+
+    assert.deepEqual(exemptResult.messages, []);
+    assert.ok(
+      nonExemptResult.messages.some(
+        (message) =>
+          message.ruleId === "db21-utilities/require-extracted-utilities",
+      ),
     );
   } finally {
     rmSync(cwd, { recursive: true, force: true });

@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 
+import { commonPredicateRestrictedSyntax } from "@db21/toolkit/eslint";
 import { ESLint } from "eslint";
 import { test } from "vitest";
-
-import { commonPredicateRestrictedSyntax } from "../../src/eslint/index.mjs";
 
 const eslint = new ESLint({
   ignore: false,
@@ -26,7 +25,7 @@ const lint = async (source) => {
   );
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Length-versus-zero comparisons must be rejected in either operand order so callers use the shared emptiness predicates.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: callers duplicate emptiness semantics with inconsistent operand ordering; Contract: both zero-length comparison orders report the predicate guidance.
 test("rejects relational zero-length comparisons", async () => {
   for (const source of [
     "const result = values.length > 0;",
@@ -41,7 +40,7 @@ test("rejects relational zero-length comparisons", async () => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- The approved isNotEmpty predicate must remain accepted as the safe replacement for manual length checks.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: the required emptiness replacement is itself rejected; Contract: isNotEmpty remains lint-clean.
 test("allows shared emptiness predicates", async () => {
   const messages = await lint("const result = isNotEmpty(values);");
 

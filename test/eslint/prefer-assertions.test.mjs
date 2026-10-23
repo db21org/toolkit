@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 
+import { preferAssertionsPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint } from "eslint";
 import { test } from "vitest";
-
-import { preferAssertionsPlugin } from "../../src/eslint/plugins/prefer-assertions.mjs";
 
 const eslint = new ESLint({
   ignore: false,
@@ -23,7 +22,7 @@ const lint = async (source) => {
   return result.messages;
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Throw-only guards must suggest assertion helpers so failure messages and presence checks use the shared test contract.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: tests use inconsistent throw-only guards that obscure failed conditions; Contract: representative guards report their prescribed assertion helpers.
 test("rejects if statements whose only behavior is throwing", async () => {
   const cases = [
     [
@@ -46,7 +45,7 @@ test("rejects if statements whose only behavior is throwing", async () => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Boolean wrappers around isDefined and isNotDefined must map to presence assertions instead of obscuring their intent.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: boolean wrappers conceal definedness failures and lose tailored assertions; Contract: wrapped predicates report the corresponding presence helper.
 test("rejects boolean assertions around shared defined predicates", async () => {
   const cases = [
     ["assert.false(isDefined(value), 'failed');", "assert.notDefined"],
@@ -63,7 +62,7 @@ test("rejects boolean assertions around shared defined predicates", async () => 
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Guards with cleanup work must remain valid because replacing them with an assertion would drop required side effects.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: an autofix-style policy rejects guards whose cleanup side effect is required; Contract: a guard with cleanup remains lint-clean.
 test("allows guards that perform additional behavior", async () => {
   const messages = await lint(
     "if (invalid) { cleanup(); throw new Error('failed'); }",
@@ -72,7 +71,7 @@ test("allows guards that perform additional behavior", async () => {
   assert.deepEqual(messages, []);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- If/else control flow must remain valid because an assertion cannot preserve the recovery branch.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: recovery control flow is replaced by an assertion that cannot preserve its else branch; Contract: an if/else guard remains lint-clean.
 test("allows if/else control flow", async () => {
   const messages = await lint(
     "if (invalid) { throw new Error('failed'); } else { recover(); }",

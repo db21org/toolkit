@@ -5,7 +5,7 @@ import jsdoc from "eslint-plugin-jsdoc";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import tseslint from "typescript-eslint";
 
-import { reactConventionsPlugin } from "../../../dist/eslint/base/react-conventions.js";
+import { reactConventionsPlugin } from "#eslint-base/react-conventions";
 
 const parser = tseslint.parser;
 
