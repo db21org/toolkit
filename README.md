@@ -134,6 +134,8 @@ Install the optional peer dependencies used by your integration:
 
 - **Utilities, money, or Feature Kit core:** no integration peers required.
 - **Domain events:** Zod `^4.4.3`.
+- **Prisma outbox runtime:** `@prisma/client >=7.8 <8` and PostgreSQL; the schema
+  configuration helper needs no Prisma runtime peer.
 - **Feature Kit React:** React 19; TypeScript projects also need `@types/react`.
 - **ESLint profiles:** ESLint `>=10.4 <11` and TypeScript `>=5 <7`.
 - **Dependency-cruiser conventions:** dependency-cruiser 18.
@@ -152,24 +154,26 @@ side-effect-free in your bundler configuration.
 
 ## Entry points and compatibility
 
-Utilities, money, and events support ESM and CommonJS. Feature Kit and JavaScript tooling
+Utilities, money, events, and Prisma outbox entries support ESM and CommonJS. Feature Kit and JavaScript tooling
 entries are ESM-only. Type declarations are included.
 
-| Subpath                                                                                 | Purpose                                                     |
-| --------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| `@db21/toolkit/utils`                                                                   | Assertions, predicates, `Maybe`, and waiting helpers        |
-| `@db21/toolkit/money`                                                                   | Decimal-backed money primitives                             |
-| `@db21/toolkit/events`                                                                  | Versioned event schemas, definitions, and typed registries  |
-| `@db21/toolkit/feature-kit`                                                             | Modular dependency injection and application lifecycle      |
-| `@db21/toolkit/feature-kit/react`                                                       | React providers and Surfaces                                |
-| `@db21/toolkit/feature-kit/conventions/{core,react,nestjs}/{eslint,dependency-cruiser}` | Static module conventions                                   |
-| `@db21/toolkit/eslint/base`                                                             | Project-agnostic `recommended` and opt-in `react` rules     |
-| `@db21/toolkit/eslint`                                                                  | Shared TypeScript/JavaScript conventions                    |
-| `@db21/toolkit/eslint/{react,astro}`                                                    | Framework-specific flat-config arrays                       |
-| `@db21/toolkit/eslint/{expo,nest}`                                                      | `createExpoConfig({ cwd })` and `createNestConfig({ cwd })` |
-| `@db21/toolkit/eslint/plugins`                                                          | Individual custom rule plugins                              |
-| `@db21/toolkit/eslint/expo/graphql-conventions`                                         | Feature-private GraphQL validation helpers                  |
-| `@db21/toolkit/typescript/{base,browser,bundler,node-next,node16,vitest}.json`          | TypeScript presets                                          |
+| Subpath                                                                                 | Purpose                                                      |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `@db21/toolkit/utils`                                                                   | Assertions, predicates, `Maybe`, and waiting helpers         |
+| `@db21/toolkit/money`                                                                   | Decimal-backed money primitives                              |
+| `@db21/toolkit/events`                                                                  | Versioned event schemas, definitions, and typed registries   |
+| `@db21/toolkit/prisma/outbox`                                                           | Transactional outbox model extension                         |
+| `@db21/toolkit/prisma/outbox/config`                                                    | Canonical outbox schema composition for Prisma configuration |
+| `@db21/toolkit/feature-kit`                                                             | Modular dependency injection and application lifecycle       |
+| `@db21/toolkit/feature-kit/react`                                                       | React providers and Surfaces                                 |
+| `@db21/toolkit/feature-kit/conventions/{core,react,nestjs}/{eslint,dependency-cruiser}` | Static module conventions                                    |
+| `@db21/toolkit/eslint/base`                                                             | Project-agnostic `recommended` and opt-in `react` rules      |
+| `@db21/toolkit/eslint`                                                                  | Shared TypeScript/JavaScript conventions                     |
+| `@db21/toolkit/eslint/{react,astro}`                                                    | Framework-specific flat-config arrays                        |
+| `@db21/toolkit/eslint/{expo,nest}`                                                      | `createExpoConfig({ cwd })` and `createNestConfig({ cwd })`  |
+| `@db21/toolkit/eslint/plugins`                                                          | Individual custom rule plugins                               |
+| `@db21/toolkit/eslint/expo/graphql-conventions`                                         | Feature-private GraphQL validation helpers                   |
+| `@db21/toolkit/typescript/{base,browser,bundler,node-next,node16,vitest}.json`          | TypeScript presets                                           |
 
 Subpaths isolate loading, not installation size or releases. Every entry shares
 one package version and dependency installation. Arbitrary deep imports are not
@@ -191,6 +195,7 @@ factories when you do not want the entire shared profile. See
 - [Utilities](docs/utils.md)
 - [Money policies and conversion behavior](docs/money.md)
 - [Domain events](docs/events.md)
+- [Prisma PostgreSQL outbox](docs/prisma-outbox.md)
 - [Lint profiles and configurable layouts](docs/lint-profiles.md)
 - [Raw SQL justification policy](docs/raw-sql-policy.md)
 - [Test value assessment and agent instructions](docs/test-policy.md)

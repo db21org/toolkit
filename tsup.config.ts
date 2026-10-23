@@ -38,12 +38,19 @@ export default defineConfig(() => {
   };
 
   const runtimeEntries = {
+    "prisma/outbox/index": "src/prisma/outbox/index.ts",
     "events/index": "src/events/index.ts",
     "utils/index": "src/utils/index.ts",
     "money/index": "src/money/index.ts",
   };
 
   return [
+    {
+      ...shared,
+      entry: { "prisma/outbox/config": "src/prisma/outbox/config.ts" },
+      format: ["esm", "cjs"],
+      splitting: false,
+    },
     {
       ...shared,
       entry: {

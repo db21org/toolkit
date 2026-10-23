@@ -14,6 +14,6 @@ assert.equal(
   "12.34",
 );
 
-for (const host of ["react", "eslint", "zod"]) {
+for (const host of ["react", "eslint", "zod", "@prisma/client"]) {
   assert.throws(() => require.resolve(host), { code: "MODULE_NOT_FOUND" });
 }

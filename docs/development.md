@@ -1,5 +1,9 @@
 # Development
 
+`yarn test:outbox` runs isolated Docker PostgreSQL outbox contracts, generates a
+Prisma client and migrations, and checks consumer types. It never uses application
+database URLs. Docker is required; see [Prisma outbox](prisma-outbox.md).
+
 Shared ESLint base rules cover `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`, `.mts`, and
 `.cts`: braces, statement spacing, import sorting, size limits, and applicable
 JSDoc rules stay consistent. Type-aware checks and TypeScript-only conventions

@@ -23,6 +23,26 @@
     "#feature-kit-config/*": "./dist/feature-kit/conventions/config/*.mjs"
   },
   "exports": {
+    "./prisma/outbox": {
+      "import": {
+        "types": "./dist/prisma/outbox/index.d.ts",
+        "default": "./dist/prisma/outbox/index.js"
+      },
+      "require": {
+        "types": "./dist/prisma/outbox/index.d.cts",
+        "default": "./dist/prisma/outbox/index.cjs"
+      }
+    },
+    "./prisma/outbox/config": {
+      "import": {
+        "types": "./dist/prisma/outbox/config.d.ts",
+        "default": "./dist/prisma/outbox/config.js"
+      },
+      "require": {
+        "types": "./dist/prisma/outbox/config.d.cts",
+        "default": "./dist/prisma/outbox/config.cjs"
+      }
+    },
     "./events": {
       "import": {
         "types": "./dist/events/index.d.ts",
@@ -127,6 +147,7 @@
   "files": [
     "dist",
     "templates",
+    "prisma",
     "typescript",
     "actions",
     "docs",
@@ -144,7 +165,8 @@
     "test": "yarn build && vitest run && node --test 'test/eslint-base/**/*.test.js'",
     "version:preview": "node scripts/prepare-preview.mjs",
     "test:pack": "yarn build && node scripts/test-pack.mjs",
-    "test:bootstrap": "yarn build && node scripts/test-bootstrap.mjs"
+    "test:bootstrap": "yarn build && node scripts/test-bootstrap.mjs",
+    "test:outbox": "yarn build && node --test test/prisma/outbox-postgres.integration.mjs"
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
@@ -165,6 +187,7 @@
     "typescript-eslint": "^8.61.1"
   },
   "peerDependencies": {
+    "@prisma/client": ">=7.8 <8",
     "dependency-cruiser": "^18.0.0",
     "eslint": ">=10.4 <11",
     "graphql": ">=16 <17",
@@ -173,6 +196,9 @@
     "zod": "^4.4.3"
   },
   "peerDependenciesMeta": {
+    "@prisma/client": {
+      "optional": true
+    },
     "dependency-cruiser": {
       "optional": true
     },
@@ -193,13 +219,18 @@
     }
   },
   "devDependencies": {
+    "@prisma/adapter-pg": "7.8.0",
+    "@prisma/client": "7.8.0",
     "@types/node": "^22.0.0",
+    "@types/pg": "^8",
     "@types/react": "~19.2.2",
     "@types/react-dom": "~19.2.3",
     "dependency-cruiser": "18.0.0",
     "eslint": "10.8.1",
     "graphql": "^16.11.0",
+    "pg": "8.22.0",
     "prettier": "^3.9.5",
+    "prisma": "7.8.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "tsup": "^8.5.1",

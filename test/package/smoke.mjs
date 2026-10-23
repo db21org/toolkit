@@ -8,10 +8,17 @@ import { createRegistry, defineEvent } from "@db21/toolkit/events";
 import { Application, inspectModule, Module } from "@db21/toolkit/feature-kit";
 import { reactProvider } from "@db21/toolkit/feature-kit/react";
 import { createMoney, serializeMoney } from "@db21/toolkit/money";
+import { outboxExtension } from "@db21/toolkit/prisma/outbox";
 import { isEmpty } from "@db21/toolkit/utils";
 import { z } from "zod";
 
 const require = createRequire(import.meta.url);
+
+assert.equal(typeof outboxExtension, "function");
+assert.equal(
+  typeof require("@db21/toolkit/prisma/outbox").outboxExtension,
+  "function",
+);
 const metadata = {
   eventId: "4423fb0f-848d-4e34-a71f-01b609b1e7cf",
   occurredAt: "2026-08-21T12:00:00.000Z",
