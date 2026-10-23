@@ -20,14 +20,14 @@ const createAnonymousComponent = (): MutableComponent => {
   return component;
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Runtime implementation details must remain unavailable to consumers of the public React entry point.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: consumers couple to unsupported runtime internals that can change without a compatibility path; Contract: the public React entry point excludes runtime implementation exports.
 test("React runtime implementation details remain excluded from the public API", () => {
   expect("ReactRuntime" in reactApi).toBe(false);
   expect("createEntries" in reactApi).toBe(false);
   expect("runtime" in reactApi).toBe(false);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Provider names must remain deterministic because ownership diagnostics identify registrations by name.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: provider diagnostics cannot identify registrations consistently; Contract: public provider names prefer displayName, then function name, then the anonymous fallback.
 test("provider name is derived from displayName, component name, then anonymous fallback", () => {
   const displayNamedProvider = ({
     children,

@@ -7,7 +7,7 @@ import { expectInvalid, expectValid } from "../helpers/lint-rule.js";
 const ruleName = "max-lines-per-function";
 const ruleConfig = recommendedRules[ruleName];
 
-// eslint-disable-next-line db21-tests/require-justification -- A short function must remain below the configured 60-line threshold.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: the function-size limit rejects concise implementation units; Contract: a function below sixty executable lines remains lint-clean.
 test(`${ruleName}: valid`, async () => {
   await expectValid({
     code: "function shortTask(): void {\n  run();\n}",
@@ -16,7 +16,7 @@ test(`${ruleName}: valid`, async () => {
   });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- A function with 61 executable body lines must exceed the configured 60-line limit.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: oversized functions evade the configured maintainability limit; Contract: sixty-one executable body lines report max-lines-per-function.
 test(`${ruleName}: invalid`, async () => {
   await expectInvalid({
     code: `function longTask(): void {\n${Array.from(

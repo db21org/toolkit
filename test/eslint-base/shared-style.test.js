@@ -30,7 +30,7 @@ const assertJavascriptBehavior = async (eslint, filename) => {
   );
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Shared preset composition previously dropped braces, spacing and sorting for JS; all extensions must retain style without TS-only checks leaking into JS.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: shared presets drop JS style rules or leak TypeScript-only checks across extensions; Contract: both presets enforce common style and isolate TypeScript type-aware behavior.
 test("base and repository presets share style across JS and TS extensions", async () => {
   for (const preset of [recommended, commonConfig]) {
     const eslint = new ESLint({
@@ -107,7 +107,7 @@ const importPlacementCases = {
   ],
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Sorting alone allowed imports below executable code; both presets must enforce placement without rejecting directives, dynamic imports or TS import-equals syntax.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: static imports after executable code evade sorting while valid directives or dynamic imports break; Contract: both presets reject misplaced static imports and allow supported exceptions.
 test("static imports precede statements in shared JS and TS presets", async () => {
   for (const preset of [recommended, commonConfig]) {
     const eslint = new ESLint({

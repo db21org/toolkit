@@ -10,6 +10,8 @@ import { afterEach, test } from "vitest";
 
 import { clearModuleDiscoveryCache } from "#feature-kit-config/module-discovery";
 
+import { assertDependencyCruiserGraph } from "./dependency-cruiser-test-helpers.mjs";
+
 const temporaryDirectories = [];
 
 const createProject = () => {
@@ -35,15 +37,36 @@ afterEach(() => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Generated dependency rules must preserve module isolation and one-way shared-code dependencies.
-test("creates isolation and one-way allow-list rules from discovered modules", () => {
+// eslint-disable-next-line db21-tests/require-justification -- Risk: feature internals or shared code can bypass module ownership and couple unrelated features; Contract: dependency-cruiser accepts public and allow-listed imports but rejects direct cross-module internals.
+test("enforces module isolation and one-way shared-code dependencies", async () => {
   const cwd = createProject();
 
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(cwd, "src/features/catalog/index.ts");
   writeProjectFile(cwd, "src/features/orders/orders.module.ts");
   writeProjectFile(cwd, "src/features/orders/index.ts");
+  writeProjectFile(cwd, "src/features/catalog/internal.ts");
+  writeProjectFile(
+    cwd,
+    "src/features/orders/allowed.ts",
+    'import "../catalog/index.js";\n',
+  );
+  writeProjectFile(
+    cwd,
+    "src/features/orders/rejected.ts",
+    'import "../catalog/internal.js";\n',
+  );
   writeProjectFile(cwd, "src/shared/index.ts");
+  writeProjectFile(
+    cwd,
+    "src/features/orders/shared-allowed.ts",
+    'import "../../shared/index.js";\n',
+  );
+  writeProjectFile(
+    cwd,
+    "src/shared/rejected.ts",
+    'import "../features/catalog/index.js";\n',
+  );
 
   const config = createCoreDependencyCruiserConfig({
     allow: ["src/shared"],
@@ -51,18 +74,28 @@ test("creates isolation and one-way allow-list rules from discovered modules", (
     moduleRoots: ["src/features"],
     sourceRoot: "src",
   });
-  const names = config.forbidden.map((rule) => rule.name);
 
-  assert.ok(
-    names.includes(
-      "feature-kit-src-features-catalog-imports-owned-public-or-allowed",
-    ),
-  );
-  assert.ok(names.includes("feature-kit-src-features-orders-has-public-api"));
-  assert.ok(names.includes("feature-kit-src-shared-stays-module-agnostic"));
+  await assertDependencyCruiserGraph({
+    allowed: [
+      "src/features/orders/allowed.ts",
+      "src/features/orders/shared-allowed.ts",
+    ],
+    config,
+    cwd,
+    rejected: [
+      {
+        file: "src/features/orders/rejected.ts",
+        rule: /feature-kit-src-features-orders-imports-owned-public-or-allowed/u,
+      },
+      {
+        file: "src/shared/rejected.ts",
+        rule: /feature-kit-src-shared-stays-module-agnostic/u,
+      },
+    ],
+  });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Nested module roots create ambiguous ownership and must be rejected during configuration.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: nested feature modules produce ambiguous ownership rules that can silently misclassify imports; Contract: configuration rejects a discovered module beneath another module.
 test("rejects nested recommended module boundaries", () => {
   const cwd = createProject();
 
@@ -80,7 +113,7 @@ test("rejects nested recommended module boundaries", () => {
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Allow-list overlap would let a feature bypass its public API and isolation boundary.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: allowing a feature directory as shared code would expose its internals across module boundaries; Contract: configuration rejects allow-list paths overlapping a discovered module.
 test("rejects allow-list paths that overlap a module", () => {
   const cwd = createProject();
 
@@ -99,7 +132,7 @@ test("rejects allow-list paths that overlap a module", () => {
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Configured project cwd must control discovery when lint runs from a workspace parent.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: workspace-parent invocation can discover the wrong project and omit required role diagnostics; Contract: linting with an explicit project cwd reports the service role violation.
 test("uses explicit cwd for module discovery when linted from another directory", async () => {
   const launchCwd = createProject();
   const projectCwd = join(launchCwd, "app");
@@ -144,7 +177,7 @@ test("uses explicit cwd for module discovery when linted from another directory"
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Module filenames and explicit barrels define enforceable public ownership boundaries.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: malformed module files and barrels can make public ownership indeterminate; Contract: linting reports each invalid module, barrel, service filename, and missing module export.
 test("reports invalid module, barrel, and service naming", async () => {
   const cwd = createProject();
 

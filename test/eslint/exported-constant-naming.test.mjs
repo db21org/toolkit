@@ -25,7 +25,7 @@ const lint = async (source) => {
   return result.messages.filter((message) => message.ruleId === targetRule);
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Primitive public constants need screaming-snake names so configuration-like exports are distinguishable from runtime values.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: configuration-like public literals are indistinguishable from runtime values; Contract: camelCase primitive literal exports report the naming rule.
 test("rejects camelCase exported primitive literal constants", async () => {
   for (const source of [
     'export const apiUrl = "https://example.test";',
@@ -41,7 +41,7 @@ test("rejects camelCase exported primitive literal constants", async () => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Runtime-derived exports and semantic object names must remain legal so the naming rule does not force misleading constant-style APIs.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: the naming rule forces misleading constant-style APIs for runtime values; Contract: derived values and semantic objects remain lint-clean.
 test("allows uppercase literals and semantic runtime exports", async () => {
   for (const source of [
     'export const API_URL = "https://example.test";',

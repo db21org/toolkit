@@ -16,7 +16,7 @@ const verify = (code) => new Linter().verify(code, config, "consumer.js");
 const explanation =
   "Transaction advisory lock has no equivalent ORM or builder operation.";
 
-// eslint-disable-next-line db21-tests/require-justification -- Raw execution or aliased SQL fragments escaping detection would bypass required review of database behavior.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: raw execution or aliased SQL fragments bypass database behavior review; Contract: representative Prisma and Kysely escape hatches report the policy.
 test("raw SQL policy detects execution and imported escape hatches", () => {
   const operations = [
     "prisma.$queryRaw`SELECT ${id}`;",
@@ -79,7 +79,7 @@ test("raw SQL policy detects execution and imported escape hatches", () => {
   assert.ok(presetMessages.some((message) => message.ruleId === rule));
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- False positives on normal builder chains or shadowed helpers would force blanket exceptions and defeat incremental adoption.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: normal builders or shadowed bindings require blanket SQL-policy exceptions; Contract: representative unrelated operations remain lint-clean.
 test("raw SQL policy leaves typed builders and unrelated bindings alone", () => {
   const operations = [
     "prisma.user.findMany({ where: { id } });",
@@ -111,7 +111,7 @@ test("raw SQL policy leaves typed builders and unrelated bindings alone", () => 
   assert.deepEqual(messages, []);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Missing or blanket explanations and inline severity changes would silently turn raw SQL review into an optional policy.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: missing, blanket, or downgraded exceptions make raw SQL review optional; Contract: only local explained error-level exceptions suppress the policy.
 test("raw SQL exceptions require local reasons and retain error severity", () => {
   const operation = "tx.$queryRaw`SELECT 1`;";
 

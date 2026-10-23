@@ -11,6 +11,8 @@ import { afterEach, test } from "vitest";
 
 import { clearModuleDiscoveryCache } from "#feature-kit-config/module-discovery";
 
+import { assertDependencyCruiserGraph } from "./dependency-cruiser-test-helpers.mjs";
+
 const temporaryDirectories = [];
 
 const createProject = () => {
@@ -77,48 +79,57 @@ const createReactLinter = (cwd) =>
     overrideConfigFile: true,
   });
 
-// eslint-disable-next-line db21-tests/require-justification -- React dependency rules must preserve separation between data, render wiring, and UI roles.
-test("extends core dependency rules with render-focused Surface contracts", () => {
+// eslint-disable-next-line db21-tests/require-justification -- Risk: data services can acquire UI dependencies, coupling server-safe logic to rendering infrastructure; Contract: dependency-cruiser accepts a query-to-service graph and rejects a service-to-component graph.
+test("enforces render-focused role dependency contracts", async () => {
   const cwd = createProject();
 
   setupCatalogModule(cwd);
+
+  for (const [path, source] of [
+    ["services/catalog.service.ts"],
+    ["queries/catalog.query.ts", 'import "../services/catalog.service.js";\n'],
+    ["components/Catalog.tsx"],
+    ["services/rejected.service.ts", 'import "../components/Catalog.js";\n'],
+    ["presenters/Feed.ts"],
+    ["views/Feed.ts"],
+    [
+      "services/compatible.service.ts",
+      'import "../presenters/Feed.js";\nimport "../views/Feed.js";\n',
+    ],
+  ]) {
+    writeProjectFile(cwd, `src/features/catalog/${path}`, source);
+  }
+
+  writeProjectFile(
+    cwd,
+    "tsconfig.json",
+    '{ "compilerOptions": { "module": "NodeNext", "moduleResolution": "NodeNext" } }\n',
+  );
 
   const config = createReactDependencyCruiserConfig({
     cwd,
     moduleRoots: ["src/features"],
     sourceRoot: "src",
+    tsConfig: "tsconfig.json",
   });
-  const names = config.forbidden.map((rule) => rule.name);
 
-  assert.ok(names.includes("feature-kit-no-circular"));
-
-  for (const suffix of [
-    "services-avoid-ui",
-    "queries-stay-data-only",
-    "hooks-stay-ui-only",
-    "surfaces-keep-render-wiring",
-    "react-providers-stay-integration-only",
-  ]) {
-    assert.ok(
-      names.includes(`feature-kit-react-src-features-catalog-${suffix}`),
-    );
-  }
-
-  assert.equal(
-    names.includes(
-      "feature-kit-react-src-features-catalog-presenters-own-data-only",
-    ),
-    false,
-  );
-  assert.equal(
-    names.includes(
-      "feature-kit-react-src-features-catalog-views-stay-data-passive",
-    ),
-    false,
-  );
+  await assertDependencyCruiserGraph({
+    allowed: [
+      "src/features/catalog/queries/catalog.query.ts",
+      "src/features/catalog/services/compatible.service.ts",
+    ],
+    config,
+    cwd,
+    rejected: [
+      {
+        file: "src/features/catalog/services/rejected.service.ts",
+        rule: /feature-kit-react-src-features-catalog-services-avoid-ui/u,
+      },
+    ],
+  });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Decorated Surface classes need constrained placement so render wiring remains discoverable and governed.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: misplaced or undecorated Surface classes bypass discoverable render-wiring conventions; Contract: linting reports invalid decorated Surface filenames and locations but accepts an undecorated class.
 test("validates Surface placement and decorator-backed filename boundaries", async () => {
   const cwd = createProject();
 
@@ -166,42 +177,29 @@ test("validates Surface placement and decorator-backed filename boundaries", asy
   assert.equal(noDecoratorResult?.messages.length, 0);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Surface classes must not import UI platform concerns that bypass DI and component boundaries.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: Surface classes can bypass controlled DI and component boundaries through platform imports; Contract: linting reports each prohibited platform dependency while allowing supported feature wiring.
 test("enforces Surface import boundaries and allows DI/component wiring", async () => {
   const cwd = createProject();
 
   setupCatalogModule(cwd);
 
-  writeProjectFile(
-    cwd,
-    "src/features/catalog/services/catalog.service.ts",
-    "export class CatalogService {}\n",
-  );
-  writeProjectFile(
-    cwd,
-    "src/features/catalog/contracts/CatalogContract.ts",
-    "export type CatalogContract = { id: string };\n",
-  );
-  writeProjectFile(
-    cwd,
-    "src/features/catalog/components/CatalogSurfaceHost.tsx",
-    "export const CatalogSurfaceHost = () => null;\n",
-  );
-  writeProjectFile(
-    cwd,
-    "src/features/catalog/hooks/use-catalog.hook.ts",
-    "export const useCatalog = () => null;\n",
-  );
-  writeProjectFile(
-    cwd,
-    "src/features/catalog/queries/catalog.query.ts",
-    "export const catalogQuery = () => null;\n",
-  );
-  writeProjectFile(
-    cwd,
-    "src/features/catalog/react-providers/App.react-provider.tsx",
-    "reactProvider({});\n",
-  );
+  for (const [path, source] of [
+    ["services/catalog.service.ts", "export class CatalogService {}\n"],
+    [
+      "contracts/CatalogContract.ts",
+      "export type CatalogContract = { id: string };\n",
+    ],
+    [
+      "components/CatalogSurfaceHost.tsx",
+      "export const CatalogSurfaceHost = () => null;\n",
+    ],
+    ["hooks/use-catalog.hook.ts", "export const useCatalog = () => null;\n"],
+    ["queries/catalog.query.ts", "export const catalogQuery = () => null;\n"],
+    ["react-providers/App.react-provider.tsx", "reactProvider({});\n"],
+  ]) {
+    writeProjectFile(cwd, `src/features/catalog/${path}`, source);
+  }
+
   writeProjectFile(
     cwd,
     "src/features/catalog/surfaces/Catalog.surface.tsx",
@@ -229,7 +227,7 @@ test("enforces Surface import boundaries and allows DI/component wiring", async 
   assert.equal(dependencyMessages.length, 6);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Unrecognized presentation folders must remain allowed to avoid imposing unsupported architectural roles.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: treating unsupported presentation folders as framework roles rejects compatible consumer structures; Contract: linting leaves presenters and views free of role diagnostics.
 test("does not enforce presenters, presentations, or views as framework roles", async () => {
   const cwd = createProject();
 
@@ -252,7 +250,7 @@ test("does not enforce presenters, presentations, or views as framework roles", 
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Components may use hooks and translations without a policy that blocks legitimate UI composition.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: component policy can block valid stateful and translated UI composition; Contract: linting accepts both hook-using and passive components.
 test("allows both smart and dumb components with no passive-component restriction", async () => {
   const cwd = createProject();
 
@@ -295,7 +293,7 @@ test("allows both smart and dumb components with no passive-component restrictio
   assert.equal(dumbResult?.messages.length, 0);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Provider registrations require dedicated filenames so integration boundaries remain enforceable.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: misnamed provider registrations evade an enforceable integration boundary; Contract: linting reports the invalid provider filename and accepts the canonical suffix.
 test("keeps react provider boundaries", async () => {
   const cwd = createProject();
 
@@ -325,7 +323,7 @@ test("keeps react provider boundaries", async () => {
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- React module discovery must use configured cwd when lint is launched outside the project.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: parent-workspace invocation can skip React module conventions for the intended project; Contract: linting with explicit project cwd reports the service role violation.
 test("uses explicit lint cwd for react module discovery", async () => {
   const launchCwd = createProject();
   const projectCwd = join(launchCwd, "app");

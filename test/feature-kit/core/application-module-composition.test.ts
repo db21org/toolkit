@@ -128,7 +128,7 @@ const createSharedModuleGraph = (): SharedModuleGraph => {
   };
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Constructing an application must not eagerly instantiate providers with side effects.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: application construction can trigger provider side effects before any consumer requests them; Contract: creating the application leaves a singleton factory uncalled.
 test("Application.create is synchronous and registrations are lazy", () => {
   let constructCount = 0;
 
@@ -151,7 +151,7 @@ test("Application.create is synchronous and registrations are lazy", () => {
   expect(constructCount).toBe(0);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Nested modules must compose only declared exports to preserve module ownership boundaries.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: nested modules can expose undeclared implementation bindings through composition; Contract: parent consumers resolve declared exports without gaining private bindings.
 test("recursive imports expose direct exports while hiding un-exported bindings", async () => {
   const leafToken = token<number>("leaf-value");
   const middleToken = token<string>("middle-value");
@@ -192,7 +192,7 @@ test("recursive imports expose direct exports while hiding un-exported bindings"
   expect(rootValue).toEqual("1-middle-root");
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Imports must not accidentally re-export transitive private capabilities to higher-level modules.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: transitive imports can accidentally re-export private capabilities to higher modules; Contract: a higher-level consumer cannot resolve a private transitive binding.
 test("exports are not transitive across module boundaries", async () => {
   const leafToken = token<number>("non-transitive-leaf");
   const middleToken = token<number>("non-transitive-middle");
@@ -229,7 +229,7 @@ test("exports are not transitive across module boundaries", async () => {
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Diamond imports must not duplicate configuration or singleton identity across feature branches.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: diamond imports can duplicate configuration or singleton instances across feature branches; Contract: both branches receive the same configured singleton identity.
 test("shared modules are configured once and keep shared singleton identity", async () => {
   const graph = createSharedModuleGraph();
 

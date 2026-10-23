@@ -10,6 +10,8 @@ import { afterEach, test } from "vitest";
 
 import { clearModuleDiscoveryCache } from "#feature-kit-config/module-discovery";
 
+import { assertDependencyCruiserGraph } from "./dependency-cruiser-test-helpers.mjs";
+
 const temporaryDirectories = [];
 
 const createProject = () => {
@@ -35,39 +37,54 @@ afterEach(() => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- NestJS role direction rules prevent transport and persistence layers from forming unsafe dependencies.
-test("adds NestJS dependency direction rules", () => {
+// eslint-disable-next-line db21-tests/require-justification -- Risk: persistence code can depend on orchestration services, creating reverse dependencies and unsafe lifecycle coupling; Contract: dependency-cruiser accepts downward dependencies and rejects repository-to-service imports.
+test("enforces NestJS dependency direction rules", async () => {
   const cwd = createProject();
 
   writeProjectFile(cwd, "src/features/catalog/catalog.module.ts");
   writeProjectFile(cwd, "src/features/catalog/index.ts");
+  writeProjectFile(
+    cwd,
+    "src/features/catalog/services/catalog.service.ts",
+    "export {};\n",
+  );
+  writeProjectFile(
+    cwd,
+    "src/features/catalog/controllers/catalog.controller.ts",
+    'import "../services/catalog.service.js";\n',
+  );
+  writeProjectFile(
+    cwd,
+    "src/features/catalog/repositories/catalog.repository.ts",
+    'import "../services/catalog.service.js";\n',
+  );
+  writeProjectFile(
+    cwd,
+    "tsconfig.json",
+    '{ "compilerOptions": { "module": "NodeNext", "moduleResolution": "NodeNext" } }\n',
+  );
 
   const config = createNestjsDependencyCruiserConfig({
     cwd,
     moduleRoots: ["src/features"],
     sourceRoot: "src",
+    tsConfig: "tsconfig.json",
   });
-  const names = config.forbidden.map((rule) => rule.name);
 
-  assert.ok(names.includes("feature-kit-no-circular"));
-  assert.ok(
-    names.includes(
-      "feature-kit-nestjs-src-features-catalog-internals-avoid-entry-points",
-    ),
-  );
-  assert.ok(
-    names.includes(
-      "feature-kit-nestjs-src-features-catalog-repositories-avoid-services",
-    ),
-  );
-  assert.ok(
-    names.includes(
-      "feature-kit-nestjs-src-features-catalog-passive-types-stay-passive",
-    ),
-  );
+  await assertDependencyCruiserGraph({
+    allowed: ["src/features/catalog/controllers/catalog.controller.ts"],
+    config,
+    cwd,
+    rejected: [
+      {
+        file: "src/features/catalog/repositories/catalog.repository.ts",
+        rule: /feature-kit-nestjs-src-features-catalog-repositories-avoid-services/u,
+      },
+    ],
+  });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Role filenames make architectural checks reliable across NestJS feature modules.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: unrecognized role filenames leave NestJS architectural files outside their governing conventions; Contract: linting reports every supported role with an invalid filename.
 test("enforces NestJS role filenames", async () => {
   const cwd = createProject();
 
@@ -126,7 +143,7 @@ test("enforces NestJS role filenames", async () => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Restricting module folders prevents ungoverned architectural roles from bypassing policy.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: unsupported module folders evade NestJS role conventions and conceal transport or persistence behavior; Contract: linting identifies each unapproved folder while accepting approved folders.
 test("allows only approved NestJS module folders", async () => {
   const cwd = createProject();
 
@@ -175,7 +192,7 @@ const violationPaths = (results, ruleId) =>
       .map(() => result.filePath),
   );
 
-// eslint-disable-next-line db21-tests/require-justification -- GraphQL input and output DTO filenames must encode direction for safe boundary use.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: ambiguous GraphQL DTO names can blur request and response boundary direction; Contract: linting reports input and output decorators whose filenames lack the corresponding suffix.
 test("requires GraphQL DTO filename direction", async () => {
   const cwd = createProject();
 

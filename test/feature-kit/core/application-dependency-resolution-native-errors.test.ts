@@ -10,7 +10,7 @@ import {
   resolveFromModule,
 } from "./test-helpers.js";
 
-// eslint-disable-next-line db21-tests/require-justification -- Container diagnostics must remain native so callers can distinguish configuration failures from Feature Kit errors.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: wrapping container diagnostics hides configuration failures from callers that distinguish native errors; Contract: unresolved dependency resolution preserves the native error type and message.
 test("missing bindings, provider cycles, and activation failures stay native Inversify errors", async () => {
   const missingToken = token<number>("missing-token");
   const cycleA = token<number>("cycle-a");

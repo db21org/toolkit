@@ -5,7 +5,7 @@ import { expectInvalid, expectValid } from "../helpers/lint-rule.js";
 const ruleName = "react-conventions/no-imported-props-types";
 const ruleConfig = "error";
 
-// eslint-disable-next-line db21-tests/require-justification -- Non-props imports must remain valid so the local-props rule does not block ordinary component dependencies.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: ordinary component dependencies are blocked by the local-props policy; Contract: a non-props import remains lint-clean.
 test(`${ruleName}: accepts non-props imports`, async () => {
   await expectValid({
     code: `
@@ -20,7 +20,7 @@ test(`${ruleName}: accepts non-props imports`, async () => {
   });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Types that do not represent component props must remain importable without false positives from name similarity.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: similarly named non-props types are falsely treated as component contracts; Contract: a non-props type import remains lint-clean.
 test(`${ruleName}: accepts similarly named non-props imports`, async () => {
   await expectValid({
     code: 'import type { ButtonOptions } from "./button";',
@@ -29,7 +29,7 @@ test(`${ruleName}: accepts similarly named non-props imports`, async () => {
   });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Imported Props types must be rejected so each component owns and documents its own public props contract.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: components hide their public props contract in another module; Contract: imported Props types report the ownership rule.
 test(`${ruleName}: rejects imported props types`, async () => {
   await expectInvalid({
     code: 'import type { ButtonProps } from "./Button";',
@@ -38,7 +38,7 @@ test(`${ruleName}: rejects imported props types`, async () => {
   });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Props-shaped value imports must also be rejected so type-only syntax cannot become a bypass.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: value imports bypass locally owned component props typing; Contract: a Props-shaped value import reports the rule.
 test(`${ruleName}: rejects imported props values`, async () => {
   await expectInvalid({
     code: 'import { DialogProps, createDialog } from "./Dialog";',

@@ -22,7 +22,7 @@ const createTestModule = (metadata: ModuleMetadata): ModuleType => {
   return ModuleFixture;
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Module ordering and immutability prevent consumers from observing mutable dependency topology.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: mutable or dependency-last module order can expose unstable application topology to consumers; Contract: Application exposes a frozen dependency-first module list.
 test("Application modules are dependency-first and immutable", () => {
   const leaf = createTestModule({});
   const middle = createTestModule({
@@ -39,7 +39,7 @@ test("Application modules are dependency-first and immutable", () => {
   expect(Object.isFrozen(app.modules)).toBe(true);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Cached module contexts must preserve private ownership without exposing sibling module bindings.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: cached contexts can leak root bindings into a private module and break module ownership; Contract: repeated selection is stable and private contexts resolve only their own bindings.
 test("Application.select returns stable root/private ModuleContext objects", async () => {
   const privateToken = token<string>("private-token");
   const sharedToken = token<string>("shared-token");
@@ -76,7 +76,7 @@ test("Application.select returns stable root/private ModuleContext objects", asy
   }, "No bindings found");
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Disposal must synchronously reject later public access and retain one lifecycle promise.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: callers can use an application after shutdown or start competing disposal lifecycles; Contract: assertActive fails after disposal starts and dispose returns the same promise.
 test("Application.assertActive is observable on active and disposed applications", () => {
   const app = Application.create(
     createTestModule({
@@ -99,7 +99,7 @@ test("Application.assertActive is observable on active and disposed applications
   expect(dispose).toBe(app.dispose());
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Selecting an unregistered module must fail before it can expose another module's bindings.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: selecting an unregistered module can expose bindings outside the declared application graph; Contract: resolution through an unregistered selection returns module_not_registered.
 test("Application.select rejects unregistered modules", async () => {
   const ownerModule = createTestModule({
     configure: ({ bind }) => {
@@ -116,7 +116,7 @@ test("Application.select rejects unregistered modules", async () => {
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Root and cached context resolutions must both fail when disposal races asynchronous construction.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: in-flight root or context resolutions can survive disposal and publish stale services; Contract: both paths reject with application_disposed when shutdown races construction.
 test("disposal gates both application and cached module contexts", async () => {
   const inFlightToken = token<string>("in-flight");
   let release = false;

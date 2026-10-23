@@ -20,7 +20,7 @@ const createTestModule = (metadata: ModuleMetadata): ModuleType => {
   return ModuleFixture;
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Typed tokens and constructor injection are the primary DI boundary used by application services.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: typed token injection can resolve the wrong service or omit constructor dependencies; Contract: Application resolves a consumer with the token-bound dependency.
 test("class identifiers and branded tokens resolve through constructor injection", async () => {
   const configToken = token<number>("config-value");
   const infoToken = token<{ readonly label: string }>("service-info");
@@ -71,7 +71,7 @@ test("class identifiers and branded tokens resolve through constructor injection
   expect(serviceName).toBe("primary");
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Exported asynchronous dependencies must cross module boundaries in dependency order without stale values.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: asynchronous exported dependencies can cross module boundaries before initialization completes; Contract: dependent resolution observes the initialized exported value in dependency order.
 test("async dependency chains resolve across module boundaries", async () => {
   const firstToken = token<string>("boundary-first");
   const secondToken = token<string>("boundary-second");
@@ -126,7 +126,7 @@ test("async dependency chains resolve across module boundaries", async () => {
   expect(order).toEqual(["first", "second", "root"]);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Equal diagnostic labels must not merge distinct DI capabilities and leak the wrong dependency.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: equal diagnostic labels can merge distinct capabilities and inject another binding; Contract: distinct tokens with matching labels resolve their independently bound values.
 test("duplicate token descriptions keep distinct identities", async () => {
   const firstToken = token<number>("duplicate-description");
   const secondToken = token<number>("duplicate-description");
@@ -147,7 +147,7 @@ test("duplicate token descriptions keep distinct identities", async () => {
   expect(secondValue).toEqual(2);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Internal resolver and type-only details must not become supported runtime entry points.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: internal resolver details can become accidental public runtime API; Contract: the public Feature Kit entry point excludes internal resolver exports.
 test("internal runtime helpers remain excluded from the public API", async () => {
   const runtime = await import("@db21/toolkit/feature-kit");
 

@@ -133,7 +133,7 @@ const malformedReceipts = [
 ];
 
 describe("image release receipts", () => {
-  // eslint-disable-next-line db21-tests/require-justification -- Deployment receipts must bind immutable image digests to source commits and isolate repeated workflow attempts.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: deployment selects an image from the wrong commit or retry; Contract: receipts bind the immutable digest and source SHA under an attempt-specific artifact name.
   it("records the immutable digest and source under an attempt-scoped artifact name", () => {
     const result = record({ GITHUB_RUN_ATTEMPT: "2" });
 
@@ -147,7 +147,7 @@ describe("image release receipts", () => {
       sha,
     });
   });
-  // eslint-disable-next-line db21-tests/require-justification -- Unsafe receipt identifiers or mutable image tags must be rejected before writing release artifacts.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: invalid publication inputs escape artifact paths or deploy mutable images; Contract: unsafe component, digest, source and attempt inputs fail before writing files.
   it.each(invalidReceiptInputs)(
     "rejects invalid %s before writing a receipt",
     (key, value) => {
@@ -157,19 +157,22 @@ describe("image release receipts", () => {
       expect(readdirSync(directory)).toEqual([]);
     },
   );
-  // eslint-disable-next-line db21-tests/require-justification -- Failed or partial publication with no receipts must not accidentally schedule deployments for unpublished images.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: partial publication deploys images that were never published; Contract: collecting no receipts succeeds with an empty deployment matrix.
   it("returns an empty matrix when a partial publication has no receipts", () => {
     expect(collect().status).toBe(0);
     expect(output()).toBe("images=[]\n");
   });
-  // eslint-disable-next-line db21-tests/require-justification -- Independently downloaded artifacts with identical filenames must retain all distinct component releases.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: identical receipt filenames discard a separately published component; Contract: collection preserves both releases from separate artifact directories.
   it("collects valid receipts without merging artifact directories", () => {
     receipt("first", { component: "api", image: digest, sha });
     receipt("second", { component: "web", image: digest, sha });
     expect(collect().status).toBe(0);
-    expect(JSON.parse(output().slice("images=".length))).toHaveLength(2);
+    expect(JSON.parse(output().slice("images=".length))).toEqual([
+      { component: "api", image: digest, sha },
+      { component: "web", image: digest, sha },
+    ]);
   });
-  // eslint-disable-next-line db21-tests/require-justification -- Collection must reject forged source commits, unknown components, mutable tags, and malformed receipt envelopes.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: forged or malformed receipts authorize unintended deployments; Contract: collection rejects wrong commits, unknown components, mutable images and invalid envelopes.
   it.each(malformedReceipts)(
     "rejects forged or malformed receipt %j",
     (value) => {
@@ -177,20 +180,27 @@ describe("image release receipts", () => {
       expect(collect().status).not.toBe(0);
     },
   );
-  // eslint-disable-next-line db21-tests/require-justification -- Duplicate component receipts must not choose an arbitrary image for deployment based on artifact traversal order.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: duplicate releases choose a deployment image by artifact traversal order; Contract: repeated component receipts fail instead of silently selecting either entry.
   it("rejects duplicate components even with identical receipt filenames", () => {
     receipt("one", { component: "api", image: digest, sha });
     receipt("two", { component: "api", image: digest, sha });
     expect(collect().status).not.toBe(0);
   });
-  // eslint-disable-next-line db21-tests/require-justification -- Artifact receipt reads must not follow symlinks into files outside the downloaded release tree.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: artifact symlinks import a valid but unauthorized external receipt; Contract: collection rejects the link itself without consuming or changing its existing target.
   it("rejects symlink receipts", () => {
     receipt("one", { component: "api", image: digest, sha });
     const path = join(directory, "receipts", "one", "api.json");
+    const external = join(directory, "external-receipt.json");
+    const contents = JSON.stringify({ component: "api", image: digest, sha });
 
+    writeFileSync(external, contents);
     rmSync(path);
-    symlinkSync(env.GITHUB_OUTPUT, path);
-    expect(collect().status).not.toBe(0);
+    symlinkSync(external, path);
+    const result = collect();
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("Unexpected receipt artifact file.");
+    expect(readFileSync(external, "utf8")).toBe(contents);
   });
 });
 
@@ -206,7 +216,7 @@ const plan = (overrides = {}) =>
   });
 
 describe("image build planning", () => {
-  // eslint-disable-next-line db21-tests/require-justification -- Node dependency graph changes must not trigger unrelated non-Node component publication.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: Node graph changes unnecessarily publish unrelated Python components; Contract: a workspace-only change selects exactly the configured Node workspaces.
   it("keeps Python outside Node workspace changes unless its own files changed", () => {
     expect(
       plan({
@@ -216,7 +226,7 @@ describe("image build planning", () => {
     ).toBe(0);
     expect(output()).toBe('components=["api","web"]\n');
   });
-  // eslint-disable-next-line db21-tests/require-justification -- Build planning must retain direct non-workspace changes when also expanding Node graph changes.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: a combined workspace and Python change omits a required image build; Contract: planning includes directly changed components alongside affected Node workspaces.
   it("adds directly changed components to workspace changes", () => {
     expect(
       plan({
@@ -226,17 +236,17 @@ describe("image build planning", () => {
     ).toBe(0);
     expect(output()).toBe('components=["api","pipelines","web"]\n');
   });
-  // eslint-disable-next-line db21-tests/require-justification -- Ordinary component changes must not unintentionally rebuild and publish every component.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: an isolated change triggers unrelated image publication; Contract: planning without a graph change selects only the directly changed component.
   it("selects only direct changes without a graph change", () => {
     expect(plan({ BUILD_CHANGES: '["web"]' }).status).toBe(0);
     expect(output()).toBe('components=["web"]\n');
   });
-  // eslint-disable-next-line db21-tests/require-justification -- Runs without deployable changes must emit an empty matrix instead of publishing unrelated images.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: no-op pushes publish unrelated images; Contract: planning without deployable changes emits an empty build matrix.
   it("supports an empty build matrix", () => {
     expect(plan().status).toBe(0);
     expect(output()).toBe("components=[]\n");
   });
-  // eslint-disable-next-line db21-tests/require-justification -- Manual rebuild selection must distinguish one component from all components without depending on changed files.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: a manual rebuild targets the wrong release components; Contract: explicit one-component and all-component selections work independently of changed files.
   it.each(["all", "api"])(
     "supports manual component selection %s",
     (component) => {
@@ -251,7 +261,7 @@ describe("image build planning", () => {
       );
     },
   );
-  // eslint-disable-next-line db21-tests/require-justification -- Untrusted workflow planning inputs must not introduce unknown components, unsafe identifiers, or unsupported events.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: untrusted workflow inputs schedule unauthorized component builds; Contract: unknown components, unsafe identifiers, invalid flags and unsupported events fail planning.
   it.each([
     { BUILD_COMPONENT: "invalid", GITHUB_EVENT_NAME: "workflow_dispatch" },
     { BUILD_CHANGES: '["unknown"]' },
@@ -291,7 +301,7 @@ describe("deployment submission", () => {
       { mode: 0o700 },
     );
   });
-  // eslint-disable-next-line db21-tests/require-justification -- Deployment credentials must remain private, correctly escaped, and cleaned on both success and failure.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: deployment credentials leak through logs, permissions or leftover files; Contract: submission escapes private credentials, uses mode 0600 and cleans temporary auth on success and failure.
   it.each(["0", "1"])(
     "keeps auth private and cleans it after make exits %s",
     (code) => {
@@ -317,7 +327,7 @@ describe("deployment submission", () => {
       );
     },
   );
-  // eslint-disable-next-line db21-tests/require-justification -- Deployment inputs must reject shell or header injection and malformed identities before creating credential files.
+  // eslint-disable-next-line db21-tests/require-justification -- Risk: malformed deployment inputs inject shell commands or HTTP headers; Contract: unsafe identities, channels and credentials fail before any private auth file is created.
   it.each([
     { COMPONENT: "api;exit" },
     { IMAGE: "latest" },

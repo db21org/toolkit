@@ -22,7 +22,7 @@ const lint = async (filePath) => {
   return result.messages;
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Kebab-case names and recognized dot roles must remain accepted so generated and hand-written TypeScript files share a stable path convention.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: valid generated and handwritten TypeScript paths are rejected; Contract: kebab-case names with recognized dot roles remain lint-clean.
 test("accepts kebab-case TypeScript files and dot-separated roles", async () => {
   const productActionStateMessages = await lint(
     "src/product-action-state.output.dto.ts",
@@ -35,7 +35,7 @@ test("accepts kebab-case TypeScript files and dot-separated roles", async () => 
   assert.deepEqual(indexMessages, []);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- PascalCase and camelCase TypeScript filenames must be rejected to prevent platform-specific import and casing drift.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: filename casing drift breaks imports on case-sensitive platforms; Contract: PascalCase and camelCase TypeScript paths report errors.
 test("rejects PascalCase and camelCase TypeScript files", async () => {
   const applicationGraphMessages = await lint("src/ApplicationGraph.ts");
   const applicationGraphCamelCaseMessages = await lint(
@@ -46,7 +46,7 @@ test("rejects PascalCase and camelCase TypeScript files", async () => {
   assert.equal(applicationGraphCamelCaseMessages.length, 1);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- TSX component filenames are deliberately outside this rule so React component naming can evolve independently.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: TypeScript filename policy prematurely constrains component naming; Contract: a PascalCase TSX path remains lint-clean.
 test("does not govern TSX component filenames yet", async () => {
   const messages = await lint("src/FeedCard.tsx");
 

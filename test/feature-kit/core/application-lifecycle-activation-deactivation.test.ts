@@ -21,7 +21,7 @@ const createTestModule = (metadata: ModuleMetadata): ModuleType => {
   return ModuleFixture;
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Application disposal must invoke both decorator and explicit factory cleanup for owned singletons.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: owned singleton resources leak when decorator or factory cleanup is skipped; Contract: disposal invokes both registered cleanup mechanisms once.
 test("explicit factory onDeactivation cleanup runs during disposal", async () => {
   const ownedFactoryToken = token<{ destroy: () => void }>("factory-owned");
   const classDisposed: string[] = [];
@@ -68,7 +68,7 @@ test("explicit factory onDeactivation cleanup runs during disposal", async () =>
   expect(factoryDisposed).toEqual(["factory"]);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Asynchronous initialization and teardown must complete before services become usable or disposal resolves.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: services become usable before initialization or shutdown reports completion before cleanup; Contract: resolution and disposal await their asynchronous lifecycle work.
 test("async PostConstruct and PreDestroy methods are honored", async () => {
   const initGate = createDeferredState();
   const destroyGate = createDeferredState();
@@ -118,7 +118,7 @@ test("async PostConstruct and PreDestroy methods are honored", async () => {
   expect(lifecycleLog).toEqual(["initialized", "destroyed"]);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Dependents must release imported resources before their providers are torn down.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: providers can be torn down before dependents release imported resources; Contract: disposal records dependent cleanup before provider cleanup.
 test("importer resources dispose before imported module resources", async () => {
   const lifecycleLog: string[] = [];
 

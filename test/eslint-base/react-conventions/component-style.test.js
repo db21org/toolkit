@@ -5,7 +5,7 @@ import { expectInvalid, expectValid } from "../helpers/lint-rule.js";
 const ruleName = "react-conventions/component-style";
 const ruleConfig = "error";
 
-// eslint-disable-next-line db21-tests/require-justification -- Directly exported FC components are the supported declaration form and must remain available to React consumers.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: supported directly exported typed components are rejected; Contract: a direct FC declaration remains lint-clean.
 test(`${ruleName}: accepts exported FC arrow components`, async () => {
   await expectValid({
     code: `
@@ -23,7 +23,7 @@ test(`${ruleName}: accepts exported FC arrow components`, async () => {
   });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- React.FC namespace annotations are equivalent to FC imports and must not be rejected by the style rule.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: equivalent React.FC annotations are falsely rejected; Contract: a namespace-qualified FC declaration remains lint-clean.
 test(`${ruleName}: accepts exported React.FC arrow components`, async () => {
   await expectValid({
     code: `
@@ -41,7 +41,7 @@ test(`${ruleName}: accepts exported React.FC arrow components`, async () => {
   });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- PascalCase function declarations must be reported to preserve the repository const-component declaration convention.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: component declarations drift from the repository const-component convention; Contract: a PascalCase function declaration reports the style rule.
 test(`${ruleName}: rejects PascalCase function declarations`, async () => {
   await expectInvalid({
     code: `
@@ -55,7 +55,7 @@ test(`${ruleName}: rejects PascalCase function declarations`, async () => {
   });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- A component exported later must be reported because direct export at declaration makes ownership and API visibility explicit.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: delayed component exports obscure public ownership and visibility; Contract: a later-exported component reports the style rule.
 test(`${ruleName}: rejects components not exported at declaration time`, async () => {
   await expectInvalid({
     code: `
@@ -73,7 +73,7 @@ test(`${ruleName}: rejects components not exported at declaration time`, async (
   });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- An unannotated PascalCase arrow function must be reported so component props stay intentionally typed.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: component props become implicit through unannotated PascalCase arrows; Contract: an untyped component arrow reports the style rule.
 test(`${ruleName}: rejects unannotated components`, async () => {
   await expectInvalid({
     code: "export const Button = () => null;",

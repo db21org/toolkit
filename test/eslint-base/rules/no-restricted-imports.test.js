@@ -7,7 +7,7 @@ import { expectInvalid, expectValid } from "../helpers/lint-rule.js";
 const ruleName = "no-restricted-imports";
 const ruleConfig = recommendedRules[ruleName];
 
-// eslint-disable-next-line db21-tests/require-justification -- Direct sibling and aliased imports must remain available so module owners can use their public boundaries.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: module owners cannot use direct sibling or aliased public boundaries; Contract: permitted direct imports remain lint-clean.
 test(`${ruleName}: valid`, async () => {
   await expectValid({
     code: `
@@ -19,7 +19,7 @@ test(`${ruleName}: valid`, async () => {
   });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- A deep parent import must be blocked so consumers cannot bypass the owning module boundary through relative traversal.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: consumers bypass module ownership through deep relative traversal; Contract: a parent-reaching import reports the boundary rule.
 test(`${ruleName}: invalid`, async () => {
   await expectInvalid({
     code: 'import { formatName } from "../../shared/formatName";',

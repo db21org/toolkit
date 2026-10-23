@@ -23,7 +23,7 @@ const lint = async (source) => {
   return result;
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- The fixer must insert exactly one separator between multiline declarations so grouped definitions remain readable.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: the custom fixer leaves adjacent multiline declarations unreadable; Contract: fixing inserts exactly one blank separator.
 test("adds an empty line between multiline const declarations", async () => {
   const result = await lint(`const first = [
   "first",
@@ -45,7 +45,7 @@ const second = [
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- A separator fix must leave a leading comment attached to its declaration rather than changing comment ownership.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: automatic padding reassigns documentation to the preceding declaration; Contract: a leading comment remains adjacent to its following declaration.
 test("keeps comments attached to the following declaration", async () => {
   const result = await lint(`const first = [
   "first",
@@ -65,14 +65,14 @@ const second`,
   );
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Compact scalar declarations are intentionally exempt so the formatter rule does not create noisy vertical whitespace.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: the padding fixer creates noisy whitespace in compact scalar groups; Contract: single-line declarations receive no fix.
 test("allows compact single-line const groups", async () => {
   const result = await lint("const first = 1;\nconst second = 2;");
 
   assert.equal(result.output, undefined);
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Already separated multiline declarations must be idempotent so lint fixing does not churn clean files.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: lint fixing churns already compliant multiline declarations; Contract: pre-separated declarations produce no output.
 test("allows multiline declarations separated by an empty line", async () => {
   const result = await lint(`const first = [
   "first",

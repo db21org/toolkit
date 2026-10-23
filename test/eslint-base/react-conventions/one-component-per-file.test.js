@@ -5,7 +5,7 @@ import { expectInvalid, expectValid } from "../helpers/lint-rule.js";
 const ruleName = "react-conventions/one-component-per-file";
 const ruleConfig = "error";
 
-// eslint-disable-next-line db21-tests/require-justification -- A single component with local non-component helpers must remain valid so simple presentation logic stays colocated.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: ordinary local presentation helpers are mistaken for extra components; Contract: one component with lowercase helpers remains lint-clean.
 test(`${ruleName}: accepts one component per file`, async () => {
   await expectValid({
     code: `
@@ -19,7 +19,7 @@ test(`${ruleName}: accepts one component per file`, async () => {
   });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Lowercase helpers and hooks must not count as components, avoiding false positives in ordinary TSX modules.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: lowercase helpers and hooks cause false multiple-component reports; Contract: helper and hook declarations remain lint-clean.
 test(`${ruleName}: ignores non-component arrow functions`, async () => {
   await expectValid({
     code: `
@@ -32,7 +32,7 @@ test(`${ruleName}: ignores non-component arrow functions`, async () => {
   });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- A second exported component must be reported to preserve one public component surface per file.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: files expose multiple public component surfaces; Contract: a second exported component reports the rule.
 test(`${ruleName}: rejects multiple exported components`, async () => {
   await expectInvalid({
     code: `
@@ -45,7 +45,7 @@ test(`${ruleName}: rejects multiple exported components`, async () => {
   });
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Multiple local PascalCase components must be reported so hidden subcomponents move into an explicit local components boundary.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: hidden local subcomponents accumulate without an explicit boundary; Contract: multiple PascalCase components report the rule.
 test(`${ruleName}: rejects multiple local components`, async () => {
   await expectInvalid({
     code: `

@@ -25,7 +25,7 @@ const lint = async (source) => {
   return result.messages.filter((message) => message.ruleId === targetRule);
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Assertions through unknown or any erase type evidence and must not provide an escape hatch into an unrelated result type.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: erased type evidence permits unrelated values to masquerade as results; Contract: unknown and any double assertions report the safety rule.
 test("rejects assertions through unknown and any", async () => {
   for (const source of [
     "const result = value as unknown as Result;",
@@ -37,7 +37,7 @@ test("rejects assertions through unknown and any", async () => {
   }
 });
 
-// eslint-disable-next-line db21-tests/require-justification -- Ordinary assertions and compatible narrowing chains must remain usable so the rule targets only unsafe escape hatches.
+// eslint-disable-next-line db21-tests/require-justification -- Risk: safe narrowing chains are blocked with unsafe escape hatches; Contract: ordinary and compatible assertions remain lint-clean.
 test("allows single and non-escape-hatch assertions", async () => {
   for (const source of [
     "const result = value as Result;",
