@@ -3,7 +3,7 @@ description: Select existing deployment files changed by a push, including every
 inputs:
   before:
     description: Previous commit; empty or all zeroes selects every application.
-    default: ''
+    default: ""
   after:
     description: Commit to compare against.
     default: HEAD

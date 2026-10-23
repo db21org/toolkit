@@ -1,8 +1,9 @@
 import { constants } from "node:fs";
-import { open, readFile, stat } from "node:fs/promises";
+import { open, readFile, stat, unlink } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { assert, isNotEmpty } from "../utils/index.js";
+import { acquireAgentsLock, hasAgentInstructions } from "./agents-file.js";
 
 /**
  * Append toolkit instructions without replacing existing repository guidance.
@@ -18,13 +19,41 @@ export const initAgents = async (directory: string): Promise<boolean> => {
     "Target must be an existing directory.",
   );
 
+  const path = join(destination, "AGENTS.md");
+
+  const initialized = await hasAgentInstructions(path);
+
+  if (initialized) {
+    return false;
+  }
+
+  const lockPath = `${path}.toolkit.lock`;
+  const lock = await acquireAgentsLock(lockPath);
+
+  try {
+    const initializedUnderLock = await hasAgentInstructions(path);
+
+    if (initializedUnderLock) {
+      return false;
+    }
+
+    const added = await appendInstructions(path);
+
+    return added;
+  } finally {
+    await lock.close();
+    await unlink(lockPath);
+  }
+};
+
+const appendInstructions = async (path: string): Promise<boolean> => {
   const section = await readFile(
     new URL("../../templates/base/AGENTS.md.hbs", import.meta.url),
     "utf8",
   );
 
   const file = await open(
-    join(destination, "AGENTS.md"),
+    path,
     constants.O_RDWR |
       constants.O_CREAT |
       constants.O_APPEND |

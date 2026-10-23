@@ -92,6 +92,32 @@ test("base and repository presets share style across JS and TS extensions", asyn
   }
 });
 
+// eslint-disable-next-line db21-tests/require-justification -- Risk: generated JSX becomes unlintable while equivalent generated JS is exempt; Contract: broad generator directives are allowed only under generated source paths.
+test("generated JSX retains the generated-source directive exception", async () => {
+  const eslint = new ESLint({
+    overrideConfigFile: true,
+    overrideConfig: commonConfig,
+  });
+
+  for (const [filePath, expected] of [
+    ["src/generated/component.jsx", false],
+    ["src/components/component.jsx", true],
+  ]) {
+    const [result] = await eslint.lintText(
+      "/* eslint-disable */\nexport const element = <span />;\n",
+      { filePath },
+    );
+
+    assert.equal(result.fatalErrorCount, 0);
+    assert.equal(
+      result.messages.some(
+        ({ ruleId }) => ruleId === "unicorn/no-abusive-eslint-disable",
+      ),
+      expected,
+    );
+  }
+});
+
 const importPlacementCases = {
   valid: [
     'import "node:fs";\nimport path from "node:path";\nvoid path;',

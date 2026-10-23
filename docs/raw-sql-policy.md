@@ -17,6 +17,12 @@ Each recognized execution or fragment needs its own local exception. Use
 File-wide exceptions and inline configurations lowering the justification rule
 to `warn` or `off` are rejected. No automatic fixes or query rewrites are provided.
 
+Shared profiles also install `db21-sql/policy-guard`, an ESLint processor that
+rejects directives disabling or downgrading `require-local-reason`. Its diagnostics
+are added after inline suppression, so disabling both rules cannot bypass review.
+Consumers replacing this processor must preserve this check; ESLint configuration
+remains an explicit trust boundary. The processor does not inspect strings as comments.
+
 ## Detection
 
 - Calls and tagged templates for `$queryRaw`, `$executeRaw`, `$queryRawUnsafe`,

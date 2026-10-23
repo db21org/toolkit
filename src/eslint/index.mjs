@@ -181,6 +181,7 @@ export const commonConfig = [
   ...javascriptRecommended,
   {
     files: sourceFiles,
+    processor: "db21-sql/policy-guard",
     plugins: {
       sonarjs,
       unicorn,
@@ -197,7 +198,7 @@ export const commonConfig = [
     },
   },
   {
-    files: ["**/src/generated/**/*.{cjs,js,mjs,ts,tsx,mts,cts}"],
+    files: ["**/src/generated/**/*.{cjs,js,jsx,mjs,ts,tsx,mts,cts}"],
     rules: { "unicorn/no-abusive-eslint-disable": "off" },
   },
   {

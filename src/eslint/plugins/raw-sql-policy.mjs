@@ -1,5 +1,7 @@
 import { isEmpty } from "@db21/toolkit/utils";
 
+import { rawSqlGuardProcessor } from "./raw-sql-guard.mjs";
+
 const SQL_RULE = "db21-sql/require-justification";
 const RAW_METHODS = new Set([
   "$queryRaw",
@@ -218,6 +220,7 @@ const requireLocalReason = {
 };
 
 export const rawSqlPolicyPlugin = {
+  processors: { "policy-guard": rawSqlGuardProcessor },
   rules: {
     "require-justification": requireJustification,
     "require-local-reason": requireLocalReason,

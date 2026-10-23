@@ -61,6 +61,9 @@ Creates `AGENTS.md` or appends a marked test-assessment section, preserving exis
 instructions. Repeated runs do not duplicate or replace that section. Its policy
 link requires `node_modules/@db21/toolkit/docs/test-policy.md` in the target repo.
 No dependency installation or ESLint configuration changes are performed.
+Concurrent initializers serialize through `AGENTS.md.toolkit.lock`; an already
+marked read-only file needs no write access. A crashed initializer may leave a
+lock: verify no initializer is running before removing that file and retrying.
 See [test policy and examples](docs/test-policy.md).
 
 ## Bootstrap a workspace

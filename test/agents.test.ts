@@ -1,11 +1,22 @@
-import { execFileSync } from "node:child_process";
-import { mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { execFile, execFileSync } from "node:child_process";
+import {
+  chmod,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { promisify } from "node:util";
 
 import { expect, it } from "vitest";
 
 import { initAgents } from "../src/cli/agents.js";
+
+const executeFile = promisify(execFile);
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: instruction initialization overwrites repository guidance or duplicates policy; Contract: built CLI creates instructions and repeated initialization preserves existing bytes.
 it("creates and appends agent instructions without replacing existing guidance", async () => {
@@ -46,6 +57,42 @@ it("creates and appends agent instructions without replacing existing guidance",
 
     expect(repeatedAppend).toBe(false);
     expect(afterAppend).toBe(appended);
+    await chmod(path, 0o444);
+    const readOnlyRepeat = await initAgents(directory);
+
+    expect(readOnlyRepeat).toBe(false);
+    await chmod(path, 0o644);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+// eslint-disable-next-line db21-tests/require-justification -- Risk: simultaneous initializers duplicate policy or overwrite repository guidance; Contract: separate CLI processes append exactly one section and remove their lock.
+it("serializes concurrent initialization across processes", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "toolkit-agents-concurrent-"));
+
+  try {
+    const path = join(directory, "AGENTS.md");
+
+    await writeFile(path, "# User guidance\n");
+    await Promise.all(
+      Array.from({ length: 8 }, () =>
+        executeFile(process.execPath, [
+          resolve("dist/cli/index.js"),
+          "agents",
+          "init",
+          directory,
+        ]),
+      ),
+    );
+    const contents = await readFile(path, "utf8");
+    const files = await readdir(directory);
+
+    expect(contents.startsWith("# User guidance\n")).toBe(true);
+    expect(contents.match(/<!-- db21-toolkit:test-policy -->/gu)).toHaveLength(
+      1,
+    );
+    expect(files).toEqual(["AGENTS.md"]);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

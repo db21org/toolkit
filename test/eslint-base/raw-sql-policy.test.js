@@ -10,6 +10,7 @@ const rule = "db21-sql/require-justification";
 const reasonRule = "db21-sql/require-local-reason";
 const config = {
   plugins: { "db21-sql": rawSqlPolicyPlugin },
+  processor: "db21-sql/policy-guard",
   rules: { [rule]: "error", [reasonRule]: "error" },
 };
 const verify = (code) => new Linter().verify(code, config, "consumer.js");
@@ -159,5 +160,43 @@ test("raw SQL exceptions require local reasons and retain error severity", () =>
       `// eslint-disable-next-line ${rule} -- ${explanation}\n${operation}\n${operation}`,
     ).map((message) => message.ruleId),
     [rule],
+  );
+});
+
+// eslint-disable-next-line db21-tests/require-justification -- Risk: a single directive silently disables SQL review and its validator; Contract: processor diagnostics survive rule suppressions without flagging text inside strings.
+test("SQL guard cannot be suppressed by disabling its policy rules", () => {
+  const operation = "tx.$queryRaw`SELECT 1`;";
+
+  for (const directive of [
+    `/* eslint-disable ${rule}, ${reasonRule} */`,
+    `// eslint-disable-next-line ${rule}, ${reasonRule}`,
+    `/* eslint "${rule}": "off", "${reasonRule}": "off" */`,
+    `/* eslint "${reasonRule}": [1] */`,
+    `/* eslint-disable db21-sql/protected-validator, ${reasonRule}, ${rule} */`,
+  ]) {
+    const messages = verify(`${directive}\n${operation}`);
+
+    assert.ok(
+      messages.some(
+        (message) => message.ruleId === "db21-sql/protected-validator",
+      ),
+      directive,
+    );
+  }
+
+  assert.deepEqual(
+    verify(`const text = "/* eslint-disable ${reasonRule} */";`),
+    [],
+  );
+  const presetMessages = new Linter().verify(
+    `/* eslint-disable ${rule}, ${reasonRule} */\n${operation}`,
+    commonConfig,
+    "consumer.mjs",
+  );
+
+  assert.ok(
+    presetMessages.some(
+      ({ ruleId }) => ruleId === "db21-sql/protected-validator",
+    ),
   );
 });
