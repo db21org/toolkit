@@ -40,6 +40,8 @@ jobs:
         run: corepack yarn lint
       - name: 🧪 Run tests
         run: corepack yarn test
+      - name: 🐘 Verify PostgreSQL outbox contracts
+        run: corepack yarn test:outbox
       - name: 🎨 Check formatting
         run: corepack yarn format:check
       - name: 🧪 Test packed package

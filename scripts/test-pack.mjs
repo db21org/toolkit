@@ -39,6 +39,7 @@ try {
   // Install only the artifact and explicit integration hosts, outside this checkout.
   // Source aliases, unpublished files and root devDependencies cannot rescue it.
   const hostPackages = [
+    "@prisma/client",
     "@types/node",
     "@types/react",
     "dependency-cruiser",
@@ -81,6 +82,7 @@ try {
   );
   run("corepack", ["yarn", "install", "--mode=skip-build"]);
   run("node", ["runtime-only.mjs"]);
+  run("node", ["outbox-schema.mjs"]);
   run("corepack", ["yarn", "toolkit", "--help"]);
   run("corepack", ["yarn", "toolkit", "agents", "init"]);
   run("corepack", ["yarn", "toolkit", "agents", "init"]);
