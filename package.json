@@ -1,6 +1,6 @@
 {
   "name": "@db21/toolkit",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Shared db21 runtime utilities, Feature Kit, development conventions and tooling.",
   "type": "module",
   "bin": "./dist/cli/index.js",
