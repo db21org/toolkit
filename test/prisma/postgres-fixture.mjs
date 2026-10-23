@@ -108,15 +108,32 @@ const prepareClient = (directory, connectionString, run) => {
     output: ".generated/schema",
   });
   const config = join(directory, "prisma.config.mjs");
+  const migrations = join(directory, "prisma/migrations");
+  const migration = join(migrations, "20260101000000_init/migration.sql");
+
+  mkdirSync(join(migrations, "20260101000000_init"), { recursive: true });
+  writeFileSync(
+    join(migrations, "migration_lock.toml"),
+    'provider = "postgresql"\n',
+  );
 
   writeFileSync(
     config,
-    `export default ${JSON.stringify({ schema, datasource: { url: connectionString }, migrations: { path: join(directory, "prisma/migrations") } })};`,
+    `export default ${JSON.stringify({ schema, datasource: { url: connectionString }, migrations: { path: migrations } })};`,
   );
 
   for (const args of [
     ["generate"],
-    ["migrate", "dev", "--name", "init"],
+    [
+      "migrate",
+      "diff",
+      "--from-empty",
+      "--to-schema",
+      schema,
+      "--script",
+      "--output",
+      migration,
+    ],
     ["migrate", "deploy"],
   ]) {
     run(process.execPath, [

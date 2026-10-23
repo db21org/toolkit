@@ -168,7 +168,9 @@ Use a stable PostgreSQL search path for all client operations.
 `yarn test:outbox` builds and runs real PostgreSQL integration tests in a new
 disposable `postgres:17-alpine` Docker container with a random password and a
 loopback-only random port. It never reads application database URLs. It generates
-a client, creates/applies migrations, checks ESM/CommonJS consumer types and
-verifies rollback, skip-locked concurrency, fencing, retries and deduplication.
+a client and migration SQL with non-interactive
+`prisma migrate diff --from-empty`, then applies that migration with
+`prisma migrate deploy`. It checks ESM/CommonJS consumer types and verifies
+rollback, skip-locked concurrency, fencing, retries and deduplication.
 The container and temporary files are removed afterward. Docker is required;
 missing Docker is a failure, not a silently skipped database contract.
