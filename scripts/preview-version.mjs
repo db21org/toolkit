@@ -11,7 +11,10 @@ export const createPreviewVersion = ({
 }) => {
   const match = stableVersionPattern.exec(stableVersion);
 
-  assert(match, "Expected latest to be a stable major.minor.patch version.");
+  assert(
+    match,
+    "Expected package version to be a stable major.minor.patch version.",
+  );
   assert(
     positiveIntegerPattern.test(runNumber) &&
       positiveIntegerPattern.test(runAttempt),

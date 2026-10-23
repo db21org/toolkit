@@ -61,20 +61,21 @@ for a maintainer to run deliberately; setup work does not run them automatically
 ## Automated previews
 
 GitHub-hosted Ubuntu runners use Node.js 24 with npm supporting trusted publishing
-(npm 11.5.1+). Pull requests validate only and never receive publication permissions.
+(npm 11.5.1+). Pull requests do not trigger this workflow.
 The publish job has `id-token: write` and only runs in `db21org/toolkit` on `main`
 after all checks pass. No release dependency cache is restored.
 
-The version generator reads the public npm `latest` version, increments its patch,
+The version generator reads the repository's `package.json` version (last stable
+release), increments its patch,
 and appends the run number, retry attempt and short commit SHA:
 
 ```text
-latest: 1.0.0
+package.json: 1.0.0
 dev:    1.0.1-dev.42.1.gabcdef123456
 retry:  1.0.1-dev.42.2.gabcdef123456
 ```
 
-Registry lookup failures stop publication. The version changes only in the CI
+Preview generation needs no registry lookup. The preview version changes only in the CI
 checkout; it is not committed and does not change the lockfile. Publishing always
 uses `--tag dev`, so previews never replace `latest`.
 
@@ -99,10 +100,27 @@ Dev and stable publication share a concurrency group. Registry errors, malformed
 versions, unsafe archives, or versions not newer than `latest` stop the release.
 npm rejects already-published versions. The `dev` tag is unchanged.
 
-No version commit, Git tag, or GitHub release is created. After stable `1.0.1`,
-the next passing main preview uses `1.0.2-dev...`. This flow releases the preview's
+After successful npm publication, the release job uses `GITHUB_TOKEN` with
+`contents: write` to commit the released version to `package.json` on `main`.
+It reads the current main manifest, preserves every other field, and supplies its
+blob SHA to refuse conflicting package edits. Equal versions need no commit;
+older versions cannot overwrite newer ones. Repository rules must allow this
+automation to commit to main. No extra token or persisted Git credentials needed.
+
+GitHub does not trigger another push workflow for commits made with `GITHUB_TOKEN`,
+so the version commit causes no publication loop. The next normal push or manual
+dev run derives its preview from the recorded release version. No Git tag or
+GitHub release is created. After stable `1.0.1`, the next passing main preview
+uses `1.0.2-dev...`. This flow releases the preview's
 existing base version; minor/major stable versions still require a deliberate
 manual release when SemVer requires one.
+
+Stable promotion still checks npm `latest` to prevent duplicate or backward
+releases; its version comes from the selected immutable dev artifact, never from
+an unrelated current checkout. If publication succeeds but recording the version
+fails, npm publication is not rolled back: fix the permission/conflict and commit
+the published stable version before publishing more previews. Likewise, record
+any manual stable release in the repository manifest.
 
 The workflow has not been tested against live npm publishing during local setup.
 OIDC authentication can only be verified after the repository and npm publisher
