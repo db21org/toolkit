@@ -197,7 +197,6 @@ export const commonConfig = [
   ...javascriptRecommended,
   {
     files: sourceFiles,
-    processor: "db21-sql/policy-guard",
     plugins: {
       sonarjs,
       unicorn,
@@ -288,6 +287,10 @@ export const commonConfig = [
     rules: {
       "db21-constants/exported-constant-naming": "error",
     },
+  },
+  {
+    files: sourceFiles,
+    processor: "db21-sql/policy-guard",
   },
 ];
 

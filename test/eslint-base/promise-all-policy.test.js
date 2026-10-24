@@ -86,6 +86,68 @@ const assertExceptions = () => {
   }
 };
 
+const assertSharedProcessors = () => {
+  const shared = [
+    ...commonConfig,
+    tseslint.configs.disableTypeChecked,
+    { rules: { "max-lines": ["error", { max: 3 }] } },
+  ];
+
+  for (const extension of [
+    "js",
+    "jsx",
+    "mjs",
+    "cjs",
+    "ts",
+    "tsx",
+    "mts",
+    "cts",
+  ]) {
+    const filename = `consumer.${extension}`;
+
+    for (const prefix of ["db21-promises", "db21-sql"]) {
+      const primary =
+        prefix === "db21-promises" ? rule : "db21-sql/require-justification";
+      const source = `/* eslint "${primary}": "off", "${prefix}/require-local-reason": "off" */\nasync function run() { await Promise.all(tasks); }`;
+      const messages = new Linter().verify(source, shared, filename);
+
+      assert.equal(
+        messages.some(({ fatal }) => fatal),
+        false,
+        filename,
+      );
+      assert.ok(
+        messages.some(
+          ({ ruleId }) => ruleId === `${prefix}/protected-validator`,
+        ),
+        filename,
+      );
+    }
+
+    const justified = new Linter().verify(
+      `// eslint-disable-next-line ${rule} -- ${explanation}\nasync function run() { await Promise.all(tasks); }`,
+      shared,
+      filename,
+    );
+
+    assert.equal(
+      justified.some(({ ruleId }) => ruleId?.startsWith("db21-promises/")),
+      false,
+      filename,
+    );
+
+    const sizeMessages = new Linter().verify(
+      "const first = 1;\nconst second = 2;\nconst third = 3;\nconst fourth = 4;",
+      shared,
+      filename,
+    );
+    const size = sizeMessages.find(({ ruleId }) => ruleId === "max-lines");
+
+    assert.ok(size, filename);
+    assert.match(size.message, /Refactor into cohesive modules/u, filename);
+  }
+};
+
 // eslint-disable-next-line db21-tests/require-justification -- Risk: preset composition permits unjustified fan-out or blocks legitimate worker races and unrelated APIs; Contract: shared policy reports awaited global Promise.all, preserves scoped justified exceptions and rejects attempts to disable their validator.
 test("native batch policy enforces awaited fan-out and local explanations", () => {
   for (const code of awaitedCalls) {
@@ -101,6 +163,7 @@ test("native batch policy enforces awaited fan-out and local explanations", () =
   }
 
   assertExceptions();
+  assertSharedProcessors();
   assert.deepEqual(
     verify(`const text = '/* eslint-disable ${reasonRule} */';`),
     [],

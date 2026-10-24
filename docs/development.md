@@ -22,6 +22,8 @@ trivial wrappers and compressed formatting are not acceptable workarounds.
 Shared presets preserve ESLint's original rule IDs, options and counting; their
 processors append this guidance. A custom processor must preserve that step if
 it replaces the shared processor.
+Common configuration selects its policy guard after the base presets, so both
+JavaScript and TypeScript retain SQL/Promise exception protections and size guidance.
 
 React presets also reject JSX space expressions such as `{" "}` and JSX ternaries
 returning `null`. Expo inherits those policies rather than owning separate copies.
