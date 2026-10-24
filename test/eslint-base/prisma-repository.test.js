@@ -207,6 +207,9 @@ class Service {
 interface OtherDelegate { findMany(): void; findUnique(): void; }
 declare const ordinary: OtherDelegate;
 ordinary.findMany();
+type Instance = InstanceType<typeof PrismaClient>;
+type Delegate = typeof detached;
+type Query = typeof storage.user.findMany;
 `;
     const filename = join(directory, "service.ts");
 

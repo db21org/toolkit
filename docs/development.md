@@ -13,6 +13,12 @@ retain their existing exceptions.
 
 `max-lines` and `max-lines-per-function` are errors, with unchanged limits of
 300 lines per file and 60 per function. Both skip blank lines and comments.
+Diagnostics explain how to refactor into cohesive modules or focused functions,
+preserve behavior and improve readability and testability. Arbitrary splitting,
+trivial wrappers and compressed formatting are not acceptable workarounds.
+Shared presets preserve ESLint's original rule IDs, options and counting; their
+processors append this guidance. A custom processor must preserve that step if
+it replaces the shared processor.
 
 Static imports must precede other statements; comments, shebangs, and directive
 prologues such as `"use client"` may come first. Dynamic imports are unaffected.

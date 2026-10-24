@@ -10,5 +10,6 @@ export const prismaRepositoryPlugin: ESLint.Plugin;
 export const rawSqlPolicyPlugin: ESLint.Plugin;
 export const requireExtractedHooksPlugin: ESLint.Plugin;
 export const requireExtractedUtilitiesPlugin: ESLint.Plugin;
+export const sizeGuidancePlugin: ESLint.Plugin;
 export const typescriptFilenameConventionsPlugin: ESLint.Plugin;
 export const testPolicyPlugin: ESLint.Plugin;

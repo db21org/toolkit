@@ -19,6 +19,7 @@ The rule detects:
   type-only injection, renamed variables, class properties and detached delegates.
 
 Type-only imports/exports and ordinary runtime enum imports remain allowed.
+Erased `typeof` type queries, including `InstanceType<typeof PrismaClient>`, remain allowed.
 Access through a type-only imported client is still runtime access and is rejected.
 Raw SQL inside a repository still needs its separate SQL-policy justification.
 

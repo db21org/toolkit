@@ -93,6 +93,10 @@ const checkTypedReferences = (context, isClient, report) => {
       if (
         reference.isValueReference !== false &&
         reference.isRead() &&
+        // Type queries read the value namespace but emit no runtime access.
+        !context.sourceCode
+          .getAncestors(node)
+          .some((ancestor) => ancestor.type === "TSTypeQuery") &&
         isClient(node) &&
         !(
           node.parent.type === "MemberExpression" && node.parent.object === node
