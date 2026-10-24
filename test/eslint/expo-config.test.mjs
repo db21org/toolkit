@@ -53,16 +53,15 @@ test("allows a configured navigation hook while rejecting Expo Router", async ()
     overrideConfigFile: true,
   });
   const filePath = "src/features/feed/components/Feed.tsx";
-  const [allowed, restricted] = await Promise.all([
-    configuredEslint.lintText(
-      'import { useNavigation } from "@/navigation";\nuseNavigation();',
-      { filePath },
-    ),
-    configuredEslint.lintText(
-      'import { useRouter } from "expo-router";\nuseRouter();',
-      { filePath },
-    ),
-  ]);
+  const allowed = await configuredEslint.lintText(
+    'import { useNavigation } from "@/navigation";\nuseNavigation();',
+    { filePath },
+  );
+
+  const restricted = await configuredEslint.lintText(
+    'import { useRouter } from "expo-router";\nuseRouter();',
+    { filePath },
+  );
 
   assert.equal(
     allowed[0].messages.some(
@@ -264,24 +263,23 @@ test("enforces Expo and Nest conventions for a custom source layout", async () =
   try {
     const { expoEslint, nestEslint } = createCustomLayoutEslints(cwd);
 
-    const [adapterResult, misplacedAdapterResult, graphqlResult] =
-      await Promise.all([
-        lintResult(
-          expoEslint,
-          "export const CATALOG_ADAPTER = 1;\n",
-          "lib/domains/catalog/adapters/catalog.adapter.ts",
-        ),
-        lintResult(
-          expoEslint,
-          "export const CATALOG_ADAPTER = 1;\n",
-          "lib/domains/catalog/misc/catalog.adapter.ts",
-        ),
-        lintResult(
-          expoEslint,
-          "query Items { items { id } }",
-          "lib/domains/catalog/documents/queries/items.query.graphql",
-        ),
-      ]);
+    const adapterResult = await lintResult(
+      expoEslint,
+      "export const CATALOG_ADAPTER = 1;\n",
+      "lib/domains/catalog/adapters/catalog.adapter.ts",
+    );
+
+    const misplacedAdapterResult = await lintResult(
+      expoEslint,
+      "export const CATALOG_ADAPTER = 1;\n",
+      "lib/domains/catalog/misc/catalog.adapter.ts",
+    );
+
+    const graphqlResult = await lintResult(
+      expoEslint,
+      "query Items { items { id } }",
+      "lib/domains/catalog/documents/queries/items.query.graphql",
+    );
 
     assert.deepEqual(adapterResult.messages, []);
     const [misplacedMessage] = misplacedAdapterResult.messages;
@@ -296,10 +294,17 @@ test("enforces Expo and Nest conventions for a custom source layout", async () =
     );
     assert.deepEqual(graphqlResult.messages, []);
 
-    const [exemptResult, nonExemptResult] = await Promise.all([
-      lintResult(nestEslint, utilitySource, "lib/shared/normalize.ts"),
-      lintResult(nestEslint, utilitySource, "lib/domains/catalog/normalize.ts"),
-    ]);
+    const exemptResult = await lintResult(
+      nestEslint,
+      utilitySource,
+      "lib/shared/normalize.ts",
+    );
+
+    const nonExemptResult = await lintResult(
+      nestEslint,
+      utilitySource,
+      "lib/domains/catalog/normalize.ts",
+    );
 
     assert.deepEqual(exemptResult.messages, []);
     assert.ok(

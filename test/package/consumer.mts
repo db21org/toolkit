@@ -1,4 +1,7 @@
-import commonConfig from "@db21/toolkit/eslint";
+import commonConfig, {
+  createUtilityExtractionConfig,
+  type UtilityExtractionOptions,
+} from "@db21/toolkit/eslint";
 import astroConfig from "@db21/toolkit/eslint/astro";
 import { recommended } from "@db21/toolkit/eslint/base";
 import { createExpoConfig } from "@db21/toolkit/eslint/expo";
@@ -84,6 +87,11 @@ export const nestOptions: Parameters<typeof createNestConfig>[0] = {
 export const scalarMappings: graphqlConventions.GraphqlScalarMappings = {
   UUID: "string",
 };
+export const utilityOptions: UtilityExtractionOptions = {
+  files: ["lib/**/*.ts"],
+  exemptPaths: ["lib/shared"],
+};
+export const utilityConfig = createUtilityExtractionConfig(utilityOptions);
 export const unmappedScalars: string[] =
   graphqlConventions.collectUnmappedCustomScalars(
     "scalar UUID",

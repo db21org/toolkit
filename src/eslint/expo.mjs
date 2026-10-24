@@ -1,22 +1,12 @@
 import { createReactEslintConfig } from "@db21/toolkit/feature-kit/conventions/react/eslint";
 
 import { createFeatureGraphqlPlugin } from "./expo/feature-graphql.mjs";
-import commonConfig, {
-  reactConfig,
-  reactHookRules,
-  typescriptRepositoryRules,
-} from "./index.mjs";
+import commonConfig, { reactConfig, reactHookRules } from "./index.mjs";
 
 const translatableAttributePattern =
   "^(accessibilityHint|accessibilityLabel|alt|aria-description|aria-label|caption|content|description|emptyMessage|errorMessage|helperText|label|message|placeholder|subtitle|text|title)$";
 
 const appRestrictedSyntax = [
-  {
-    selector:
-      'JSXExpressionContainer > ConditionalExpression[consequent.type="Literal"][consequent.value=null], JSXExpressionContainer > ConditionalExpression[alternate.type="Literal"][alternate.value=null]',
-    message:
-      "Use condition && <Component /> rendering instead of JSX ternaries that return null.",
-  },
   {
     selector: "JSXText[value=/\\S/]",
     message:
@@ -64,11 +54,6 @@ const appRestrictedSyntax = [
       "Use an i18n translation instead of a hardcoded user-facing attribute template.",
   },
   {
-    selector: 'JSXExpressionContainer > Literal[value=" "]',
-    message:
-      "Do not use JSX space expressions. Include spacing in text or layout instead.",
-  },
-  {
     selector: 'JSXAttribute[name.name="style"]',
     message:
       "Prefer NativeWind className tokens instead of the style prop. If inline style is unavoidable, disable this rule locally with a reason.",
@@ -82,7 +67,7 @@ const appRestrictedSyntax = [
 ];
 
 export const expoRestrictedSyntax = [
-  ...typescriptRepositoryRules["no-restricted-syntax"].slice(1),
+  ...reactConfig.rules["no-restricted-syntax"].slice(1),
   ...appRestrictedSyntax,
 ];
 
@@ -215,10 +200,7 @@ export const createExpoConfig = ({
       rules: {
         ...reactConfig.rules,
         "db21-hooks/require-extracted-hooks": "error",
-        "max-lines-per-function": [
-          "warn",
-          { max: 150, skipBlankLines: true, skipComments: true },
-        ],
+        "no-restricted-syntax": ["error", ...expoRestrictedSyntax],
       },
     },
   ];

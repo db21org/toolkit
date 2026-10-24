@@ -1,4 +1,9 @@
-export { react, reactComponentRules, reactConventionsPlugin } from "./react.js";
+export {
+  react,
+  reactComponentRules,
+  reactConventionsPlugin,
+  reactRestrictedSyntax,
+} from "./react.js";
 export {
   javascriptRecommended,
   recommended,

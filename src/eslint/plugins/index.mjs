@@ -5,6 +5,7 @@ export { noUnsafeDoubleAssertionPlugin } from "./no-unsafe-double-assertion.mjs"
 export { preferAssertionsPlugin } from "./prefer-assertions.mjs";
 export { preferAwaitedValuesPlugin } from "./prefer-awaited-values.mjs";
 export { prismaRepositoryPlugin } from "./prisma-repository-policy.mjs";
+export { promiseAllPolicyPlugin } from "./promise-all-policy.mjs";
 export { rawSqlPolicyPlugin } from "./raw-sql-policy.mjs";
 export { requireExtractedHooksPlugin } from "./require-extracted-hooks.mjs";
 export { requireExtractedUtilitiesPlugin } from "./require-extracted-utilities.mjs";

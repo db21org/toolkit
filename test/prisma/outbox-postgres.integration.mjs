@@ -103,11 +103,9 @@ test("all extension operations remain on the caller transaction", async () => {
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: competing workers block or deliver overlapping batches; Contract: another transaction skips held row locks and later concurrent claims have disjoint identities.
 test("concurrent workers skip locked rows and claim disjoint batches", async () => {
-  await Promise.all(
-    Array.from({ length: 6 }, () =>
-      prisma.outboxMessage.enqueue(message("concurrent")),
-    ),
-  );
+  for (let index = 0; index < 6; index += 1) {
+    await prisma.outboxMessage.enqueue(message("concurrent"));
+  }
 
   const ready = Promise.withResolvers();
   const release = Promise.withResolvers();
@@ -143,6 +141,7 @@ test("concurrent workers skip locked rows and claim disjoint batches", async () 
     await heldTransaction;
   }
 
+  // eslint-disable-next-line db21-promises/prefer-native-batch -- Distinct workers must claim concurrently to detect overlapping delivery; combining claims into one batch removes that race.
   const batches = await Promise.all([
     claim("concurrent", 2),
     claim("concurrent", 2),

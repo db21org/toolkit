@@ -7,6 +7,7 @@ export const noUnsafeDoubleAssertionPlugin: ESLint.Plugin;
 export const preferAssertionsPlugin: ESLint.Plugin;
 export const preferAwaitedValuesPlugin: ESLint.Plugin;
 export const prismaRepositoryPlugin: ESLint.Plugin;
+export const promiseAllPolicyPlugin: ESLint.Plugin;
 export const rawSqlPolicyPlugin: ESLint.Plugin;
 export const requireExtractedHooksPlugin: ESLint.Plugin;
 export const requireExtractedUtilitiesPlugin: ESLint.Plugin;

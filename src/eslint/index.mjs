@@ -1,6 +1,7 @@
 import {
   javascriptRecommended,
   react,
+  reactRestrictedSyntax,
   typescriptRecommended,
 } from "@db21/toolkit/eslint/base";
 import sonarjs from "eslint-plugin-sonarjs";
@@ -14,6 +15,7 @@ import {
   preferAssertionsPlugin,
   preferAwaitedValuesPlugin,
   prismaRepositoryPlugin,
+  promiseAllPolicyPlugin,
   rawSqlPolicyPlugin,
   requireExtractedHooksPlugin,
   testPolicyPlugin,
@@ -80,8 +82,6 @@ export const reactHookRules = Object.fromEntries(
     name.startsWith("react-hooks/"),
   ),
 );
-
-export const reactConfig = react;
 
 export const sonarRules = {
   "sonarjs/no-all-duplicated-branches": "error",
@@ -170,6 +170,18 @@ export const typescriptRepositoryRules = {
   ],
 };
 
+export const reactConfig = {
+  ...react,
+  rules: {
+    ...react.rules,
+    "no-restricted-syntax": [
+      "error",
+      ...typescriptRepositoryRules["no-restricted-syntax"].slice(1),
+      ...reactRestrictedSyntax,
+    ],
+  },
+};
+
 export const commonConfig = [
   {
     ignores: [
@@ -185,11 +197,11 @@ export const commonConfig = [
   ...javascriptRecommended,
   {
     files: sourceFiles,
-    processor: "db21-sql/policy-guard",
     plugins: {
       sonarjs,
       unicorn,
       "db21-prisma": prismaRepositoryPlugin,
+      "db21-promises": promiseAllPolicyPlugin,
       "db21-sql": rawSqlPolicyPlugin,
       "db21-tests": testPolicyPlugin,
     },
@@ -198,6 +210,8 @@ export const commonConfig = [
       ...unicornRules,
       "db21-sql/require-justification": "error",
       "db21-prisma/repository-only": "error",
+      "db21-promises/prefer-native-batch": "error",
+      "db21-promises/require-local-reason": "error",
       "db21-sql/require-local-reason": "error",
       "db21-tests/require-justification": "error",
       "db21-tests/require-local-reason": "error",
@@ -274,6 +288,10 @@ export const commonConfig = [
       "db21-constants/exported-constant-naming": "error",
     },
   },
+  {
+    files: sourceFiles,
+    processor: "db21-sql/policy-guard",
+  },
 ];
 
 export const reactPackageConfig = [
@@ -285,12 +303,14 @@ export const reactPackageConfig = [
   },
   {
     files: ["**/*.tsx"],
-    ...react,
+    ...reactConfig,
     rules: {
-      ...react.rules,
+      ...reactConfig.rules,
       "db21-hooks/require-extracted-hooks": "error",
     },
   },
 ];
 
 export default commonConfig;
+
+export { createUtilityExtractionConfig } from "./utilities.mjs";

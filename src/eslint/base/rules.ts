@@ -8,6 +8,10 @@ export const maxLinesRules = {
 } satisfies Linter.RulesRecord;
 
 export const reactComponentRules = {
+  "max-lines-per-function": [
+    "error",
+    { max: 150, skipBlankLines: true, skipComments: true },
+  ],
   "jsdoc/no-restricted-syntax": [
     "error",
     {

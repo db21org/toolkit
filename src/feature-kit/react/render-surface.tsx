@@ -35,31 +35,26 @@ export const RenderSurface = <
   const resolution = SurfaceModule.getSurfaceResolution(props.surface);
   const runtime = React.useContext(ReactRuntimeContext);
 
-  const surfaceInstance =
-    resolution === "direct"
-      ? SurfaceModule.instantiateDirectSurface(props.surface)
-      : instantiateManagedSurface(runtime, props.surface, resolution);
+  let surfaceInstance: SurfaceModule.SurfaceInstance<SurfaceType>;
+
+  if (resolution === "direct") {
+    surfaceInstance = SurfaceModule.instantiateDirectSurface(props.surface);
+  } else {
+    assert.defined(
+      runtime,
+      "Cannot render a managed Surface outside a FeatureKitProvider. Wrap this tree in <FeatureKitProvider>.",
+    );
+
+    // React's `use` API may be called conditionally, unlike conventional Hooks.
+    surfaceInstance =
+      resolution === "sync"
+        ? runtime.instantiateSurfaceSync(props.surface)
+        : use(runtime.instantiateSurface(props.surface));
+  }
+
   const nestedProps = props.props as SurfaceRenderProps<SurfaceType>;
 
   return invokeSurfaceRender(surfaceInstance, nestedProps);
-};
-
-const instantiateManagedSurface = <
-  SurfaceType extends SurfaceModule.SurfaceConstructor,
->(
-  runtime: React.ContextType<typeof ReactRuntimeContext>,
-  surface: SurfaceType,
-  resolution: Exclude<SurfaceModule.SurfaceResolution, "direct">,
-): SurfaceModule.SurfaceInstance<SurfaceType> => {
-  assert.defined(
-    runtime,
-    "Cannot render a managed Surface outside a FeatureKitProvider. Wrap this tree in <FeatureKitProvider>.",
-  );
-
-  // React's `use` API may be called conditionally, unlike conventional Hooks.
-  return resolution === "sync"
-    ? runtime.instantiateSurfaceSync(surface)
-    : use(runtime.instantiateSurface(surface));
 };
 
 const ensureSurfaceRenderResult = (

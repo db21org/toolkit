@@ -12,13 +12,53 @@ presets add their own scoped rules. Generated files and explicit profile overrid
 retain their existing exceptions.
 
 `max-lines` and `max-lines-per-function` are errors, with unchanged limits of
-300 lines per file and 60 per function. Both skip blank lines and comments.
+300 lines per file and 60 per function. React component presets allow 150 lines
+per function in `.tsx` files, including Expo; this remains an error, not a warning.
+The file-scoped allowance covers helpers in the same component file too. Ordinary
+`.ts` functions retain the 60-line limit. Both limits skip blank lines and comments.
 Diagnostics explain how to refactor into cohesive modules or focused functions,
 preserve behavior and improve readability and testability. Arbitrary splitting,
 trivial wrappers and compressed formatting are not acceptable workarounds.
 Shared presets preserve ESLint's original rule IDs, options and counting; their
 processors append this guidance. A custom processor must preserve that step if
 it replaces the shared processor.
+Common configuration selects its policy guard after the base presets, so both
+JavaScript and TypeScript retain SQL/Promise exception protections and size guidance.
+
+React presets also reject JSX space expressions such as `{" "}` and JSX ternaries
+returning `null`. Expo inherits those policies rather than owning separate copies.
+Shared React enables the full recommended React Hooks preset, including Compiler
+diagnostics, with upstream severities. Hook rules apply to `.ts` hooks as well as
+`.tsx` components in React/Expo profiles; plain common configuration is unaffected.
+See the [preset ownership audit](eslint-preset-ownership.md) for layer boundaries
+and completed follow-ups.
+
+## Optional utility layout
+
+Private-helper extraction is a TypeScript layout choice, not universal policy.
+Nest enables it by default; other profiles can opt in:
+
+```js
+import commonConfig, {
+  createUtilityExtractionConfig,
+} from "@db21/toolkit/eslint";
+
+export default [
+  ...commonConfig,
+  createUtilityExtractionConfig({
+    files: ["lib/**/*.ts"],
+    exemptPaths: ["lib/shared"],
+  }),
+];
+```
+
+Default files are `src/**/*.ts`; default exemption is `packages/utils/src`.
+Explicit `exemptPaths` replaces that default. Existing exemptions for tests,
+`main.ts`, `*.module.ts` and `utils/*.util.ts` remain unchanged. This factory
+configures the extraction rule only; compose it with an appropriate parser/base
+preset. Avoid opting in solely to split cohesive component-local code into files.
+
+## Local checks
 
 Static imports must precede other statements; comments, shebangs, and directive
 prologues such as `"use client"` may come first. Dynamic imports are unaffected.
@@ -43,6 +83,10 @@ details, or unrelated changes.
 Shared ESLint presets enforce [per-test justification](test-policy.md). Existing
 tests must be reviewed individually before their policy errors are resolved;
 do not add blanket exceptions or delete tests solely to make lint pass.
+
+Shared presets also reject direct `await Promise.all(...)` in favor of native
+batch operations or batch-capable owning methods. Necessary concurrency requires
+a local explanation; see [native batching policy](promise-all-policy.md).
 
 ## Build and package validation
 
@@ -80,6 +124,10 @@ required by lint-plugin dependencies, even though those hosts are optional at th
 toolkit boundary. Utilities and money are tested without declaring integration
 hosts and without React or ESLint installed. SonarJS brings TypeScript
 transitively; importing a lint profile still requires its hosts.
+React Hooks diagnostics also bring Zod transitively. A runtime-only consumer
+does not need to declare it for utilities or money, but its absence is no longer
+guaranteed. Consumers of `@db21/toolkit/events` must still declare its supported
+Zod peer explicitly.
 
 ## Releases
 
