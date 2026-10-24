@@ -198,6 +198,8 @@ factories when you do not want the entire shared profile. See
 - [Prisma PostgreSQL outbox](docs/prisma-outbox.md)
 - [Lint profiles and configurable layouts](docs/lint-profiles.md)
 - [Raw SQL justification policy](docs/raw-sql-policy.md)
+- [Prisma repository boundary](docs/prisma-repository-policy.md)
+- [Exported type alias policy](docs/type-alias-policy.md)
 - [Test value assessment and agent instructions](docs/test-policy.md)
 - [Feature Kit React](docs/feature-kit-react.md)
 - [Module conventions](docs/feature-kit-conventions.md)

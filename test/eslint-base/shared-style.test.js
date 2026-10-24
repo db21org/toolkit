@@ -63,8 +63,8 @@ test("base and repository presets share style across JS and TS extensions", asyn
         assert.equal(config.rules[rule][0], 2, `${filename}: ${rule}`);
       }
 
-      assert.equal(config.rules["max-lines"][0], 1, filename);
-      assert.equal(config.rules["max-lines-per-function"][0], 1, filename);
+      assert.equal(config.rules["max-lines"][0], 2, filename);
+      assert.equal(config.rules["max-lines-per-function"][0], 2, filename);
       assert.equal(
         config.rules["@typescript-eslint/strict-boolean-expressions"]?.[0] ?? 0,
         isTypescript ? 2 : 0,

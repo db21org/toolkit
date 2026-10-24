@@ -11,6 +11,9 @@ remain scoped to TypeScript; JavaScript can use native `#private` fields. Framew
 presets add their own scoped rules. Generated files and explicit profile overrides
 retain their existing exceptions.
 
+`max-lines` and `max-lines-per-function` are errors, with unchanged limits of
+300 lines per file and 60 per function. Both skip blank lines and comments.
+
 Static imports must precede other statements; comments, shebangs, and directive
 prologues such as `"use client"` may come first. Dynamic imports are unaffected.
 
