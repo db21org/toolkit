@@ -8,12 +8,6 @@ const translatableAttributePattern =
 
 const appRestrictedSyntax = [
   {
-    selector:
-      'JSXExpressionContainer > ConditionalExpression[consequent.type="Literal"][consequent.value=null], JSXExpressionContainer > ConditionalExpression[alternate.type="Literal"][alternate.value=null]',
-    message:
-      "Use condition && <Component /> rendering instead of JSX ternaries that return null.",
-  },
-  {
     selector: "JSXText[value=/\\S/]",
     message:
       "Use an i18n translation instead of hardcoded user-facing JSX text.",

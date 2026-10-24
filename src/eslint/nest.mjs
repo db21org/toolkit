@@ -1,8 +1,6 @@
 import { createNestjsEslintConfig } from "@db21/toolkit/feature-kit/conventions/nestjs/eslint";
-import { isNotDefined } from "@db21/toolkit/utils";
 
-import commonConfig from "./index.mjs";
-import { requireExtractedUtilitiesPlugin } from "./plugins/index.mjs";
+import commonConfig, { createUtilityExtractionConfig } from "./index.mjs";
 
 export const createNestConfig = ({
   cwd,
@@ -19,20 +17,10 @@ export const createNestConfig = ({
 
   return [
     ...commonConfig,
-    {
+    createUtilityExtractionConfig({
       files: [`${sourceRoot}/**/*.ts`],
-      plugins: {
-        "db21-utilities": requireExtractedUtilitiesPlugin,
-      },
-      rules: {
-        "db21-utilities/require-extracted-utilities": [
-          "error",
-          ...(isNotDefined(utilityExemptPaths)
-            ? []
-            : [{ exemptPaths: utilityExemptPaths }]),
-        ],
-      },
-    },
+      exemptPaths: utilityExemptPaths,
+    }),
     nestjsConfig,
   ];
 };

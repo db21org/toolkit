@@ -2,10 +2,13 @@ import tseslint from "typescript-eslint";
 
 import { addSizeGuidance } from "./size-guidance.mjs";
 
-const validator = "db21-sql/require-local-reason";
+const validators = [
+  "db21-sql/require-local-reason",
+  "db21-promises/require-local-reason",
+];
 const pending = new Map();
 
-const disablesValidator = (comment) => {
+const disablesValidator = (comment, validator) => {
   const disable =
     /^\s*eslint-disable(?:-next-line|-line)?\s+([^]*?)(?:\s+--\s[^]*)?\s*$/u.exec(
       comment.value,
@@ -27,9 +30,11 @@ const disablesValidator = (comment) => {
     return false;
   }
 
-  const settings = directive[1].matchAll(
-    /(?:^|[,{])\s*["']?db21-sql\/require-local-reason["']?\s*:\s*(?:\[\s*)?(?:"([^"]*)"|'([^']*)'|([^\s,\]}]+))/gu,
+  const pattern = new RegExp(
+    String.raw`(?:^|[,{])\s*["']?${validator}["']?\s*:\s*(?:\[\s*)?(?:"([^"]*)"|'([^']*)'|([^\s,\]}]+))`,
+    "gu",
   );
+  const settings = directive[1].matchAll(pattern);
 
   return [...settings].some((setting) => {
     const severity = setting[1] ?? setting[2] ?? setting[3];
@@ -60,14 +65,17 @@ export const rawSqlGuardProcessor = {
 
     pending.set(
       filename,
-      comments.filter(disablesValidator).map((comment) => ({
-        ruleId: "db21-sql/protected-validator",
-        severity: 2,
-        message:
-          "Do not disable or downgrade db21-sql/require-local-reason; justify individual SQL operations instead.",
-        line: comment.loc.start.line,
-        column: comment.loc.start.column + 1,
-      })),
+      comments.flatMap((comment) =>
+        validators
+          .filter((validator) => disablesValidator(comment, validator))
+          .map((validator) => ({
+            ruleId: `${validator.split("/")[0]}/protected-validator`,
+            severity: 2,
+            message: `Do not disable or downgrade ${validator}; justify individual operations instead.`,
+            line: comment.loc.start.line,
+            column: comment.loc.start.column + 1,
+          })),
+      ),
     );
 
     return [text];

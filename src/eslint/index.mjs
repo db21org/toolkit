@@ -15,6 +15,7 @@ import {
   preferAssertionsPlugin,
   preferAwaitedValuesPlugin,
   prismaRepositoryPlugin,
+  promiseAllPolicyPlugin,
   rawSqlPolicyPlugin,
   requireExtractedHooksPlugin,
   testPolicyPlugin,
@@ -201,6 +202,7 @@ export const commonConfig = [
       sonarjs,
       unicorn,
       "db21-prisma": prismaRepositoryPlugin,
+      "db21-promises": promiseAllPolicyPlugin,
       "db21-sql": rawSqlPolicyPlugin,
       "db21-tests": testPolicyPlugin,
     },
@@ -209,6 +211,8 @@ export const commonConfig = [
       ...unicornRules,
       "db21-sql/require-justification": "error",
       "db21-prisma/repository-only": "error",
+      "db21-promises/prefer-native-batch": "error",
+      "db21-promises/require-local-reason": "error",
       "db21-sql/require-local-reason": "error",
       "db21-tests/require-justification": "error",
       "db21-tests/require-local-reason": "error",
@@ -305,3 +309,5 @@ export const reactPackageConfig = [
 ];
 
 export default commonConfig;
+
+export { createUtilityExtractionConfig } from "./utilities.mjs";

@@ -75,6 +75,7 @@ it("serializes concurrent initialization across processes", async () => {
     const path = join(directory, "AGENTS.md");
 
     await writeFile(path, "# User guidance\n");
+    // eslint-disable-next-line db21-promises/prefer-native-batch -- Separate CLI processes must overlap to expose duplicate appends; a batch initializer would bypass the cross-process lock contract.
     await Promise.all(
       Array.from({ length: 8 }, () =>
         executeFile(process.execPath, [

@@ -1,20 +1,14 @@
 import assert from "node:assert/strict";
 
-import { requireExtractedUtilitiesPlugin } from "@db21/toolkit/eslint/plugins";
+import commonConfig, {
+  createUtilityExtractionConfig,
+} from "@db21/toolkit/eslint";
 import { ESLint } from "eslint";
 import { test } from "vitest";
 
 const eslint = new ESLint({
   ignore: false,
-  overrideConfig: [
-    {
-      files: ["**/*.ts"],
-      plugins: { "db21-utilities": requireExtractedUtilitiesPlugin },
-      rules: {
-        "db21-utilities/require-extracted-utilities": "error",
-      },
-    },
-  ],
+  overrideConfig: [createUtilityExtractionConfig({ files: ["**/*.ts"] })],
   overrideConfigFile: true,
 });
 
@@ -83,16 +77,10 @@ test("supports replacement utility exemptions with directory boundaries", async 
     ignore: false,
     overrideConfigFile: true,
     overrideConfig: [
-      {
+      createUtilityExtractionConfig({
         files: ["**/*.ts"],
-        plugins: { "db21-utilities": requireExtractedUtilitiesPlugin },
-        rules: {
-          "db21-utilities/require-extracted-utilities": [
-            "error",
-            { exemptPaths: ["lib/shared"] },
-          ],
-        },
-      },
+        exemptPaths: ["lib/shared"],
+      }),
     ],
   });
 
@@ -109,4 +97,15 @@ test("supports replacement utility exemptions with directory boundaries", async 
 
     assert.equal(result.messages.length, expectedCount, filePath);
   }
+
+  const common = new ESLint({
+    overrideConfigFile: true,
+    overrideConfig: commonConfig,
+  });
+  const config = await common.calculateConfigForFile("src/example.ts");
+
+  assert.equal(
+    config.rules["db21-utilities/require-extracted-utilities"],
+    undefined,
+  );
 });

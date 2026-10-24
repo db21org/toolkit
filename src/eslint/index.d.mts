@@ -1,5 +1,14 @@
 import type { Linter } from "eslint";
 
+export type UtilityExtractionOptions = Readonly<{
+  files?: string[];
+  exemptPaths?: readonly string[];
+}>;
+
+export const createUtilityExtractionConfig: (
+  options?: UtilityExtractionOptions,
+) => Linter.Config;
+
 export const commonConfig: Linter.Config[];
 export const commonPredicateRestrictedSyntax: Linter.RuleEntry[];
 export const inheritedRestrictedSyntax: Linter.RuleEntry[];

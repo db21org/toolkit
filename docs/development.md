@@ -23,10 +23,40 @@ Shared presets preserve ESLint's original rule IDs, options and counting; their
 processors append this guidance. A custom processor must preserve that step if
 it replaces the shared processor.
 
-React presets also reject JSX space expressions such as `{" "}`. Expo inherits
-that policy rather than owning a separate copy. See the
-[preset ownership audit](eslint-preset-ownership.md) for layer boundaries and
-remaining recommendations.
+React presets also reject JSX space expressions such as `{" "}` and JSX ternaries
+returning `null`. Expo inherits those policies rather than owning separate copies.
+Shared React enables the full recommended React Hooks preset, including Compiler
+diagnostics, with upstream severities. Hook rules apply to `.ts` hooks as well as
+`.tsx` components in React/Expo profiles; plain common configuration is unaffected.
+See the [preset ownership audit](eslint-preset-ownership.md) for layer boundaries
+and completed follow-ups.
+
+## Optional utility layout
+
+Private-helper extraction is a TypeScript layout choice, not universal policy.
+Nest enables it by default; other profiles can opt in:
+
+```js
+import commonConfig, {
+  createUtilityExtractionConfig,
+} from "@db21/toolkit/eslint";
+
+export default [
+  ...commonConfig,
+  createUtilityExtractionConfig({
+    files: ["lib/**/*.ts"],
+    exemptPaths: ["lib/shared"],
+  }),
+];
+```
+
+Default files are `src/**/*.ts`; default exemption is `packages/utils/src`.
+Explicit `exemptPaths` replaces that default. Existing exemptions for tests,
+`main.ts`, `*.module.ts` and `utils/*.util.ts` remain unchanged. This factory
+configures the extraction rule only; compose it with an appropriate parser/base
+preset. Avoid opting in solely to split cohesive component-local code into files.
+
+## Local checks
 
 Static imports must precede other statements; comments, shebangs, and directive
 prologues such as `"use client"` may come first. Dynamic imports are unaffected.
@@ -51,6 +81,10 @@ details, or unrelated changes.
 Shared ESLint presets enforce [per-test justification](test-policy.md). Existing
 tests must be reviewed individually before their policy errors are resolved;
 do not add blanket exceptions or delete tests solely to make lint pass.
+
+Shared presets also reject direct `await Promise.all(...)` in favor of native
+batch operations or batch-capable owning methods. Necessary concurrency requires
+a local explanation; see [native batching policy](promise-all-policy.md).
 
 ## Build and package validation
 
@@ -88,6 +122,10 @@ required by lint-plugin dependencies, even though those hosts are optional at th
 toolkit boundary. Utilities and money are tested without declaring integration
 hosts and without React or ESLint installed. SonarJS brings TypeScript
 transitively; importing a lint profile still requires its hosts.
+React Hooks diagnostics also bring Zod transitively. A runtime-only consumer
+does not need to declare it for utilities or money, but its absence is no longer
+guaranteed. Consumers of `@db21/toolkit/events` must still declare its supported
+Zod peer explicitly.
 
 ## Releases
 

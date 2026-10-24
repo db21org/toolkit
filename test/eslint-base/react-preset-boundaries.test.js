@@ -7,6 +7,7 @@ import { react, recommended } from "@db21/toolkit/eslint/base";
 import { createExpoConfig } from "@db21/toolkit/eslint/expo";
 import reactConfig from "@db21/toolkit/eslint/react";
 import { ESLint, Linter } from "eslint";
+import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 const presets = [
@@ -74,7 +75,6 @@ const assertExpoPolicy = (config, name) => {
   for (const [code, message] of [
     ["const screen = <span>Hello</span>;", /i18n translation/u],
     ["const screen = <View style={layout} />;", /NativeWind/u],
-    ["const screen = <>{visible ? <View /> : null}</>;", /condition &&/u],
     ['export { Data } from "./generated/graphql";', /feature-private/u],
   ]) {
     const messages = syntaxMessages(config, code);
@@ -85,6 +85,58 @@ const assertExpoPolicy = (config, name) => {
     } else {
       assert.deepEqual(messages, [], name);
     }
+  }
+};
+
+const assertReactPolicy = (config, enabled, name) => {
+  for (const code of [
+    "const screen = <>{visible ? <View /> : null}</>;",
+    "const screen = <>{visible ? null : <View />}</>;",
+  ]) {
+    assert.equal(syntaxMessages(config, code).length, enabled ? 1 : 0, name);
+  }
+
+  assert.deepEqual(
+    syntaxMessages(config, "const screen = <>{visible && <View />}</>;"),
+    [],
+    name,
+  );
+};
+
+const assertHooksPolicy = (config, enabled, name) => {
+  const levels = { error: 2, warn: 1 };
+
+  for (const [rule, severity] of Object.entries(
+    reactHooks.configs.flat.recommended.rules,
+  )) {
+    assert.equal(
+      config.rules[rule]?.[0],
+      enabled ? levels[severity] : undefined,
+      name,
+    );
+  }
+
+  if (!enabled) {
+    return;
+  }
+
+  const messages = new Linter().verify(
+    'import { useState, useEffect } from "react";\nexport function Screen({ ready, value }) { if (ready) { useState(0); } useEffect(() => { console.log(value); }, []); return <span>{Date.now()}</span>; }',
+    {
+      languageOptions: {
+        parser: tseslint.parser,
+        parserOptions: { ecmaFeatures: { jsx: true } },
+      },
+      plugins: config.plugins,
+      rules: reactHooks.configs.flat.recommended.rules,
+    },
+  );
+
+  for (const rule of ["rules-of-hooks", "exhaustive-deps", "purity"]) {
+    assert.ok(
+      messages.some(({ ruleId }) => ruleId === `react-hooks/${rule}`),
+      name,
+    );
   }
 };
 
@@ -111,6 +163,12 @@ test("React policies compose without losing shared or Expo restrictions", async 
       );
       assertSharedSyntax(config, name);
       assertExpoPolicy(config, name);
+      assertReactPolicy(config, isReact || name === "Expo", name);
+      assertHooksPolicy(
+        config,
+        isReact || name === "Expo" || name === "React package",
+        name,
+      );
     }
   }
 });
