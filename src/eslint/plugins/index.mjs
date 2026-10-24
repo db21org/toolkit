@@ -1,10 +1,13 @@
 export { exportedConstantNamingPlugin } from "./exported-constant-naming.mjs";
+export { exportedTypeAliasPlugin } from "./exported-type-alias.mjs";
 export { multilineConstPaddingPlugin } from "./multiline-const-padding.mjs";
 export { noUnsafeDoubleAssertionPlugin } from "./no-unsafe-double-assertion.mjs";
 export { preferAssertionsPlugin } from "./prefer-assertions.mjs";
 export { preferAwaitedValuesPlugin } from "./prefer-awaited-values.mjs";
+export { prismaRepositoryPlugin } from "./prisma-repository-policy.mjs";
 export { rawSqlPolicyPlugin } from "./raw-sql-policy.mjs";
 export { requireExtractedHooksPlugin } from "./require-extracted-hooks.mjs";
 export { requireExtractedUtilitiesPlugin } from "./require-extracted-utilities.mjs";
+export { sizeGuidancePlugin } from "./size-guidance.mjs";
 export { testPolicyPlugin } from "./test-policy.mjs";
 export { typescriptFilenameConventionsPlugin } from "./typescript-filename-conventions.mjs";

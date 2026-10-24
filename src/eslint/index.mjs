@@ -8,10 +8,12 @@ import unicorn from "eslint-plugin-unicorn";
 
 import {
   exportedConstantNamingPlugin,
+  exportedTypeAliasPlugin,
   multilineConstPaddingPlugin,
   noUnsafeDoubleAssertionPlugin,
   preferAssertionsPlugin,
   preferAwaitedValuesPlugin,
+  prismaRepositoryPlugin,
   rawSqlPolicyPlugin,
   requireExtractedHooksPlugin,
   testPolicyPlugin,
@@ -141,9 +143,11 @@ export const typescriptRepositoryPlugins = {
   "db21-hooks": requireExtractedHooksPlugin,
   "db21-padding": multilineConstPaddingPlugin,
   "db21-types": noUnsafeDoubleAssertionPlugin,
+  "db21-type-aliases": exportedTypeAliasPlugin,
 };
 
 export const typescriptRepositoryRules = {
+  "db21-type-aliases/no-redundant-alias": "error",
   "db21-assertions/prefer-assertions": "error",
   "db21-await/prefer-awaited-values": "error",
   "db21-filenames/typescript-filename": "error",
@@ -185,6 +189,7 @@ export const commonConfig = [
     plugins: {
       sonarjs,
       unicorn,
+      "db21-prisma": prismaRepositoryPlugin,
       "db21-sql": rawSqlPolicyPlugin,
       "db21-tests": testPolicyPlugin,
     },
@@ -192,6 +197,7 @@ export const commonConfig = [
       ...sonarRules,
       ...unicornRules,
       "db21-sql/require-justification": "error",
+      "db21-prisma/repository-only": "error",
       "db21-sql/require-local-reason": "error",
       "db21-tests/require-justification": "error",
       "db21-tests/require-local-reason": "error",

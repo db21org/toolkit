@@ -1,5 +1,7 @@
 import tseslint from "typescript-eslint";
 
+import { addSizeGuidance } from "./size-guidance.mjs";
+
 const validator = "db21-sql/require-local-reason";
 const pending = new Map();
 
@@ -75,7 +77,7 @@ export const rawSqlGuardProcessor = {
 
     pending.delete(filename);
 
-    return [...messages.flat(), ...violations];
+    return addSizeGuidance([...messages.flat(), ...violations]);
   },
   supportsAutofix: true,
 };

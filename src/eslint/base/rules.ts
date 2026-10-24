@@ -1,7 +1,10 @@
 import type { Linter } from "eslint";
 
 export const maxLinesRules = {
-  "max-lines": ["warn", { max: 300, skipBlankLines: true, skipComments: true }],
+  "max-lines": [
+    "error",
+    { max: 300, skipBlankLines: true, skipComments: true },
+  ],
 } satisfies Linter.RulesRecord;
 
 export const reactComponentRules = {
@@ -121,7 +124,7 @@ export const commonRules = {
   "jsdoc/require-returns": "error",
   "jsdoc/tag-lines": "off",
   "max-lines-per-function": [
-    "warn",
+    "error",
     { max: 60, skipBlankLines: true, skipComments: true },
   ],
   "no-restricted-imports": [

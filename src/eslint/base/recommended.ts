@@ -1,3 +1,4 @@
+import { sizeGuidancePlugin } from "@db21/toolkit/eslint/plugins";
 import js from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import jsdoc from "eslint-plugin-jsdoc";
@@ -8,6 +9,7 @@ import tseslint from "typescript-eslint";
 import { commonRules, maxLinesRules, recommendedRules } from "./rules.js";
 
 export const javascriptRecommended = defineConfig({
+  processor: "db21-size/refactor-guidance",
   files: ["**/*.{js,jsx,mjs,cjs}"],
   extends: [js.configs.recommended, jsdoc.configs["flat/recommended"]],
   languageOptions: {
@@ -15,12 +17,14 @@ export const javascriptRecommended = defineConfig({
     parserOptions: { ecmaFeatures: { jsx: true } },
   },
   plugins: {
+    "db21-size": sizeGuidancePlugin,
     "simple-import-sort": simpleImportSort,
   },
   rules: { ...commonRules, ...maxLinesRules },
 });
 
 export const typescriptRecommended = defineConfig({
+  processor: "db21-size/refactor-guidance",
   files: ["**/*.{ts,tsx,mts,cts}"],
   extends: [
     js.configs.recommended,
@@ -36,6 +40,7 @@ export const typescriptRecommended = defineConfig({
     },
   },
   plugins: {
+    "db21-size": sizeGuidancePlugin,
     "simple-import-sort": simpleImportSort,
   },
   rules: { ...recommendedRules, ...maxLinesRules },

@@ -63,8 +63,8 @@ test("base and repository presets share style across JS and TS extensions", asyn
         assert.equal(config.rules[rule][0], 2, `${filename}: ${rule}`);
       }
 
-      assert.equal(config.rules["max-lines"][0], 1, filename);
-      assert.equal(config.rules["max-lines-per-function"][0], 1, filename);
+      assert.equal(config.rules["max-lines"][0], 2, filename);
+      assert.equal(config.rules["max-lines-per-function"][0], 2, filename);
       assert.equal(
         config.rules["@typescript-eslint/strict-boolean-expressions"]?.[0] ?? 0,
         isTypescript ? 2 : 0,
@@ -115,6 +115,65 @@ test("generated JSX retains the generated-source directive exception", async () 
       ),
       expected,
     );
+  }
+});
+
+// eslint-disable-next-line db21-tests/require-justification -- Risk: custom diagnostic processing drops size guidance or changes core violations and suppressions; Contract: both public presets append actionable guidance without changing rule IDs, counts, locations or valid exceptions.
+test("size diagnostics guide refactoring without changing core enforcement", async () => {
+  const code =
+    "export function run() {\n// ignored comment\n\nconsole.log(1);\nconsole.log(2);\n}\n";
+
+  const options = [
+    "error",
+    { max: 3, skipComments: true, skipBlankLines: true },
+  ];
+
+  for (const preset of [recommended, commonConfig]) {
+    const eslint = new ESLint({
+      overrideConfigFile: true,
+      overrideConfig: preset,
+    });
+
+    for (const extension of ["js", "ts"]) {
+      const config = await eslint.calculateConfigForFile(
+        `consumer.${extension}`,
+      );
+
+      const isolated = {
+        languageOptions: { parser: tseslint.parser },
+        plugins: config.plugins,
+        processor: config.processor,
+        rules: { "max-lines": options, "max-lines-per-function": options },
+      };
+      const linter = new Linter();
+      const baseline = linter.verify(code, {
+        languageOptions: isolated.languageOptions,
+        rules: isolated.rules,
+      });
+      const processed = linter.verify(code, isolated);
+
+      assert.equal(processed.length, 2);
+
+      for (const [index, diagnostic] of processed.entries()) {
+        const { message, ...details } = diagnostic;
+        const { message: original, ...originalDetails } = baseline[index];
+
+        assert.deepEqual(details, originalDetails);
+        assert.ok(message.startsWith(original));
+        assert.match(message, /\(4\).*3/u);
+        assert.match(message, /Refactor.*cohesive/u);
+        assert.match(message, /test/u);
+        assert.match(message, /bypass this limit/u);
+      }
+
+      assert.deepEqual(
+        linter.verify(
+          `/* eslint-disable max-lines, max-lines-per-function */\n${code}`,
+          isolated,
+        ),
+        [],
+      );
+    }
   }
 });
 
