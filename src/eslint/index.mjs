@@ -1,6 +1,7 @@
 import {
   javascriptRecommended,
   react,
+  reactRestrictedSyntax,
   typescriptRecommended,
 } from "@db21/toolkit/eslint/base";
 import sonarjs from "eslint-plugin-sonarjs";
@@ -80,8 +81,6 @@ export const reactHookRules = Object.fromEntries(
     name.startsWith("react-hooks/"),
   ),
 );
-
-export const reactConfig = react;
 
 export const sonarRules = {
   "sonarjs/no-all-duplicated-branches": "error",
@@ -168,6 +167,18 @@ export const typescriptRepositoryRules = {
         "Use Maybe<T> from @db21/toolkit/utils instead of explicit `| null` unions.",
     },
   ],
+};
+
+export const reactConfig = {
+  ...react,
+  rules: {
+    ...react.rules,
+    "no-restricted-syntax": [
+      "error",
+      ...typescriptRepositoryRules["no-restricted-syntax"].slice(1),
+      ...reactRestrictedSyntax,
+    ],
+  },
 };
 
 export const commonConfig = [
@@ -285,9 +296,9 @@ export const reactPackageConfig = [
   },
   {
     files: ["**/*.tsx"],
-    ...react,
+    ...reactConfig,
     rules: {
-      ...react.rules,
+      ...reactConfig.rules,
       "db21-hooks/require-extracted-hooks": "error",
     },
   },
