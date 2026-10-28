@@ -44,24 +44,31 @@ const reactProviderFilePattern =
 const surfaceClassFilePattern =
   /(?:^|\/)surfaces\/[A-Z][A-Za-z0-9]*\.surface\.tsx$/u;
 
-const isSurfaceDecorator = (node) =>
-  node.type === "Decorator" &&
-  node.expression.type === "CallExpression" &&
-  node.expression.callee.type === "Identifier" &&
-  node.expression.callee.name === "Surface";
+const isSurfaceDecorator = (node) => {
+  if (node.type !== "Decorator" || node.expression.type !== "CallExpression") {
+    return false;
+  }
+
+  return (
+    node.expression.callee.type === "Identifier" &&
+    node.expression.callee.name === "Surface"
+  );
+};
+
+const forbiddenSurfaceSources = new Set([
+  "react-native",
+  "react-i18next",
+  "expo-router",
+  "@react-navigation",
+  "react-providers",
+  "hooks",
+  "queries",
+]);
 
 const isForbiddenSurfaceImportSource = (source) =>
-  source === "react-native" ||
-  source === "react-i18next" ||
-  source === "expo-router" ||
-  source === "@react-navigation" ||
+  forbiddenSurfaceSources.has(source) ||
   source.startsWith("@react-navigation/") ||
-  source === "react-providers" ||
-  /(?:^|\/)react-providers(?:\/$|\/.+$)/u.test(source) ||
-  source === "hooks" ||
-  /(?:^|\/)hooks(?:\/$|\/.+$)/u.test(source) ||
-  source === "queries" ||
-  /(?:^|\/)queries(?:\/$|\/.+$)/u.test(source);
+  /(?:^|\/)(?:react-providers|hooks|queries)(?:\/$|\/.+$)/u.test(source);
 
 const reactProviderFilenameRule = {
   meta: {

@@ -1,3 +1,4 @@
+import { logicalChecksPlugin } from "@db21/toolkit/eslint/plugins";
 import type { ESLint, Linter } from "eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 
@@ -21,11 +22,13 @@ export const reactRestrictedSyntax = [
 export const react = {
   plugins: {
     ...reactHooks.configs.flat.recommended.plugins,
+    "db21-logic": logicalChecksPlugin,
     "react-conventions": reactConventionsPlugin as ESLint.Plugin,
   },
   rules: {
     ...reactHooks.configs.flat.recommended.rules,
     ...reactComponentRules,
+    "db21-logic/max-checks": "error",
     "no-restricted-syntax": [
       "error",
       ...recommendedRules["no-restricted-syntax"].slice(1),

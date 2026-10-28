@@ -31,7 +31,12 @@ const requireExtractedHooksRule = {
 
     if (
       !normalizedFilename.endsWith(".tsx") ||
-      normalizedFilename.includes("/generated/") ||
+      normalizedFilename.includes("/generated/")
+    ) {
+      return {};
+    }
+
+    if (
       normalizedFilename.includes("/test/") ||
       testFilenamePattern.test(normalizedFilename)
     ) {

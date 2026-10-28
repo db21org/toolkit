@@ -81,9 +81,11 @@ export const deserializeMoney = (money: SerializedMoney): Money | undefined =>
 export const deserializeExchangeRateSnapshot = (
   value: unknown,
 ): ExchangeRateSnapshot | undefined => {
+  if (!isRecord(value) || !isRecord(value.rates)) {
+    return undefined;
+  }
+
   if (
-    !isRecord(value) ||
-    !isRecord(value.rates) ||
     typeof value.baseCurrency !== "string" ||
     typeof value.rateDate !== "string" ||
     typeof value.source !== "string"
@@ -111,7 +113,12 @@ export const deserializeExchangeRateSnapshot = (
   if (
     isNotDefined(baseCurrency) ||
     !rateDatePattern.test(value.rateDate) ||
-    isEmpty(value.source.trim()) ||
+    isEmpty(value.source.trim())
+  ) {
+    return undefined;
+  }
+
+  if (
     Object.keys(rates).length !== Object.keys(value.rates).length ||
     isNotDefined(rates[baseCurrency])
   ) {

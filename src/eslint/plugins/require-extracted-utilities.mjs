@@ -12,19 +12,28 @@ const isExemptFile = (filename, cwd, exemptPaths) => {
   const normalizedFilename = filename.replaceAll("\\", "/");
   const name = basename(normalizedFilename);
 
-  return (
+  if (
     testFilenamePattern.test(name) ||
     name === "main.ts" ||
-    name.endsWith(".module.ts") ||
+    name.endsWith(".module.ts")
+  ) {
+    return true;
+  }
+
+  return (
     exemptPaths.some((path) => {
       const fromExemption = relative(resolve(cwd, path), resolve(filename));
 
+      if (isEmpty(fromExemption)) {
+        return true;
+      }
+
+      if (isAbsolute(fromExemption) || fromExemption === "..") {
+        return false;
+      }
+
       return (
-        isEmpty(fromExemption) ||
-        (!isAbsolute(fromExemption) &&
-          fromExemption !== ".." &&
-          !fromExemption.startsWith("../") &&
-          !fromExemption.startsWith("..\\"))
+        !fromExemption.startsWith("../") && !fromExemption.startsWith("..\\")
       );
     }) ||
     (normalizedFilename.includes("/utils/") &&

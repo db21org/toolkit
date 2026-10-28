@@ -37,11 +37,14 @@ const isAll = (node) => {
     return node.property.name === "all";
   }
 
+  if (node.property.type === "Literal") {
+    return node.property.value === "all";
+  }
+
   return (
-    (node.property.type === "Literal" && node.property.value === "all") ||
-    (node.property.type === "TemplateLiteral" &&
-      isEmpty(node.property.expressions) &&
-      node.property.quasis[0].value.cooked === "all")
+    node.property.type === "TemplateLiteral" &&
+    isEmpty(node.property.expressions) &&
+    node.property.quasis[0].value.cooked === "all"
   );
 };
 

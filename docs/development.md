@@ -11,6 +11,12 @@ remain scoped to TypeScript; JavaScript can use native `#private` fields. Framew
 presets add their own scoped rules. Generated files and explicit profile overrides
 retain their existing exceptions.
 
+`db21-logic/max-checks` limits each logical expression to three operands across
+all JS/TS contexts, not only `if` statements. Nested groups count together;
+diagnostics recommend focused guards and behavior-preserving early returns.
+See [logical expression readability](logical-checks-policy.md) for counting and
+refactoring guidance.
+
 `max-lines` and `max-lines-per-function` are errors, with unchanged limits of
 300 lines per file and 60 per function. React component presets allow 150 lines
 per function in `.tsx` files, including Expo; this remains an error, not a warning.

@@ -83,15 +83,21 @@ const validateRoleFile = ({ context, filePath, module, roles }) => {
     return;
   }
 
-  const role = roles.find(
-    (candidate) =>
-      (segments[0] === candidate.folder &&
-        (candidate.recursive === true || segments.length === 2)) ||
-      (isNotEmpty(candidate.suffix) &&
-        candidate.extensions.some((extension) =>
-          fileName.endsWith(`${candidate.suffix}${extension}`),
-        )),
-  );
+  const role = roles.find((candidate) => {
+    if (
+      segments[0] === candidate.folder &&
+      (candidate.recursive === true || segments.length === 2)
+    ) {
+      return true;
+    }
+
+    return (
+      isNotEmpty(candidate.suffix) &&
+      candidate.extensions.some((extension) =>
+        fileName.endsWith(`${candidate.suffix}${extension}`),
+      )
+    );
+  });
 
   if (isNotDefined(role)) {
     return;
@@ -107,19 +113,18 @@ const validateRoleFile = ({ context, filePath, module, roles }) => {
   const inRoleFolder = segments[0] === role.folder;
   const hasExtension = role.extensions.includes(extension);
 
-  if (
-    !inRoleFolder ||
-    !hasSuffix ||
-    !hasExtension ||
-    !matchesCase(name, role.case)
-  ) {
-    const extensionList = role.extensions.join(" or ");
-
-    context.report({
-      loc: { column: 0, line: 1 },
-      message: `Files for role "${role.folder}" must live under ${role.folder}/ and use ${role.case}-case names ending in ${expectedSuffix}${extensionList}.`,
-    });
+  if (inRoleFolder && hasSuffix && hasExtension) {
+    if (matchesCase(name, role.case)) {
+      return;
+    }
   }
+
+  const extensionList = role.extensions.join(" or ");
+
+  context.report({
+    loc: { column: 0, line: 1 },
+    message: `Files for role "${role.folder}" must live under ${role.folder}/ and use ${role.case}-case names ending in ${expectedSuffix}${extensionList}.`,
+  });
 };
 
 const validateModuleFolder = ({
