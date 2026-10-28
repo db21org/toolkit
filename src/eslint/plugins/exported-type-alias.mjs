@@ -1,8 +1,13 @@
-const isIdentityAlias = (node) =>
-  node.type === "TSTypeAliasDeclaration" &&
-  !node.typeParameters &&
-  node.typeAnnotation.type === "TSTypeReference" &&
-  !node.typeAnnotation.typeArguments;
+const isIdentityAlias = (node) => {
+  if (node.type !== "TSTypeAliasDeclaration" || node.typeParameters) {
+    return false;
+  }
+
+  return (
+    node.typeAnnotation.type === "TSTypeReference" &&
+    !node.typeAnnotation.typeArguments
+  );
+};
 
 const noRedundantAlias = {
   meta: {

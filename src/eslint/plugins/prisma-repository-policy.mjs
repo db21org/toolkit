@@ -74,11 +74,14 @@ const checkImports = (node, names, report, isClient) => {
 
     const imported = specifier.imported?.name ?? specifier.imported?.value;
 
+    if (names.has(imported) || isClient(specifier.local)) {
+      report(specifier);
+      continue;
+    }
+
     if (
-      names.has(imported) ||
-      isClient(specifier.local) ||
-      (clientModules.has(node.source.value) &&
-        specifier.type !== "ImportSpecifier")
+      clientModules.has(node.source.value) &&
+      specifier.type !== "ImportSpecifier"
     ) {
       report(specifier);
     }
@@ -90,13 +93,20 @@ const checkTypedReferences = (context, isClient, report) => {
     for (const reference of scope.references) {
       const node = reference.identifier;
 
+      if (reference.isValueReference === false || !reference.isRead()) {
+        continue;
+      }
+
+      // Type queries read the value namespace but emit no runtime access.
       if (
-        reference.isValueReference !== false &&
-        reference.isRead() &&
-        // Type queries read the value namespace but emit no runtime access.
-        !context.sourceCode
+        context.sourceCode
           .getAncestors(node)
-          .some((ancestor) => ancestor.type === "TSTypeQuery") &&
+          .some((ancestor) => ancestor.type === "TSTypeQuery")
+      ) {
+        continue;
+      }
+
+      if (
         isClient(node) &&
         !(
           node.parent.type === "MemberExpression" && node.parent.object === node
@@ -126,13 +136,15 @@ const createSyntaxVisitors = (names, report, isClient, context) => ({
     }
   },
   MemberExpression(node) {
+    if (methods.has(memberName(node)) || isClient(node.object)) {
+      report(node);
+
+      return;
+    }
+
     if (
-      methods.has(memberName(node)) ||
-      isClient(node.object) ||
-      (isClient(node) &&
-        !(
-          node.parent.type === "MemberExpression" && node.parent.object === node
-        ))
+      isClient(node) &&
+      !(node.parent.type === "MemberExpression" && node.parent.object === node)
     ) {
       report(node);
     }

@@ -21,15 +21,24 @@ const unwrapTypeExpression = (node) => {
 const isPrimitiveLiteral = (node) => {
   const initializer = unwrapTypeExpression(node);
 
+  if (initializer.type === "TemplateLiteral") {
+    return hasNoTemplateExpressions(initializer);
+  }
+
+  if (initializer.type === "Literal") {
+    return ["boolean", "number", "string"].includes(typeof initializer.value);
+  }
+
+  if (
+    initializer.type !== "UnaryExpression" ||
+    !["+", "-"].includes(initializer.operator)
+  ) {
+    return false;
+  }
+
   return (
-    (initializer.type === "TemplateLiteral" &&
-      hasNoTemplateExpressions(initializer)) ||
-    (initializer.type === "Literal" &&
-      ["boolean", "number", "string"].includes(typeof initializer.value)) ||
-    (initializer.type === "UnaryExpression" &&
-      ["+", "-"].includes(initializer.operator) &&
-      initializer.argument.type === "Literal" &&
-      typeof initializer.argument.value === "number")
+    initializer.argument.type === "Literal" &&
+    typeof initializer.argument.value === "number"
   );
 };
 

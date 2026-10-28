@@ -1,4 +1,7 @@
-import { sizeGuidancePlugin } from "@db21/toolkit/eslint/plugins";
+import {
+  logicalChecksPlugin,
+  sizeGuidancePlugin,
+} from "@db21/toolkit/eslint/plugins";
 import js from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import jsdoc from "eslint-plugin-jsdoc";
@@ -17,10 +20,15 @@ export const javascriptRecommended = defineConfig({
     parserOptions: { ecmaFeatures: { jsx: true } },
   },
   plugins: {
+    "db21-logic": logicalChecksPlugin,
     "db21-size": sizeGuidancePlugin,
     "simple-import-sort": simpleImportSort,
   },
-  rules: { ...commonRules, ...maxLinesRules },
+  rules: {
+    ...commonRules,
+    ...maxLinesRules,
+    "db21-logic/max-checks": "error",
+  },
 });
 
 export const typescriptRecommended = defineConfig({
@@ -40,10 +48,15 @@ export const typescriptRecommended = defineConfig({
     },
   },
   plugins: {
+    "db21-logic": logicalChecksPlugin,
     "db21-size": sizeGuidancePlugin,
     "simple-import-sort": simpleImportSort,
   },
-  rules: { ...recommendedRules, ...maxLinesRules },
+  rules: {
+    ...recommendedRules,
+    ...maxLinesRules,
+    "db21-logic/max-checks": "error",
+  },
 });
 
 export const recommended = defineConfig(

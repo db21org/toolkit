@@ -1,5 +1,6 @@
 export { exportedConstantNamingPlugin } from "./exported-constant-naming.mjs";
 export { exportedTypeAliasPlugin } from "./exported-type-alias.mjs";
+export { logicalChecksPlugin } from "./logical-checks.mjs";
 export { multilineConstPaddingPlugin } from "./multiline-const-padding.mjs";
 export { noUnsafeDoubleAssertionPlugin } from "./no-unsafe-double-assertion.mjs";
 export { preferAssertionsPlugin } from "./prefer-assertions.mjs";

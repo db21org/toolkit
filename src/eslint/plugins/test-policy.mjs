@@ -207,9 +207,12 @@ const requireLocalReason = {
             reason.trim(),
           );
 
+          if (match[1] === "eslint-disable" || !assessment) {
+            context.report({ loc: comment.loc, messageId: "reason" });
+            continue;
+          }
+
           if (
-            match[1] === "eslint-disable" ||
-            !assessment ||
             assessment[1].trim().length < 10 ||
             assessment[2].trim().length < 10
           ) {

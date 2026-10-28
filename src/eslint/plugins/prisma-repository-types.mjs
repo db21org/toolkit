@@ -12,8 +12,11 @@ const isPrismaType = (type) => {
 
   const symbol = type.getSymbol();
 
+  if (!symbol?.getName().endsWith("Delegate")) {
+    return false;
+  }
+
   return Boolean(
-    symbol?.getName().endsWith("Delegate") &&
     symbol.declarations?.some((declaration) =>
       declaration
         .getSourceFile()

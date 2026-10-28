@@ -36,17 +36,25 @@ const relocateGenerators = (source: string, file: string): string => {
       generator = true;
     }
 
-    if (token.text === "{") {
-      depth += 1;
-    } else if (token.text === "}") {
-      depth -= 1;
-      generator = depth === 0 ? false : generator;
-    } else if (
-      generator &&
-      depth === 1 &&
-      token.text === "output" &&
-      tokens[index + 1]?.text === "="
-    ) {
+    switch (token.text) {
+      case "{":
+        depth += 1;
+        continue;
+      case "}":
+        depth -= 1;
+        generator = depth === 0 ? false : generator;
+        continue;
+      case "output":
+        break;
+      default:
+        continue;
+    }
+
+    if (!generator || depth !== 1) {
+      continue;
+    }
+
+    if (tokens[index + 1]?.text === "=") {
       const output = tokens[index + 2];
 
       assert.true(

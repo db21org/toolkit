@@ -57,10 +57,20 @@ const preferAssertionsRule = {
         if (
           node.callee.type !== "MemberExpression" ||
           node.callee.object.type !== "Identifier" ||
-          node.callee.object.name !== "assert" ||
+          node.callee.object.name !== "assert"
+        ) {
+          return;
+        }
+
+        if (
           node.callee.property.type !== "Identifier" ||
           !["false", "true"].includes(node.callee.property.name) ||
-          node.arguments[0]?.type !== "CallExpression" ||
+          node.arguments[0]?.type !== "CallExpression"
+        ) {
+          return;
+        }
+
+        if (
           node.arguments[0].callee.type !== "Identifier" ||
           !["isDefined", "isNotDefined"].includes(node.arguments[0].callee.name)
         ) {

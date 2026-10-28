@@ -107,11 +107,13 @@ const isSqlFragment = (expression, context) => {
     return path.length === 2 && ["sql", "raw"].includes(path[1]);
   }
 
+  if (source !== "kysely" || path[0] !== "sql") {
+    return false;
+  }
+
   return (
-    source === "kysely" &&
-    path[0] === "sql" &&
-    (path.length === 1 ||
-      (path.length === 2 && KYSELY_ESCAPE_HATCHES.has(path[1])))
+    path.length === 1 ||
+    (path.length === 2 && KYSELY_ESCAPE_HATCHES.has(path[1]))
   );
 };
 

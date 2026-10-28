@@ -51,16 +51,22 @@ for (const artifact of readdirSync(directory).toSorted((left, right) =>
     const receipt = JSON.parse(readFileSync(path, "utf8"));
 
     assert(
-      receipt &&
-        typeof receipt === "object" &&
-        !Array.isArray(receipt) &&
-        receipt.sha === sha &&
-        components.includes(receipt.component) &&
-        typeof receipt.image === "string" &&
-        /^sha256:[a-f\d]{64}$/u.test(receipt.image) &&
-        Object.keys(receipt)
-          .toSorted((left, right) => left.localeCompare(right))
-          .join(",") === "component,image,sha",
+      receipt && typeof receipt === "object" && !Array.isArray(receipt),
+      "Invalid image publication receipt.",
+    );
+    assert(
+      receipt.sha === sha && components.includes(receipt.component),
+      "Invalid image publication receipt.",
+    );
+    assert(
+      typeof receipt.image === "string" &&
+        /^sha256:[a-f\d]{64}$/u.test(receipt.image),
+      "Invalid image publication receipt.",
+    );
+    assert(
+      Object.keys(receipt)
+        .toSorted((left, right) => left.localeCompare(right))
+        .join(",") === "component,image,sha",
       "Invalid image publication receipt.",
     );
     assert(!seen.has(receipt.component), "Duplicate receipt component.");

@@ -1,6 +1,12 @@
 import type { ReadableStreamDefaultReader } from "node:stream/web";
 
-import { assert, isDefined, isEmpty, isNotEmpty } from "@db21/toolkit/utils";
+import {
+  assert,
+  isDefined,
+  isEmpty,
+  isNotDefined,
+  isNotEmpty,
+} from "@db21/toolkit/utils";
 
 const pageSize = 24;
 const responseLimit = 2_000_000;
@@ -53,10 +59,11 @@ const parseBindings = (body: string): Row[] => {
   const result: unknown = JSON.parse(body);
 
   assert.true(
-    typeof result === "object" &&
-      isDefined(result) &&
-      "results" in result &&
-      typeof result.results === "object" &&
+    typeof result === "object" && isDefined(result) && "results" in result,
+    "Expected SPARQL SELECT JSON results.",
+  );
+  assert.true(
+    typeof result.results === "object" &&
       isDefined(result.results) &&
       "bindings" in result.results,
     "Expected SPARQL SELECT JSON results.",
@@ -69,15 +76,17 @@ const parseBindings = (body: string): Row[] => {
       (row: unknown) =>
         typeof row === "object" &&
         isDefined(row) &&
-        Object.values(row).every(
-          (value: unknown) =>
-            typeof value === "object" &&
-            isDefined(value) &&
-            "type" in value &&
-            typeof value.type === "string" &&
-            "value" in value &&
-            typeof value.value === "string",
-        ),
+        Object.values(row).every((value: unknown) => {
+          if (typeof value !== "object" || isNotDefined(value)) {
+            return false;
+          }
+
+          if (!("type" in value) || typeof value.type !== "string") {
+            return false;
+          }
+
+          return "value" in value && typeof value.value === "string";
+        }),
     ),
     "Invalid SPARQL result term.",
   );
@@ -100,8 +109,11 @@ export class SparqlReader {
   public constructor(endpoint: string, graph?: string) {
     this.endpoint = new URL(endpoint);
     assert.true(
-      ["http:", "https:"].includes(this.endpoint.protocol) &&
-        isEmpty(this.endpoint.username) &&
+      ["http:", "https:"].includes(this.endpoint.protocol),
+      "SPARQL endpoint must be HTTP(S), without URL credentials or fragment.",
+    );
+    assert.true(
+      isEmpty(this.endpoint.username) &&
         isEmpty(this.endpoint.password) &&
         isEmpty(this.endpoint.hash),
       "SPARQL endpoint must be HTTP(S), without URL credentials or fragment.",

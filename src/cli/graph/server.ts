@@ -35,11 +35,13 @@ const prepareResponse = (
   response.setHeader("x-content-type-options", "nosniff");
   response.setHeader("referrer-policy", "no-referrer");
   response.setHeader("cache-control", "no-store");
+  const hasForeignOrigin =
+    isDefined(request.headers.origin) && request.headers.origin !== origin;
 
   // Reject DNS rebinding and cross-origin browser requests to this local proxy.
   if (
     request.headers.host !== new URL(origin).host ||
-    (isDefined(request.headers.origin) && request.headers.origin !== origin) ||
+    hasForeignOrigin ||
     request.headers["sec-fetch-site"] === "cross-site"
   ) {
     response.writeHead(403, { "content-type": "application/json" });
