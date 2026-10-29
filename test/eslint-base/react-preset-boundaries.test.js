@@ -10,6 +10,8 @@ import { ESLint, Linter } from "eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
+const errorSeverity = 2;
+
 const presets = [
   ["base React", [...recommended, { files: ["**/*.tsx"], ...react }]],
   ["React package", reactConfig],
@@ -33,15 +35,16 @@ const verify = (config, code) =>
   });
 
 const assertSizeBoundary = (config, max, name) => {
+  const functionSyntaxLines = 3;
   const code = (lines) =>
-    `const screen = () => {\n// excluded comment\n\n${"console.log('render');\n".repeat(lines - 3)}return <span />;\n};`;
+    `const screen = () => {\n// excluded comment\n\n${"console.log('render');\n".repeat(lines - functionSyntaxLines)}return <span />;\n};`;
 
   assert.deepEqual(verify(config, code(max)), [], name);
   const messages = verify(config, code(max + 1));
 
   assert.equal(messages.length, 1, name);
   assert.equal(messages[0].ruleId, "max-lines-per-function", name);
-  assert.equal(messages[0].severity, 2, name);
+  assert.equal(messages[0].severity, errorSeverity, name);
   assert.equal(messages[0].line, 1, name);
 };
 
@@ -60,8 +63,6 @@ const assertReadabilityPolicy = (config, name) => {
     "consume(42); [first, second].includes(value); if (items.some(item => item.ready)) act(); if (ready) { if (valid) act(); }",
     { plugins: config.plugins, rules },
   );
-
-  const errorSeverity = 2;
 
   for (const rule of Object.keys(rules)) {
     assert.equal(config.rules[rule][0], errorSeverity, name);
@@ -129,7 +130,7 @@ const assertReactPolicy = (config, enabled, name) => {
 };
 
 const assertHooksPolicy = (config, enabled, name) => {
-  const levels = { error: 2, warn: 1 };
+  const levels = { error: errorSeverity, warn: 1 };
 
   for (const [rule, severity] of Object.entries(
     reactHooks.configs.flat.recommended.rules,
@@ -167,6 +168,10 @@ const assertHooksPolicy = (config, enabled, name) => {
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: preset composition drops shared restrictions, weakens Expo policy or leaks React limits into ordinary functions; Contract: public presets enforce React spacing and exact error-level size boundaries while preserving shared and platform-specific checks.
 test("React policies compose without losing shared or Expo restrictions", async () => {
+  const reactFunctionLineLimit = 150;
+  const ordinaryFunctionLineLimit = 60;
+  const fileLineLimit = 300;
+
   for (const [name, preset] of presets) {
     const eslint = new ESLint({
       overrideConfigFile: true,
@@ -179,8 +184,12 @@ test("React policies compose without losing shared or Expo restrictions", async 
       );
       const isReact = extension === "tsx" && name !== "common";
 
-      assertSizeBoundary(config, isReact ? 150 : 60, `${name}: ${extension}`);
-      assert.equal(config.rules["max-lines"][1].max, 300, name);
+      assertSizeBoundary(
+        config,
+        isReact ? reactFunctionLineLimit : ordinaryFunctionLineLimit,
+        `${name}: ${extension}`,
+      );
+      assert.equal(config.rules["max-lines"][1].max, fileLineLimit, name);
       assert.equal(
         syntaxMessages(config, 'const screen = <span>{" "}</span>;').length,
         isReact || name === "Expo" ? 1 : 0,

@@ -8,6 +8,7 @@ import { ESLint, Linter } from "eslint";
 import tseslint from "typescript-eslint";
 
 const rule = "db21-logic/max-checks";
+const errorSeverity = 2;
 const verify = (source) =>
   new Linter().verify(
     source,
@@ -71,20 +72,27 @@ test("logical checks reject lone nested if statements without changing branch se
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: bulky two-check expressions evade operand limits or formatting hides excessive length; Contract: exact 120-character token boundary, literal contents and nested callbacks count consistently without comments or whitespace and produce one actionable error.
 test("logical expression length ignores formatting but retains literal and callback content", () => {
-  const atLimit = `${"a".repeat(117)}&&b`;
-  const overLimit = `${"a".repeat(118)}&&b`;
+  const atLimitIdentifierLength = 117;
+  const overLimitIdentifierLength = 118;
+  const overLimitLiteralContentLength = 116;
+  const overLimitCallbackArgumentLength = 90;
+  const standaloneLiteralLength = 121;
+  const atLimit = `${"a".repeat(atLimitIdentifierLength)}&&b`;
+  const overLimit = `${"a".repeat(overLimitIdentifierLength)}&&b`;
 
   assert.deepEqual(verify(`${atLimit};`), []);
   assert.deepEqual(
-    verify(`${"a".repeat(117)} /* comment */\n && /* comment */ b;`),
+    verify(
+      `${"a".repeat(atLimitIdentifierLength)} /* comment */\n && /* comment */ b;`,
+    ),
     [],
   );
 
   for (const expression of [
     overLimit,
-    `${"a".repeat(118)} /* comment */\n && b`,
-    `a&&"${" ".repeat(116)}"`,
-    `a&&items.some((item)=>item.matches("${"x".repeat(90)}"))`,
+    `${"a".repeat(overLimitIdentifierLength)} /* comment */\n && b`,
+    `a&&"${" ".repeat(overLimitLiteralContentLength)}"`,
+    `a&&items.some((item)=>item.matches("${"x".repeat(overLimitCallbackArgumentLength)}"))`,
     `${overLimit}&&c&&d`,
   ]) {
     const messages = verify(`${expression};`);
@@ -99,7 +107,7 @@ test("logical expression length ignores formatting but retains literal and callb
     verify(`${overLimit};`)[0].message,
     /2 checks and 121 characters/u,
   );
-  assert.deepEqual(verify(`"${"x".repeat(121)}";`), []);
+  assert.deepEqual(verify(`"${"x".repeat(standaloneLiteralLength)}";`), []);
 });
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: nested or non-if logical chains escape readability enforcement or produce duplicate noise; Contract: four operands report once across expression contexts and presets while three operands and independent expressions remain valid.
@@ -127,9 +135,11 @@ test("logical check limit counts nested operands in every expression context", a
     assert.deepEqual(verify(source), [], source);
   }
 
+  const independentExpressionCount = 2;
+
   assert.equal(
     verify("const result = a && b && c && d ? e || f || g || h : i;").length,
-    2,
+    independentExpressionCount,
   );
 
   for (const preset of [recommended, commonConfig]) {
@@ -152,7 +162,7 @@ test("logical check limit counts nested operands in every expression context", a
         `consumer.${extension}`,
       );
 
-      assert.equal(config.rules[rule][0], 2, extension);
+      assert.equal(config.rules[rule][0], errorSeverity, extension);
     }
   }
 });
