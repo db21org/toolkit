@@ -1,16 +1,18 @@
 import { isEmpty } from "@db21/toolkit/utils";
 
+import { createLocalReasonRule } from "./local-reason-rule.mjs";
+
 const RULE = "db21-promises/prefer-native-batch";
+const minimumReasonLength = 20;
+const transparentExpressions = new Set([
+  "ChainExpression",
+  "TSAsExpression",
+  "TSTypeAssertion",
+  "TSNonNullExpression",
+]);
 
 const unwrap = (node) =>
-  [
-    "ChainExpression",
-    "TSAsExpression",
-    "TSTypeAssertion",
-    "TSNonNullExpression",
-  ].includes(node.type)
-    ? unwrap(node.expression)
-    : node;
+  transparentExpressions.has(node.type) ? unwrap(node.expression) : node;
 
 const isGlobalPromise = (node, context) => {
   if (node.type !== "Identifier" || node.name !== "Promise") {
@@ -80,72 +82,16 @@ const preferNativeBatch = {
   },
 };
 
-const isInlineDowngrade = (comment) => {
-  if (comment.type !== "Block") {
-    return false;
-  }
-
-  const directive = /^\s*eslint\s+([^]*?)(?:\s+--\s[^]*)?\s*$/u.exec(
-    comment.value,
-  );
-
-  if (!directive) {
-    return false;
-  }
-
-  const settings = directive[1].matchAll(
-    /(?:^|[,{])\s*["']?db21-promises\/prefer-native-batch["']?\s*:\s*(?:\[\s*)?(?:"([^"]*)"|'([^']*)'|([^\s,\]}]+))/gu,
-  );
-
-  return [...settings].some((setting) => {
-    const severity = setting[1] ?? setting[2] ?? setting[3];
-
-    return severity !== "error" && Number(severity) !== 2;
-  });
-};
-
-const requireLocalReason = {
-  meta: {
-    type: "problem",
-    schema: [],
-    messages: {
-      reason:
-        "Promise.all exceptions require eslint-disable-next-line or eslint-disable-line with a -- explanation of at least 20 characters stating why native batching is unsuitable; blanket exceptions are forbidden.",
-      inline:
-        "Do not disable or downgrade native batch policy through inline configuration; justify each necessary await Promise.all locally.",
-    },
+const requireLocalReason = createLocalReasonRule({
+  rule: RULE,
+  isValidReason: (reason) => reason.trim().length >= minimumReasonLength,
+  messages: {
+    reason:
+      "Promise.all exceptions require eslint-disable-next-line or eslint-disable-line with a -- explanation of at least 20 characters stating why native batching is unsuitable; blanket exceptions are forbidden.",
+    inline:
+      "Do not disable or downgrade native batch policy through inline configuration; justify each necessary await Promise.all locally.",
   },
-  create(context) {
-    return {
-      Program() {
-        for (const comment of context.sourceCode.getAllComments()) {
-          if (isInlineDowngrade(comment)) {
-            context.report({ loc: comment.loc, messageId: "inline" });
-            continue;
-          }
-
-          const match =
-            /^\s*(eslint-disable(?:-next-line|-line)?)\s+([^]*?)\s*$/u.exec(
-              comment.value,
-            );
-
-          if (!match) {
-            continue;
-          }
-
-          const [rules, reason = ""] = match[2].split(/\s+--\s*/u);
-
-          if (
-            rules.split(/\s*,\s*/u).includes(RULE) &&
-            (match[1] === "eslint-disable" || reason.trim().length < 20)
-          ) {
-            context.report({ loc: comment.loc, messageId: "reason" });
-          }
-        }
-      },
-    };
-  },
-};
+});
 
 export const promiseAllPolicyPlugin = {
   rules: {

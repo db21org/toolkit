@@ -37,15 +37,36 @@ export const logicalChecksPlugin = {
     "max-checks": {
       meta: {
         type: "suggestion",
-        docs: { description: "Keep logical expressions readable and focused." },
+        docs: {
+          description:
+            "Keep logical expressions readable and avoid lone nested if statements.",
+        },
         schema: [],
         messages: {
           excessive:
             "Logical expression has {{count}} checks and {{length}} characters; maximum is 3 checks and 120 characters. Refactor into readable, focused checks, preferably separate guards with early returns where appropriate. Preserve evaluation order, short-circuit behavior and returned values; do not hide complexity in trivial wrappers.",
+          loneNestedIf:
+            "Do not nest an if statement as the only statement inside another if. Prefer extracting both conditions into named boolean constants before a single if and combining them with &&. Preserve evaluation order and short-circuit behavior; guard dependent checks with the first boolean when necessary.",
         },
       },
       create(context) {
         return {
+          IfStatement(node) {
+            if (node.alternate) {
+              return;
+            }
+
+            const consequent = node.consequent;
+            const inner =
+              consequent.type === "BlockStatement" &&
+              consequent.body.length === 1
+                ? consequent.body[0]
+                : consequent;
+
+            if (inner.type === "IfStatement" && !inner.alternate) {
+              context.report({ node, messageId: "loneNestedIf" });
+            }
+          },
           LogicalExpression(node) {
             if (hasLogicalParent(node)) {
               return;

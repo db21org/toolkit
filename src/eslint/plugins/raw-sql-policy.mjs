@@ -1,8 +1,19 @@
 import { isEmpty } from "@db21/toolkit/utils";
 
+import { createLocalReasonRule } from "./local-reason-rule.mjs";
 import { rawSqlGuardProcessor } from "./raw-sql-guard.mjs";
 
 const SQL_RULE = "db21-sql/require-justification";
+const minimumReasonLength = 20;
+const fragmentPathLength = 2;
+const prismaSqlMethods = new Set(["sql", "raw"]);
+const transparentExpressions = new Set([
+  "ChainExpression",
+  "TSAsExpression",
+  "TSTypeAssertion",
+  "TSNonNullExpression",
+]);
+
 const RAW_METHODS = new Set([
   "$queryRaw",
   "$executeRaw",
@@ -12,14 +23,7 @@ const RAW_METHODS = new Set([
 const KYSELY_ESCAPE_HATCHES = new Set(["raw", "lit", "ref", "id"]);
 
 const unwrap = (node) => {
-  if (
-    [
-      "ChainExpression",
-      "TSAsExpression",
-      "TSTypeAssertion",
-      "TSNonNullExpression",
-    ].includes(node.type)
-  ) {
+  if (transparentExpressions.has(node.type)) {
     return unwrap(node.expression);
   }
 
@@ -104,7 +108,7 @@ const isSqlFragment = (expression, context) => {
 
   // Named Prisma re-exports from workspace database packages retain this API.
   if (path[0] === "Prisma") {
-    return path.length === 2 && ["sql", "raw"].includes(path[1]);
+    return path.length === fragmentPathLength && prismaSqlMethods.has(path[1]);
   }
 
   if (source !== "kysely" || path[0] !== "sql") {
@@ -113,7 +117,7 @@ const isSqlFragment = (expression, context) => {
 
   return (
     path.length === 1 ||
-    (path.length === 2 && KYSELY_ESCAPE_HATCHES.has(path[1]))
+    (path.length === fragmentPathLength && KYSELY_ESCAPE_HATCHES.has(path[1]))
   );
 };
 
@@ -153,73 +157,16 @@ const requireJustification = {
   },
 };
 
-const isInlineDowngrade = (comment) => {
-  if (comment.type !== "Block") {
-    return false;
-  }
-
-  const directive = /^\s*eslint\s+([^]*?)(?:\s+--\s[^]*)?\s*$/u.exec(
-    comment.value,
-  );
-
-  if (!directive) {
-    return false;
-  }
-
-  const settings = directive[1].matchAll(
-    /(?:^|[,{])\s*["']?db21-sql\/require-justification["']?\s*:\s*(?:\[\s*)?(?:"([^"]*)"|'([^']*)'|([^\s,\]}]+))/gu,
-  );
-
-  return [...settings].some((setting) => {
-    const severity = setting[1] ?? setting[2] ?? setting[3];
-
-    return severity !== "error" && Number(severity) !== 2;
-  });
-};
-
-const requireLocalReason = {
-  meta: {
-    type: "problem",
-    schema: [],
-    messages: {
-      reason:
-        "Raw SQL exceptions must use eslint-disable-next-line or eslint-disable-line with a -- explanation of at least 20 characters; blanket exceptions are forbidden.",
-      inline:
-        "Inline ESLint configuration must not disable or downgrade raw SQL justification; use a justified local exception for each operation or fragment.",
-    },
+const requireLocalReason = createLocalReasonRule({
+  rule: SQL_RULE,
+  isValidReason: (reason) => reason.trim().length >= minimumReasonLength,
+  messages: {
+    reason:
+      "Raw SQL exceptions must use eslint-disable-next-line or eslint-disable-line with a -- explanation of at least 20 characters; blanket exceptions are forbidden.",
+    inline:
+      "Inline ESLint configuration must not disable or downgrade raw SQL justification; use a justified local exception for each operation or fragment.",
   },
-  create(context) {
-    return {
-      Program() {
-        for (const comment of context.sourceCode.getAllComments()) {
-          if (isInlineDowngrade(comment)) {
-            context.report({ loc: comment.loc, messageId: "inline" });
-            continue;
-          }
-
-          const match =
-            /^\s*(eslint-disable(?:-next-line|-line)?)\s+([^]*?)\s*$/u.exec(
-              comment.value,
-            );
-
-          if (!match) {
-            continue;
-          }
-
-          const [rules, reason = ""] = match[2].split(/\s+--\s*/u);
-
-          if (!rules.split(/\s*,\s*/u).includes(SQL_RULE)) {
-            continue;
-          }
-
-          if (match[1] === "eslint-disable" || reason.trim().length < 20) {
-            context.report({ loc: comment.loc, messageId: "reason" });
-          }
-        }
-      },
-    };
-  },
-};
+});
 
 export const rawSqlPolicyPlugin = {
   processors: { "policy-guard": rawSqlGuardProcessor },

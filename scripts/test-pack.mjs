@@ -84,16 +84,19 @@ try {
   run("node", ["runtime-only.mjs"]);
   run("node", ["outbox-schema.mjs"]);
   run("corepack", ["yarn", "toolkit", "--help"]);
+  // Resolve the native detector from the installed artifact, without devDependencies.
+  run("corepack", ["yarn", "toolkit", "duplicates", "runtime-only.mjs"]);
   run("corepack", ["yarn", "toolkit", "agents", "init"]);
   run("corepack", ["yarn", "toolkit", "agents", "init"]);
   const instructions = readFileSync(
     join(temporaryDirectory, "AGENTS.md"),
     "utf8",
   );
+  const segmentsWithOnePolicyMarker = 2;
 
   assert.equal(
     instructions.split("<!-- db21-toolkit:test-policy -->").length,
-    2,
+    segmentsWithOnePolicyMarker,
     "Packed agent initializer must add exactly one policy section.",
   );
 

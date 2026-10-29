@@ -1,33 +1,19 @@
+import { isNotDefined } from "@db21/toolkit/utils";
+
+import { createLocalReasonRule } from "./local-reason-rule.mjs";
+
 const TEST_RULE = "db21-tests/require-justification";
 const TEST_MODULES = new Set(["vitest", "@jest/globals", "node:test"]);
 const TEST_NAMES = new Set(["test", "it", "fit", "xit", "xtest"]);
-
-const isInlineDowngrade = (comment) => {
-  if (comment.type !== "Block") {
-    return false;
-  }
-
-  const directive = /^\s*eslint\s+([^]*?)(?:\s+--\s[^]*)?\s*$/u.exec(
-    comment.value,
-  );
-
-  if (!directive) {
-    return false;
-  }
-
-  const setting =
-    /(?:^|[,{])\s*["']?db21-tests\/require-justification["']?\s*:\s*(?:\[\s*)?(?:"([^"]*)"|'([^']*)'|([^\s,\]}]+))/u.exec(
-      directive[1],
-    );
-
-  if (!setting) {
-    return false;
-  }
-
-  const severity = setting[1] ?? setting[2] ?? setting[3];
-
-  return severity !== "error" && Number(severity) !== 2;
-};
+const TEST_BUILDERS = new Set([
+  "each",
+  "for",
+  "skipIf",
+  "runIf",
+  "extend",
+  "scoped",
+  "use",
+]);
 
 const getRoot = (node) => {
   if (node.type === "Identifier") {
@@ -144,17 +130,7 @@ const requireJustification = {
             ? node.callee.property.value
             : node.callee.property.name;
 
-          if (
-            [
-              "each",
-              "for",
-              "skipIf",
-              "runIf",
-              "extend",
-              "scoped",
-              "use",
-            ].includes(property)
-          ) {
+          if (TEST_BUILDERS.has(property)) {
             return;
           }
         }
@@ -170,61 +146,33 @@ const requireJustification = {
   },
 };
 
-const requireLocalReason = {
-  meta: {
-    type: "problem",
-    schema: [],
-    messages: {
-      reason:
-        "Test exceptions require eslint-disable-next-line or eslint-disable-line with -- Risk: <concrete failure impact>; Contract: <observable guarantee> (at least 10 characters each). Assess each test; do not bulk-rewrite justifications. Blanket exceptions are forbidden. See @db21/toolkit/docs/test-policy.md.",
-      inline:
-        "Inline ESLint configuration must not disable or downgrade the test justification rule; use a justified local exception for each critical test.",
-    },
-  },
-  create(context) {
-    return {
-      Program() {
-        for (const comment of context.sourceCode.getAllComments()) {
-          if (isInlineDowngrade(comment)) {
-            context.report({ loc: comment.loc, messageId: "inline" });
-            continue;
-          }
+const minimumAssessmentLength = 10;
 
-          const match =
-            /^\s*(eslint-disable(?:-next-line|-line)?)\s+([^]*?)\s*$/u.exec(
-              comment.value,
-            );
+const isValidAssessment = (reason) => {
+  const assessment = /^Risk:\s*(.+?);\s*Contract:\s*(.+)$/u.exec(reason.trim());
 
-          if (!match) {
-            continue;
-          }
+  if (isNotDefined(assessment)) {
+    return false;
+  }
 
-          const [rules, reason = ""] = match[2].split(/\s+--\s*/u);
+  const [, risk, contract] = assessment;
 
-          if (!rules.split(/\s*,\s*/u).includes(TEST_RULE)) {
-            continue;
-          }
-
-          const assessment = /^Risk:\s*(.+?);\s*Contract:\s*(.+)$/u.exec(
-            reason.trim(),
-          );
-
-          if (match[1] === "eslint-disable" || !assessment) {
-            context.report({ loc: comment.loc, messageId: "reason" });
-            continue;
-          }
-
-          if (
-            assessment[1].trim().length < 10 ||
-            assessment[2].trim().length < 10
-          ) {
-            context.report({ loc: comment.loc, messageId: "reason" });
-          }
-        }
-      },
-    };
-  },
+  return (
+    risk.trim().length >= minimumAssessmentLength &&
+    contract.trim().length >= minimumAssessmentLength
+  );
 };
+
+const requireLocalReason = createLocalReasonRule({
+  rule: TEST_RULE,
+  isValidReason: isValidAssessment,
+  messages: {
+    reason:
+      "Test exceptions require eslint-disable-next-line or eslint-disable-line with -- Risk: <concrete failure impact>; Contract: <observable guarantee> (at least 10 characters each). Assess each test; do not bulk-rewrite justifications. Blanket exceptions are forbidden. See @db21/toolkit/docs/test-policy.md.",
+    inline:
+      "Inline ESLint configuration must not disable or downgrade the test justification rule; use a justified local exception for each critical test.",
+  },
+});
 
 export const testPolicyPlugin = {
   rules: {

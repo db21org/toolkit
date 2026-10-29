@@ -8,6 +8,7 @@ import { assert, isDefined } from "../utils/index.js";
 import { initAgents } from "./agents.js";
 import { bootstrap } from "./bootstrap.js";
 import { appTypes } from "./bootstrap-options.js";
+import { duplicatesCommand } from "./duplicates.js";
 
 const manifestText = await readFile(
   new URL("../../package.json", import.meta.url),
@@ -22,6 +23,7 @@ const command = defineCommand({
     description: "db21 development helpers",
   },
   subCommands: {
+    duplicates: duplicatesCommand,
     agents: defineCommand({
       meta: { description: "Repository agent instructions" },
       subCommands: {
