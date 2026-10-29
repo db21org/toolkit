@@ -36,6 +36,39 @@ const rejected = [
   "const element = <span>{a && b && c && d}</span>;",
 ];
 
+// eslint-disable-next-line db21-tests/require-justification -- Risk: consumers evade shared readability limits with lone nested conditions or receive unsafe rewrite advice; Contract: collapsible if pairs report extraction guidance without autofixes while else branches and meaningful outer bodies remain valid.
+test("logical checks reject lone nested if statements without changing branch semantics", () => {
+  for (const source of [
+    "if (a) { if (b) act(); }",
+    "if (a) if (b) act();",
+    "if (a) { /* comment */ if (b) { act(); } }",
+    "if (isDefined(previous) && previous.uri === uri) { if (previous.height === sourceHeight && previous.width === sourceWidth) { return previous; } }",
+  ]) {
+    const messages = verify(source);
+
+    assert.equal(messages.length, 1, source);
+    assert.equal(messages[0].ruleId, rule, source);
+    assert.equal(messages[0].messageId, "loneNestedIf", source);
+    assert.match(messages[0].message, /both conditions.*before a single if/u);
+    assert.match(messages[0].message, /short-circuit.*guard dependent checks/u);
+    assert.equal(messages[0].fix, undefined);
+    assert.equal(messages[0].suggestions, undefined);
+  }
+
+  for (const source of [
+    "const isSameSource = isDefined(previous) && previous.uri === uri; const isSameSize = isSameSource && previous.height === sourceHeight && previous.width === sourceWidth; if (isSameSource && isSameSize) { return previous; }",
+    "if (a) { prepare(); if (b) act(); }",
+    "if (a) { if (b) act(); finish(); }",
+    "if (a) { if (b) act(); } else fallback();",
+    "if (a) { if (b) act(); else fallback(); }",
+    "if (a) if (b) act(); else fallback();",
+    "if (a) act(); else if (b) fallback();",
+    "if (a) { while (b) act(); }",
+  ]) {
+    assert.deepEqual(verify(source), [], source);
+  }
+});
+
 // eslint-disable-next-line db21-tests/require-justification -- Risk: bulky two-check expressions evade operand limits or formatting hides excessive length; Contract: exact 120-character token boundary, literal contents and nested callbacks count consistently without comments or whitespace and produce one actionable error.
 test("logical expression length ignores formatting but retains literal and callback content", () => {
   const atLimit = `${"a".repeat(117)}&&b`;

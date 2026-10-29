@@ -1,4 +1,9 @@
-import { logicalChecksPlugin } from "@db21/toolkit/eslint/plugins";
+import {
+  logicalChecksPlugin,
+  namedArraysPlugin,
+  namedNumbersPlugin,
+  preferConditionValuesPlugin,
+} from "@db21/toolkit/eslint/plugins";
 import type { ESLint, Linter } from "eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 
@@ -22,13 +27,19 @@ export const reactRestrictedSyntax = [
 export const react = {
   plugins: {
     ...reactHooks.configs.flat.recommended.plugins,
+    "db21-arrays": namedArraysPlugin,
+    "db21-conditions": preferConditionValuesPlugin,
     "db21-logic": logicalChecksPlugin,
+    "db21-numbers": namedNumbersPlugin,
     "react-conventions": reactConventionsPlugin as ESLint.Plugin,
   },
   rules: {
     ...reactHooks.configs.flat.recommended.rules,
     ...reactComponentRules,
+    "db21-arrays/no-inline-member-access": "error",
+    "db21-conditions/prefer-named-values": "error",
     "db21-logic/max-checks": "error",
+    "db21-numbers/no-magic-numbers": "error",
     "no-restricted-syntax": [
       "error",
       ...recommendedRules["no-restricted-syntax"].slice(1),

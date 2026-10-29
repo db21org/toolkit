@@ -4,6 +4,98 @@ This document describes the rules exported by `@db21/toolkit/eslint/base` and sh
 
 ## Base `recommended` rules
 
+### `db21-conditions/prefer-named-values`
+
+Assign calls receiving inline callbacks to meaningful named constants before using
+their results in `if`, `while`, `do...while`, `for` tests, ternary tests or `switch`
+discriminants. Simple predicates and named callbacks remain allowed. This rule
+does not cover returns, switch case labels, loop initializers/updates or branch
+bodies. Nested callback bodies are independent evaluation scopes.
+
+Preserve short-circuit evaluation: do not eagerly compute a callback call that was
+guarded by another condition. Loop tests must recompute their results on every
+check, not reuse a constant computed before the loop. No autofix is provided.
+
+Valid:
+
+```ts
+const hasProduct = page.products.some(({ id }) => id === productId);
+
+if (!hasProduct) {
+  handleMissingProduct();
+}
+```
+
+Invalid:
+
+```ts
+if (!page.products.some(({ id }) => id === productId)) {
+  handleMissingProduct();
+}
+```
+
+### `db21-arrays/no-inline-member-access`
+
+Extract array literals into meaningfully named constants before member access.
+This covers method calls, indexes, properties such as `.length`, optional chaining
+and TypeScript assertion wrappers. Comments do not exempt these expressions.
+Array declarations, arguments, returns and destructuring remain allowed.
+
+Keep initialization in the same evaluation scope: hoisting arrays can change
+mutation, allocation and side-effect behavior. No autofix is provided.
+The numeric-literal rule still applies independently to array elements.
+
+Valid:
+
+```ts
+const validationStatuses = [badRequest, conflict, unprocessable];
+validationStatuses.some((status) => error.status === status);
+```
+
+Invalid:
+
+```ts
+[badRequest, conflict, unprocessable].some((status) => error.status === status);
+[first, second][index];
+[first, second].length;
+```
+
+### `db21-numbers/no-magic-numbers`
+
+Give numeric literals meaningful names or attach a comment explaining their meaning.
+Applies to decimal, hex, binary, octal, fractional and bigint values, even when used
+only once. `-1`, `0` and `1` (including bigint equivalents) are exempt. Strings are
+outside this rule's scope.
+
+Direct named variable initializers, named class fields, enum members and numeric
+literal types are allowed. Numeric values inside expressions, arrays, object
+properties, arguments, returns and indexes still need names or explanations.
+Comments may be inline next to the value, immediately above the containing
+statement, or on the same line after that statement. Empty comments, lint/type
+directives, detached comments and comments belonging to other statements do not
+qualify. Lint checks comment presence, not whether its explanation is meaningful.
+No autofix is provided.
+
+Valid:
+
+```ts
+const supplementaryPlaneStart = 0x10000;
+const maxUnicodeCodePoint = 0x10ffff;
+const isSupplementary =
+  codePoint >= supplementaryPlaneStart && codePoint <= maxUnicodeCodePoint;
+
+// Supplementary Unicode plane bounds.
+const isSupplementaryWithComment =
+  codePoint >= 0x10000 && codePoint <= 0x10ffff;
+```
+
+Invalid:
+
+```ts
+const isSupplementary = codePoint >= 0x10000 && codePoint <= 0x10ffff;
+scheduleRetry(500);
+```
+
 ### `@typescript-eslint/consistent-type-assertions`
 
 Use `as` assertions.

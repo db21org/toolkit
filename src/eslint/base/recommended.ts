@@ -1,5 +1,8 @@
 import {
   logicalChecksPlugin,
+  namedArraysPlugin,
+  namedNumbersPlugin,
+  preferConditionValuesPlugin,
   sizeGuidancePlugin,
 } from "@db21/toolkit/eslint/plugins";
 import js from "@eslint/js";
@@ -20,14 +23,20 @@ export const javascriptRecommended = defineConfig({
     parserOptions: { ecmaFeatures: { jsx: true } },
   },
   plugins: {
+    "db21-arrays": namedArraysPlugin,
+    "db21-conditions": preferConditionValuesPlugin,
     "db21-logic": logicalChecksPlugin,
+    "db21-numbers": namedNumbersPlugin,
     "db21-size": sizeGuidancePlugin,
     "simple-import-sort": simpleImportSort,
   },
   rules: {
     ...commonRules,
     ...maxLinesRules,
+    "db21-arrays/no-inline-member-access": "error",
+    "db21-conditions/prefer-named-values": "error",
     "db21-logic/max-checks": "error",
+    "db21-numbers/no-magic-numbers": "error",
   },
 });
 
@@ -48,14 +57,20 @@ export const typescriptRecommended = defineConfig({
     },
   },
   plugins: {
+    "db21-arrays": namedArraysPlugin,
+    "db21-conditions": preferConditionValuesPlugin,
     "db21-logic": logicalChecksPlugin,
+    "db21-numbers": namedNumbersPlugin,
     "db21-size": sizeGuidancePlugin,
     "simple-import-sort": simpleImportSort,
   },
   rules: {
     ...recommendedRules,
     ...maxLinesRules,
+    "db21-arrays/no-inline-member-access": "error",
+    "db21-conditions/prefer-named-values": "error",
     "db21-logic/max-checks": "error",
+    "db21-numbers/no-magic-numbers": "error",
   },
 });
 
