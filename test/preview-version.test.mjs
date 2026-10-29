@@ -13,6 +13,8 @@ import { delimiter, join, resolve } from "node:path";
 
 import { expect, it } from "vitest";
 
+const executableFileMode = 0o755;
+
 // eslint-disable-next-line db21-tests/require-justification -- Risk: preview numbering ignores recorded stable releases or requires registry availability; Contract: CI derives next patch from its own package manifest without npm access and changes no other manifest fields.
 it("derives preview from recorded stable version without registry access", () => {
   const directory = mkdtempSync(join(tmpdir(), "toolkit-preview-version-"));
@@ -38,7 +40,7 @@ it("derives preview from recorded stable version without registry access", () =>
       join(directory, "npm"),
       '#!/usr/bin/env node\nthrow new Error("Registry access forbidden");\n',
     );
-    chmodSync(join(directory, "npm"), 0o755);
+    chmodSync(join(directory, "npm"), executableFileMode);
     execFileSync(process.execPath, [join(scripts, "prepare-preview.mjs")], {
       env: {
         ...process.env,

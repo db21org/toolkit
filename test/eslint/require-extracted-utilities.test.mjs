@@ -6,6 +6,17 @@ import commonConfig, {
 import { ESLint } from "eslint";
 import { test } from "vitest";
 
+const privateUtilitySourceLines = [
+  "const normalizeMoney = (value) => value.trim();",
+  "function parseValue(value) { return value; }",
+];
+
+const exportedUtilitySourceLines = [
+  "export const mapProduct = (value) => value;",
+  "export function parseProduct(value) { return value; }",
+  "const values = [1].map((value) => value + 1);",
+];
+
 const eslint = new ESLint({
   ignore: false,
   overrideConfig: [createUtilityExtractionConfig({ files: ["**/*.ts"] })],
@@ -21,10 +32,7 @@ const lint = async (source, filePath) => {
 // eslint-disable-next-line db21-tests/require-justification -- Risk: reusable module transforms remain hidden beside unrelated code; Contract: private top-level function values report extraction errors.
 test("rejects private module-scope function values", async () => {
   const messages = await lint(
-    [
-      "const normalizeMoney = (value) => value.trim();",
-      "function parseValue(value) { return value; }",
-    ].join("\n"),
+    privateUtilitySourceLines.join("\n"),
     "src/features/catalog/mappers/product.mapper.ts",
   );
 
@@ -60,11 +68,7 @@ test("allows extracted, test, entrypoint, module, and shared utility helpers", a
 // eslint-disable-next-line db21-tests/require-justification -- Risk: exported APIs and callbacks are falsely treated as hidden reusable utilities; Contract: exports and nested callbacks remain lint-clean.
 test("allows exported APIs and nested callbacks", async () => {
   const messages = await lint(
-    [
-      "export const mapProduct = (value) => value;",
-      "export function parseProduct(value) { return value; }",
-      "const values = [1].map((value) => value + 1);",
-    ].join("\n"),
+    exportedUtilitySourceLines.join("\n"),
     "src/features/catalog/mappers/product.mapper.ts",
   );
 

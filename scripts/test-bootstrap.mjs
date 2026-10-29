@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
+const jsonIndentSpaces = 2;
 const temporaryDirectory = mkdtempSync(
   join(tmpdir(), "db21-bootstrap-validation-"),
 );
@@ -42,7 +43,10 @@ try {
     ...manifest.resolutions,
     "@db21/toolkit": `file:${archive}`,
   };
-  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+  writeFileSync(
+    manifestPath,
+    JSON.stringify(manifest, null, jsonIndentSpaces) + "\n",
+  );
   writeFileSync(
     join(starter, ".yarnrc.yml"),
     "nodeLinker: node-modules\nenableImmutableInstalls: false\nenableScripts: false\n",

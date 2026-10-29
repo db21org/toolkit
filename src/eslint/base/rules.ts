@@ -1,16 +1,24 @@
 import type { Linter } from "eslint";
 
+const MAX_FILE_LINES = 300;
+const MAX_REACT_COMPONENT_LINES = 150;
+const MAX_FUNCTION_LINES = 60;
+
 export const maxLinesRules = {
   "max-lines": [
     "error",
-    { max: 300, skipBlankLines: true, skipComments: true },
+    { max: MAX_FILE_LINES, skipBlankLines: true, skipComments: true },
   ],
 } satisfies Linter.RulesRecord;
 
 export const reactComponentRules = {
   "max-lines-per-function": [
     "error",
-    { max: 150, skipBlankLines: true, skipComments: true },
+    {
+      max: MAX_REACT_COMPONENT_LINES,
+      skipBlankLines: true,
+      skipComments: true,
+    },
   ],
   "jsdoc/no-restricted-syntax": [
     "error",
@@ -129,7 +137,7 @@ export const commonRules = {
   "jsdoc/tag-lines": "off",
   "max-lines-per-function": [
     "error",
-    { max: 60, skipBlankLines: true, skipComments: true },
+    { max: MAX_FUNCTION_LINES, skipBlankLines: true, skipComments: true },
   ],
   "no-restricted-imports": [
     "error",

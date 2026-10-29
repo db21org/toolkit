@@ -14,6 +14,10 @@ import { expect, test } from "vitest";
 
 import { expectNativeErrorFrom, resolveFromModule } from "./test-helpers.js";
 
+const leafValue = 21;
+const doubledLeafValue = 42;
+const dependencyMultiplier = 2;
+
 type SharedModuleResult = {
   sharedService: object;
 };
@@ -200,7 +204,7 @@ test("exports are not transitive across module boundaries", async () => {
   const leafModule = createTestModule({
     exports: [leafToken],
     configure: ({ bind }) => {
-      bind(leafToken).toConstantValue(21);
+      bind(leafToken).toConstantValue(leafValue);
     },
   });
 
@@ -209,7 +213,7 @@ test("exports are not transitive across module boundaries", async () => {
     exports: [middleToken],
     configure: ({ bind }) => {
       bind(middleToken).toResolvedValue(
-        (leafValue: number) => leafValue * 2,
+        (leafValue: number) => leafValue * dependencyMultiplier,
         [leafToken],
       );
     },
@@ -222,7 +226,7 @@ test("exports are not transitive across module boundaries", async () => {
   const app = Application.create(rootModule);
   const middleValue = await resolveFromModule(app, rootModule, middleToken);
 
-  expect(middleValue).toBe(42);
+  expect(middleValue).toBe(doubledLeafValue);
   await expectNativeErrorFrom(
     () => resolveFromModule(app, rootModule, leafToken),
     "No bindings",

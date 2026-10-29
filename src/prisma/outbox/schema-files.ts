@@ -5,6 +5,9 @@ import { assert, isDefined, isEmpty } from "@db21/toolkit/utils";
 
 type Token = Readonly<{ text: string; index: number }>;
 
+const definitionKeywords = new Set(["model", "enum", "type", "view"]);
+const assignmentValueOffset = 2;
+
 const tokenize = (source: string): Token[] => {
   const tokens: Token[] = [];
 
@@ -55,7 +58,7 @@ const relocateGenerators = (source: string, file: string): string => {
     }
 
     if (tokens[index + 1]?.text === "=") {
-      const output = tokens[index + 2];
+      const output = tokens[index + assignmentValueOffset];
 
       assert.true(
         isDefined(output) && output.text.startsWith('"'),
@@ -124,7 +127,7 @@ export const readSchemaFiles = (
       assert.false(
         tokens.some(
           (token, index) =>
-            ["model", "enum", "type", "view"].includes(token.text) &&
+            definitionKeywords.has(token.text) &&
             tokens[index + 1]?.text === "OutboxMessage",
         ),
         "Remove the local OutboxMessage definition before composing the toolkit schema.",

@@ -15,6 +15,11 @@ import {
   resolveFromModule,
 } from "./test-helpers.js";
 
+const privateBindingValue = 11;
+const secondAmbiguousBindingValue = 2;
+const exportedCollisionBindingValue = 5;
+const localCollisionBindingValue = 6;
+
 // eslint-disable-next-line db21-tests/require-justification -- Risk: invalid module metadata can publish unowned or undecorated types into the container graph; Contract: module creation rejects invalid exports before application construction.
 test("module export must be local-owned and undecorated modules are rejected", async () => {
   const localToken = token<string>("unowned-token");
@@ -80,7 +85,7 @@ test("private imported bindings are inaccessible without explicit export", async
 
   const hiddenModule = createModule({
     configure: ({ bind }) => {
-      bind(privateToken).toConstantValue(11);
+      bind(privateToken).toConstantValue(privateBindingValue);
     },
   });
 
@@ -108,7 +113,7 @@ test("ambiguous bindings across direct imports and local/imported collisions sur
   const branchTwoModule = createModule({
     exports: [ambiguousToken],
     configure: ({ bind }) => {
-      bind(ambiguousToken).toConstantValue(2);
+      bind(ambiguousToken).toConstantValue(secondAmbiguousBindingValue);
     },
   });
 
@@ -127,14 +132,14 @@ test("ambiguous bindings across direct imports and local/imported collisions sur
   const exportingModule = createModule({
     exports: [collisionToken],
     configure: ({ bind }) => {
-      bind(collisionToken).toConstantValue(5);
+      bind(collisionToken).toConstantValue(exportedCollisionBindingValue);
     },
   });
 
   const localCollisionRoot = createModule({
     imports: [exportingModule],
     configure: ({ bind }) => {
-      bind(collisionToken).toConstantValue(6);
+      bind(collisionToken).toConstantValue(localCollisionBindingValue);
     },
   });
 

@@ -5,6 +5,8 @@ const transparentTypes = new Set([
   "TSNonNullExpression",
   "TSSatisfiesExpression",
 ]);
+const MAX_LOGICAL_CHECKS = 3;
+const MAX_LOGICAL_EXPRESSION_CHARACTERS = 120;
 
 const isTransparent = (node) =>
   transparentTypes.has(node.type) ||
@@ -80,7 +82,10 @@ export const logicalChecksPlugin = {
                 0,
               );
 
-            if (count > 3 || length > 120) {
+            if (
+              count > MAX_LOGICAL_CHECKS ||
+              length > MAX_LOGICAL_EXPRESSION_CHARACTERS
+            ) {
               context.report({
                 node,
                 messageId: "excessive",

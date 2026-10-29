@@ -11,6 +11,14 @@ const metadata = {
   eventId: "4423fb0f-848d-4e34-a71f-01b609b1e7cf",
   occurredAt: "2026-08-21T12:00:00.000Z",
 };
+const pingEventVersion = 2;
+const mismatchedEventVersion = 2;
+const fractionalVersion = 1.5;
+const expectedParsedPayloadCount = 2;
+const expectedIncrementedPayloadCount = 2;
+const duplicateEventVersion = 2;
+const expectedTransformCountAfterValidEvent = 1;
+const expectedTransformCountAfterInvalidEvent = 2;
 
 const created = defineEvent(
   "itemCreated",
@@ -18,7 +26,7 @@ const created = defineEvent(
   1,
   z.object({ itemId: z.string().min(1) }),
 );
-const ping = defineEvent("ping", "system.ping", 2, z.object({}));
+const ping = defineEvent("ping", "system.ping", pingEventVersion, z.object({}));
 const registry = createRegistry([created, ping]);
 
 describe("domain event envelope", () => {
@@ -28,7 +36,7 @@ describe("domain event envelope", () => {
     { occurredAt: "yesterday" },
     { type: "" },
     { version: 0 },
-    { version: 1.5 },
+    { version: fractionalVersion },
   ])("rejects invalid metadata: %o", (override) => {
     const result = domainEventSchema.safeParse({
       ...metadata,
@@ -43,20 +51,22 @@ describe("domain event envelope", () => {
 
 describe("event definitions", () => {
   // eslint-disable-next-line db21-tests/require-justification -- Risk: mismatched or extra event fields cross a consumer's versioned wire boundary; Contract: definitions reject wrong routing/version, invalid payloads and unexpected fields.
-  it.each([{ type: "other" }, { version: 2 }, { extra: true }, { itemId: "" }])(
-    "rejects mismatched or invalid event: %o",
-    (override) => {
-      expect(
-        created.schema.safeParse({
-          ...metadata,
-          itemId: "item-1",
-          type: created.type,
-          version: created.version,
-          ...override,
-        }).success,
-      ).toBe(false);
-    },
-  );
+  it.each([
+    { type: "other" },
+    { version: mismatchedEventVersion },
+    { extra: true },
+    { itemId: "" },
+  ])("rejects mismatched or invalid event: %o", (override) => {
+    expect(
+      created.schema.safeParse({
+        ...metadata,
+        itemId: "item-1",
+        type: created.type,
+        version: created.version,
+        ...override,
+      }).success,
+    ).toBe(false);
+  });
 });
 
 describe("event payload transforms", () => {
@@ -87,8 +97,8 @@ describe("event payload transforms", () => {
     });
 
     expectTypeOf(event.count).toEqualTypeOf<number>();
-    expect(event.count).toBe(2);
-    expect(transforms).toBe(1);
+    expect(event.count).toBe(expectedParsedPayloadCount);
+    expect(transforms).toBe(expectedTransformCountAfterValidEvent);
     const invalid = countedRegistry.safeParseEvent("item.counted", {
       ...metadata,
       type: counted.type,
@@ -97,7 +107,7 @@ describe("event payload transforms", () => {
     });
 
     expect(invalid.success).toBe(false);
-    expect(transforms).toBe(2);
+    expect(transforms).toBe(expectedTransformCountAfterInvalidEvent);
 
     if (!invalid.success) {
       expect(invalid.error.issues).toContainEqual(
@@ -152,7 +162,7 @@ describe("same-type payload transforms", () => {
         version: 1,
         count: 1,
       }).count,
-    ).toBe(2);
+    ).toBe(expectedIncrementedPayloadCount);
   });
 });
 
@@ -222,7 +232,7 @@ describe("event registry creation", () => {
     expect(registry.createEvent("system.ping", metadata)).toEqual({
       ...metadata,
       type: "system.ping",
-      version: 2,
+      version: pingEventVersion,
     });
   });
 });
@@ -240,7 +250,10 @@ describe("event registry validation", () => {
       data: event,
     });
     expect(
-      registry.safeParseEvent("item.created", { ...event, version: 2 }).success,
+      registry.safeParseEvent("item.created", {
+        ...event,
+        version: mismatchedEventVersion,
+      }).success,
     ).toBe(false);
     expect(registry.safeParseEvent("item.created", null).success).toBe(false);
     expect(() =>
@@ -253,7 +266,7 @@ describe("event registry validation", () => {
     const duplicate = defineEvent(
       "itemCreated",
       "item.updated",
-      2,
+      duplicateEventVersion,
       z.object({}),
     );
 

@@ -17,6 +17,9 @@ import { expect, it } from "vitest";
 import { initAgents } from "../src/cli/agents.js";
 
 const executeFile = promisify(execFile);
+const readOnlyFileMode = 0o444;
+const defaultFileMode = 0o644;
+const concurrentInitializers = 8;
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: instruction initialization overwrites repository guidance or duplicates policy; Contract: built CLI creates instructions and repeated initialization preserves existing bytes.
 it("creates and appends agent instructions without replacing existing guidance", async () => {
@@ -57,11 +60,11 @@ it("creates and appends agent instructions without replacing existing guidance",
 
     expect(repeatedAppend).toBe(false);
     expect(afterAppend).toBe(appended);
-    await chmod(path, 0o444);
+    await chmod(path, readOnlyFileMode);
     const readOnlyRepeat = await initAgents(directory);
 
     expect(readOnlyRepeat).toBe(false);
-    await chmod(path, 0o644);
+    await chmod(path, defaultFileMode);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
@@ -77,7 +80,7 @@ it("serializes concurrent initialization across processes", async () => {
     await writeFile(path, "# User guidance\n");
     // eslint-disable-next-line db21-promises/prefer-native-batch -- Separate CLI processes must overlap to expose duplicate appends; a batch initializer would bypass the cross-process lock contract.
     await Promise.all(
-      Array.from({ length: 8 }, () =>
+      Array.from({ length: concurrentInitializers }, () =>
         executeFile(process.execPath, [
           resolve("dist/cli/index.js"),
           "agents",

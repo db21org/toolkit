@@ -12,6 +12,19 @@ import { Linter } from "eslint";
 import tseslint from "typescript-eslint";
 
 const rule = "db21-prisma/repository-only";
+const storageAccessLine = 5;
+const transactionAccessLine = 6;
+const detachedDelegateAccessLine = 7;
+const copiedClientAccessLine = 8;
+const serviceClientAccessLine = 11;
+const forbiddenTypedClientLines = [
+  storageAccessLine,
+  transactionAccessLine,
+  detachedDelegateAccessLine,
+  copiedClientAccessLine,
+  serviceClientAccessLine,
+];
+
 const config = {
   languageOptions: { parser: tseslint.parser },
   plugins: { "db21-prisma": prismaRepositoryPlugin },
@@ -187,12 +200,7 @@ model User {
   }
 };
 
-// eslint-disable-next-line db21-tests/require-justification -- Risk: type-only injection, renamed clients or detached delegates evade import checks; Contract: real generated Prisma types reveal client and transaction access while normal lookalike methods and type references remain allowed.
-test("typed Prisma clients and detached delegates cannot escape repositories", () => {
-  const directory = createTypedFixture();
-
-  try {
-    const source = `import type { PrismaClient, Prisma } from "./generated";
+const typedClientSource = `import type { PrismaClient, Prisma } from "./generated";
 declare const storage: PrismaClient;
 declare const transaction: Prisma.TransactionClient;
 declare const detached: Prisma.UserDelegate;
@@ -211,11 +219,17 @@ type Instance = InstanceType<typeof PrismaClient>;
 type Delegate = typeof detached;
 type Query = typeof storage.user.findMany;
 `;
+
+// eslint-disable-next-line db21-tests/require-justification -- Risk: type-only injection, renamed clients or detached delegates evade import checks; Contract: real generated Prisma types reveal client and transaction access while normal lookalike methods and type references remain allowed.
+test("typed Prisma clients and detached delegates cannot escape repositories", () => {
+  const directory = createTypedFixture();
+
+  try {
     const filename = join(directory, "service.ts");
 
-    writeFileSync(filename, source);
+    writeFileSync(filename, typedClientSource);
     const messages = new Linter({ cwd: directory }).verify(
-      source,
+      typedClientSource,
       [
         {
           ...config,
@@ -232,7 +246,7 @@ type Query = typeof storage.user.findMany;
       { filename },
     );
 
-    for (const line of [5, 6, 7, 8, 11]) {
+    for (const line of forbiddenTypedClientLines) {
       assert.ok(
         messages.some(
           (message) => message.ruleId === rule && message.line === line,
@@ -244,7 +258,8 @@ type Query = typeof storage.user.findMany;
     assert.ok(
       messages.every(
         (message) =>
-          message.ruleId === rule && [5, 6, 7, 8, 11].includes(message.line),
+          message.ruleId === rule &&
+          forbiddenTypedClientLines.includes(message.line),
       ),
       JSON.stringify(messages),
     );

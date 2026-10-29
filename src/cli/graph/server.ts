@@ -7,6 +7,13 @@ import { GRAPH_STYLE, graphPage, graphScript } from "./page.js";
 import { SparqlReader } from "./sparql.js";
 
 type GraphOptions = { endpoint: string; port: number; graph?: string };
+const httpOk = 200;
+const httpBadRequest = 400;
+const httpForbidden = 403;
+const httpNotFound = 404;
+const httpMethodNotAllowed = 405;
+const maxTcpPort = 65535;
+
 type RequestHandler = (
   request: IncomingMessage,
   response: ServerResponse,
@@ -44,7 +51,7 @@ const prepareResponse = (
     hasForeignOrigin ||
     request.headers["sec-fetch-site"] === "cross-site"
   ) {
-    response.writeHead(403, { "content-type": "application/json" });
+    response.writeHead(httpForbidden, { "content-type": "application/json" });
     response.end(
       JSON.stringify({
         error: "Use the printed localhost URL from the same origin.",
@@ -55,7 +62,7 @@ const prepareResponse = (
   }
 
   if (request.method !== "GET") {
-    response.writeHead(405, {
+    response.writeHead(httpMethodNotAllowed, {
       allow: "GET",
       "content-type": "application/json",
     });
@@ -95,11 +102,11 @@ const createViewHandler = (
       );
 
       if (!controller.signal.aborted) {
-        sendJson(response, 200, view);
+        sendJson(response, httpOk, view);
       }
     } catch (error: unknown) {
       if (!controller.signal.aborted) {
-        sendJson(response, 400, {
+        sendJson(response, httpBadRequest, {
           error: error instanceof Error ? error.message : "Graph query failed.",
         });
       }
@@ -141,7 +148,7 @@ const createHandler = (
     try {
       url = new URL(request.url ?? "/", origin);
     } catch {
-      json(400, { error: "Invalid request URL." });
+      json(httpBadRequest, { error: "Invalid request URL." });
 
       return;
     }
@@ -149,14 +156,16 @@ const createHandler = (
     const asset = assets.get(url.pathname);
 
     if (isDefined(asset)) {
-      response.writeHead(200, { "content-type": `${asset[0]}; charset=utf-8` });
+      response.writeHead(httpOk, {
+        "content-type": `${asset[0]}; charset=utf-8`,
+      });
       response.end(asset[1]);
     } else if (url.pathname === "/connection") {
-      json(200, { endpoint: options.endpoint, graph: options.graph });
+      json(httpOk, { endpoint: options.endpoint, graph: options.graph });
     } else if (url.pathname === "/view") {
       void view(url, response);
     } else {
-      json(404, { error: "Not found." });
+      json(httpNotFound, { error: "Not found." });
     }
   };
 };
@@ -167,7 +176,7 @@ export const startGraphServer = async (
   assert.true(
     Number.isInteger(options.port) &&
       options.port >= 1 &&
-      options.port <= 65535,
+      options.port <= maxTcpPort,
     "Port must be between 1 and 65535.",
   );
   const reader = new SparqlReader(options.endpoint, options.graph);

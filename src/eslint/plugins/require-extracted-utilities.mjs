@@ -4,9 +4,12 @@ import { isEmpty } from "@db21/toolkit/utils";
 
 const utilityFilenamePattern = /\.util\.(?:cts|mts|ts)$/u;
 const testFilenamePattern = /\.(?:spec|test)\.(?:cts|mts|ts)$/u;
+const FUNCTION_VALUE_NODE_TYPES = new Set([
+  "ArrowFunctionExpression",
+  "FunctionExpression",
+]);
 
-const isFunctionValue = (node) =>
-  ["ArrowFunctionExpression", "FunctionExpression"].includes(node?.type);
+const isFunctionValue = (node) => FUNCTION_VALUE_NODE_TYPES.has(node?.type);
 
 const isExemptFile = (filename, cwd, exemptPaths) => {
   const normalizedFilename = filename.replaceAll("\\", "/");
@@ -20,23 +23,23 @@ const isExemptFile = (filename, cwd, exemptPaths) => {
     return true;
   }
 
-  if (
-    exemptPaths.some((path) => {
-      const fromExemption = relative(resolve(cwd, path), resolve(filename));
+  const isExemptPath = exemptPaths.some((path) => {
+    const fromExemption = relative(resolve(cwd, path), resolve(filename));
 
-      if (isEmpty(fromExemption)) {
-        return true;
-      }
+    if (isEmpty(fromExemption)) {
+      return true;
+    }
 
-      if (isAbsolute(fromExemption) || fromExemption === "..") {
-        return false;
-      }
+    if (isAbsolute(fromExemption) || fromExemption === "..") {
+      return false;
+    }
 
-      return (
-        !fromExemption.startsWith("../") && !fromExemption.startsWith("..\\")
-      );
-    })
-  ) {
+    return (
+      !fromExemption.startsWith("../") && !fromExemption.startsWith("..\\")
+    );
+  });
+
+  if (isExemptPath) {
     return true;
   }
 

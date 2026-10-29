@@ -16,8 +16,13 @@ import { fileURLToPath, URL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const actions = fileURLToPath(new URL("../../actions/", import.meta.url));
-const sha = "a".repeat(40);
-const digest = `sha256:${"b".repeat(64)}`;
+const shaLength = 40;
+const digestHexLength = 64;
+const executableFileMode = 0o700;
+const permissionMask = 0o777;
+const privateFileMode = 0o600;
+const sha = "a".repeat(shaLength);
+const digest = `sha256:${"b".repeat(digestHexLength)}`;
 let directory;
 let env;
 
@@ -74,7 +79,7 @@ const invalidReceiptInputs = [
 ];
 
 const malformedReceipts = [
-  { component: "api", image: digest, sha: "c".repeat(40) },
+  { component: "api", image: digest, sha: "c".repeat(shaLength) },
   { component: "other", image: digest, sha },
   { component: "api", image: "latest", sha },
   { component: "api", image: digest, sha, extra: true },
@@ -247,7 +252,7 @@ describe("deployment submission", () => {
     writeFileSync(
       join(directory, "make"),
       '#!/bin/bash\ncp "$DEPLOY_CURL_CONFIG" "$RUNNER_TEMP/captured"\nstat -f %Lp "$DEPLOY_CURL_CONFIG" > "$RUNNER_TEMP/mode" 2>/dev/null || stat -c %a "$DEPLOY_CURL_CONFIG" > "$RUNNER_TEMP/mode"\nprintf "%s\\n" "$@" "$IMAGE" "$REQUEST_ID" > "$RUNNER_TEMP/arguments"\nexit "${FAKE_MAKE_EXIT:-0}"\n',
-      { mode: 0o700 },
+      { mode: executableFileMode },
     );
   });
   // eslint-disable-next-line db21-tests/require-justification -- Risk: deployment credentials leak through logs, permissions or leftover files; Contract: submission escapes private credentials, uses mode 0600 and cleans temporary auth on success and failure.
@@ -263,7 +268,9 @@ describe("deployment submission", () => {
           name.startsWith("deployment-access."),
         ),
       ).toEqual([]);
-      expect(statSync(join(directory, "captured")).mode & 0o777).toBe(0o600);
+      expect(statSync(join(directory, "captured")).mode & permissionMask).toBe(
+        privateFileMode,
+      );
       expect(readFileSync(join(directory, "mode"), "utf8").trim()).toBe("600");
       expect(readFileSync(join(directory, "captured"), "utf8")).toContain(
         'header = "CF-Access-Client-Secret: example-\\"secret"',

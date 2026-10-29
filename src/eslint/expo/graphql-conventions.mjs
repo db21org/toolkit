@@ -12,6 +12,7 @@ const GRAPHQL_ROLE_BY_FOLDER = {
 };
 
 const ownerPattern = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u;
+const FILE_EXTENSION_CAPTURE_INDEX = 4;
 const graphqlFilePattern =
   /^(queries|mutations|subscriptions|fragments)(?:\/.+)?\/([a-z][a-z0-9]*(?:-[a-z0-9]+)*)\.(query|mutation|subscription|fragment)\.(gql|graphql)$/u;
 
@@ -45,7 +46,10 @@ export const describeGraphqlFile = (
       .join("/");
     const match = graphqlFilePattern.exec(documentPath);
 
-    if (isNotDefined(match) || !documentExtensions.includes(match[4])) {
+    if (
+      isNotDefined(match) ||
+      !documentExtensions.includes(match[FILE_EXTENSION_CAPTURE_INDEX])
+    ) {
       continue;
     }
 
@@ -229,7 +233,9 @@ export const collectUnmappedCustomScalars = (
     .filter((name) => !BUILTIN_SCALARS.has(name))
     .filter((name) => !Object.hasOwn(scalarMappings, name));
 
-  return [...new Set(customScalars)].toSorted((left, right) =>
+  const uniqueCustomScalars = [...new Set(customScalars)];
+
+  return uniqueCustomScalars.toSorted((left, right) =>
     left.localeCompare(right),
   );
 };

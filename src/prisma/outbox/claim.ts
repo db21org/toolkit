@@ -3,6 +3,10 @@ import { assert, isNotEmpty } from "@db21/toolkit/utils";
 import { getOutboxContext } from "./context.js";
 import type { ClaimOutboxMessages, OutboxClaim } from "./types.js";
 
+const maximumTopicLength = 128;
+const maximumClaimLimit = 1000;
+const maximumLeaseSeconds = 86_400;
+
 /**
  * Atomically leases messages using one database clock and fresh fencing tokens.
  * @param options Topic, bounded batch size, and lease duration.
@@ -16,17 +20,17 @@ export async function claim(
   { topic, limit, leaseSeconds }: ClaimOutboxMessages,
 ): Promise<readonly OutboxClaim[]> {
   assert.true(
-    isNotEmpty(topic.trim()) && topic.length <= 128,
+    isNotEmpty(topic.trim()) && topic.length <= maximumTopicLength,
     "Outbox claim topic must contain at most 128 characters.",
   );
   assert.true(
-    Number.isSafeInteger(limit) && limit > 0 && limit <= 1000,
+    Number.isSafeInteger(limit) && limit > 0 && limit <= maximumClaimLimit,
     "Outbox claim limit must be an integer between 1 and 1000.",
   );
   assert.true(
     Number.isSafeInteger(leaseSeconds) &&
       leaseSeconds > 0 &&
-      leaseSeconds <= 86_400,
+      leaseSeconds <= maximumLeaseSeconds,
     "Outbox claim lease must be an integer between 1 and 86400 seconds.",
   );
 

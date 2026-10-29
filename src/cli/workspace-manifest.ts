@@ -77,46 +77,48 @@ export const createRootManifest = (
   projectName: string,
   apps: readonly AppType[],
   toolkitVersion: string,
-): WorkspaceManifest => ({
-  name: projectName,
-  version: "0.0.0",
-  private: true,
-  type: "module",
-  packageManager: "yarn@4.16.0",
-  engines: { node: ">=22.16.0" },
-  workspaces: ["apps/*"],
-  // Match Amatok's checker: newer language servers introduce incompatible native tooling.
-  ...(apps.some((app) => app.startsWith("astro"))
-    ? { resolutions: { "@astrojs/language-server": "2.16.11" } }
-    : {}),
-  scripts: {
-    build: "turbo run build",
-    check: "tsc --noEmit && turbo run check",
-    lint: "yarn lint:root && turbo run lint",
-    "lint:root": "eslint .",
-    "architecture:check": "turbo run architecture:check",
-    format: "prettier --write .",
-    "format:check": "prettier --check .",
-    test: "vitest run",
-    ...Object.fromEntries(
-      apps.map((app) => [
-        `dev:${appDirectories[app]}`,
-        `turbo run dev --filter=@${projectName}/${appDirectories[app]}`,
-      ]),
-    ),
-  },
-  devDependencies: {
-    "@db21/toolkit": toolkitVersion,
-    ...tooling,
-    "@types/node": "^22.0.0",
-    prettier: "^3.9.5",
-    ...(apps.some((app) => app.startsWith("astro"))
-      ? { "prettier-plugin-astro": "^0.14.1" }
+): WorkspaceManifest => {
+  const hasAstro = apps.some((app) => app.startsWith("astro"));
+
+  return {
+    name: projectName,
+    version: "0.0.0",
+    private: true,
+    type: "module",
+    packageManager: "yarn@4.16.0",
+    engines: { node: ">=22.16.0" },
+    workspaces: ["apps/*"],
+    // Match Amatok's checker: newer language servers introduce incompatible native tooling.
+    ...(hasAstro
+      ? { resolutions: { "@astrojs/language-server": "2.16.11" } }
       : {}),
-    turbo: "2.10.9",
-    vitest: "^4.1.10",
-  },
-});
+    scripts: {
+      build: "turbo run build",
+      check: "tsc --noEmit && turbo run check",
+      lint: "yarn lint:root && turbo run lint",
+      "lint:root": "eslint .",
+      "architecture:check": "turbo run architecture:check",
+      format: "prettier --write .",
+      "format:check": "prettier --check .",
+      test: "vitest run",
+      ...Object.fromEntries(
+        apps.map((app) => [
+          `dev:${appDirectories[app]}`,
+          `turbo run dev --filter=@${projectName}/${appDirectories[app]}`,
+        ]),
+      ),
+    },
+    devDependencies: {
+      "@db21/toolkit": toolkitVersion,
+      ...tooling,
+      "@types/node": "^22.0.0",
+      prettier: "^3.9.5",
+      ...(hasAstro ? { "prettier-plugin-astro": "^0.14.1" } : {}),
+      turbo: "2.10.9",
+      vitest: "^4.1.10",
+    },
+  };
+};
 
 export const getAppDirectory = (type: AppType): string => appDirectories[type];
 

@@ -98,11 +98,11 @@ const checkTypedReferences = (context, isClient, report) => {
       }
 
       // Type queries read the value namespace but emit no runtime access.
-      if (
-        context.sourceCode
-          .getAncestors(node)
-          .some((ancestor) => ancestor.type === "TSTypeQuery")
-      ) {
+      const isTypeQuery = context.sourceCode
+        .getAncestors(node)
+        .some((ancestor) => ancestor.type === "TSTypeQuery");
+
+      if (isTypeQuery) {
         continue;
       }
 

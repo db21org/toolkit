@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 const stablePattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/u;
 const previewPattern =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-dev\.[1-9]\d*\.[1-9]\d*\.g[a-f\d]{12}$/u;
+const previewVersionComponentsEnd = 4;
 
 export const compareStableVersions = (left, right) => {
   const leftParts = stablePattern.exec(left);
@@ -26,7 +27,7 @@ export const createReleaseVersion = ({ devVersion, latestVersion }) => {
 
   assert(preview, "Expected dev to use the toolkit preview version format.");
 
-  const parts = preview.slice(1, 4);
+  const parts = preview.slice(1, previewVersionComponentsEnd);
   const version = parts.join(".");
 
   assert(

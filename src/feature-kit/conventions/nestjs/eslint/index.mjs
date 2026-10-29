@@ -93,23 +93,25 @@ const outputDtoFilenameRule = {
   },
 };
 
+const nestjsRoleDefinitions = [
+  ["context", ".context"],
+  ["controllers", ".controller"],
+  ["decorators", ".decorator"],
+  ["guards", ".guard"],
+  ["loaders", ".loader"],
+  ["mappers", ".mapper"],
+  ["pipes", ".pipe"],
+  ["processors", ".processor"],
+  ["resolvers", ".resolver"],
+  ["repositories", ".repository"],
+  ["scalars", ".scalar"],
+  ["schemas", ".schema"],
+  ["types", ".type"],
+  ["utils", ".util"],
+];
+
 const nestjsRoles = Object.freeze(
-  [
-    ["context", ".context"],
-    ["controllers", ".controller"],
-    ["decorators", ".decorator"],
-    ["guards", ".guard"],
-    ["loaders", ".loader"],
-    ["mappers", ".mapper"],
-    ["pipes", ".pipe"],
-    ["processors", ".processor"],
-    ["resolvers", ".resolver"],
-    ["repositories", ".repository"],
-    ["scalars", ".scalar"],
-    ["schemas", ".schema"],
-    ["types", ".type"],
-    ["utils", ".util"],
-  ].map(([folder, suffix]) =>
+  nestjsRoleDefinitions.map(([folder, suffix]) =>
     Object.freeze({
       case: "kebab",
       extensions: Object.freeze([".ts"]),

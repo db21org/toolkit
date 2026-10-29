@@ -20,6 +20,7 @@ import {
 } from "../src/cli/bootstrap-options.js";
 
 let temporaryDirectory: string;
+const appCombinationCount = 15;
 
 beforeEach(async () => {
   temporaryDirectory = await mkdtemp(join(tmpdir(), "toolkit-cli-test-"));
@@ -72,7 +73,7 @@ describe("bootstrap options", () => {
 });
 
 describe("bootstrap generation", () => {
-  const combinations = Array.from({ length: 15 }, (_, index) =>
+  const combinations = Array.from({ length: appCombinationCount }, (_, index) =>
     appTypes.filter((_, bit) => ((index + 1) & (1 << bit)) !== 0),
   );
 
@@ -101,6 +102,7 @@ describe("bootstrap generation", () => {
         join(directory, ".github/workflows/validate.yml"),
         "utf8",
       );
+      const includesAstroApp = apps.some((app) => app.startsWith("astro"));
 
       expect(entries.toSorted((a, b) => a.localeCompare(b))).toEqual(
         expected.toSorted((a, b) => a.localeCompare(b)),
@@ -108,7 +110,7 @@ describe("bootstrap generation", () => {
       expect(root.name).toBe("starter");
       expect(root.devDependencies).toMatchObject({ "@db21/toolkit": "1.2.3" });
       expect(root.resolutions).toEqual(
-        apps.some((app) => app.startsWith("astro"))
+        includesAstroApp
           ? { "@astrojs/language-server": "2.16.11" }
           : undefined,
       );

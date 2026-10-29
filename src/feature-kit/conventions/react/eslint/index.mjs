@@ -1,36 +1,38 @@
 import { createCoreEslintConfig } from "@db21/toolkit/feature-kit/conventions/core/eslint";
 
+const reactRoleDefinitions = [
+  {
+    case: "kebab",
+    extensions: [".ts"],
+    folder: "queries",
+    recursive: false,
+    suffix: ".query",
+  },
+  {
+    case: "kebab",
+    extensions: [".tsx"],
+    folder: "react-providers",
+    recursive: false,
+    suffix: ".react-provider",
+  },
+  {
+    case: "pascal",
+    extensions: [".tsx"],
+    folder: "surfaces",
+    recursive: false,
+    suffix: ".surface",
+  },
+  {
+    case: "kebab",
+    extensions: [".ts", ".tsx"],
+    folder: "hooks",
+    recursive: true,
+    suffix: ".hook",
+  },
+];
+
 const reactRoles = Object.freeze(
-  [
-    {
-      case: "kebab",
-      extensions: [".ts"],
-      folder: "queries",
-      recursive: false,
-      suffix: ".query",
-    },
-    {
-      case: "kebab",
-      extensions: [".tsx"],
-      folder: "react-providers",
-      recursive: false,
-      suffix: ".react-provider",
-    },
-    {
-      case: "pascal",
-      extensions: [".tsx"],
-      folder: "surfaces",
-      recursive: false,
-      suffix: ".surface",
-    },
-    {
-      case: "kebab",
-      extensions: [".ts", ".tsx"],
-      folder: "hooks",
-      recursive: true,
-      suffix: ".hook",
-    },
-  ].map((role) =>
+  reactRoleDefinitions.map((role) =>
     Object.freeze({
       ...role,
       extensions: Object.freeze(role.extensions),

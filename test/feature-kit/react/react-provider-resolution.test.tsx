@@ -11,6 +11,8 @@ import {
   renderWithFeatureKit,
 } from "./feature-kit-provider-test-helpers.js";
 
+const applicationResolutionCount = 2;
+
 // eslint-disable-next-line db21-tests/require-justification -- Risk: asynchronous provider data is omitted from server-rendered content; Contract: SSR waits for resolved provider dependencies before emitting the tree.
 test("FeatureKitProvider suspends and resolves React provider dependencies", async () => {
   const payloadToken = token<string>("payload-token");
@@ -138,7 +140,7 @@ test("SSR requests cache provider dependencies per application", async () => {
   expect(firstRequest).toContain("value-1");
   expect(repeatedFirstRequest).toContain("value-1");
   expect(secondRequest).toContain("value-2");
-  expect(resolveCount).toBe(2);
+  expect(resolveCount).toBe(applicationResolutionCount);
 });
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: a failed dependency produces misleading partial server output; Contract: SSR rejects with the provider dependency error.

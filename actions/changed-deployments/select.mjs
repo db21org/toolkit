@@ -61,14 +61,18 @@ const namespaceChanged = changed.some((file) =>
   /^namespace\.ya?ml$/.test(file.slice(prefix.length)),
 );
 
-const components = [
+const uniqueComponents = [
   ...new Set(
     all
       .filter((file) => namespaceChanged || changed.includes(file))
       .map((file) => path.basename(file).replace(/\.ya?ml$/, ""))
       .filter((name) => name !== "namespace"),
   ),
-].toSorted((left, right) => left.localeCompare(right));
+];
+
+const components = uniqueComponents.toSorted((left, right) =>
+  left.localeCompare(right),
+);
 
 appendFileSync(
   process.env.GITHUB_OUTPUT,

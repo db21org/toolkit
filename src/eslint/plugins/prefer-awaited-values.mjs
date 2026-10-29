@@ -4,6 +4,11 @@ const functionNodeTypes = new Set([
   "FunctionExpression",
 ]);
 
+const CALL_ARGUMENT_EXPRESSION_TYPES = new Set([
+  "CallExpression",
+  "NewExpression",
+]);
+
 const getAwaitUsage = (sourceCode, node) => {
   let child = node;
   const ancestors = sourceCode.getAncestors(node).toReversed();
@@ -18,7 +23,7 @@ const getAwaitUsage = (sourceCode, node) => {
     }
 
     if (
-      ["CallExpression", "NewExpression"].includes(ancestor.type) &&
+      CALL_ARGUMENT_EXPRESSION_TYPES.has(ancestor.type) &&
       ancestor.arguments.includes(child)
     ) {
       return "argument";

@@ -68,6 +68,7 @@ const validateRoleFile = ({ context, filePath, module, roles }) => {
   const relativePath = toPosixPath(relative(module.directory, filePath));
   const segments = relativePath.split("/");
   const fileName = segments.at(-1);
+  const directRoleFileSegments = 2;
 
   if (isNotDefined(fileName) || fileName === "index.ts") {
     return;
@@ -76,7 +77,8 @@ const validateRoleFile = ({ context, filePath, module, roles }) => {
   const role = roles.find((candidate) => {
     if (
       segments[0] === candidate.folder &&
-      (candidate.recursive === true || segments.length === 2)
+      (candidate.recursive === true ||
+        segments.length === directRoleFileSegments)
     ) {
       return true;
     }
@@ -104,10 +106,11 @@ const validateRoleFile = ({ context, filePath, module, roles }) => {
   const inRoleFolder = segments[0] === role.folder;
   const hasExtension = role.extensions.includes(extension);
 
-  if (inRoleFolder && hasSuffix && hasExtension) {
-    if (matchesCase(name, role.case)) {
-      return;
-    }
+  const hasValidRoleLocation = inRoleFolder && hasSuffix && hasExtension;
+  const hasValidRoleName = hasValidRoleLocation && matchesCase(name, role.case);
+
+  if (hasValidRoleName) {
+    return;
   }
 
   const extensionList = role.extensions.join(" or ");

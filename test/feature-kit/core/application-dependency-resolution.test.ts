@@ -13,6 +13,9 @@ import { expect, test } from "vitest";
 
 import { resolveFromModule } from "./test-helpers.js";
 
+const configuredDependencyValue = 2;
+const duplicateSecondValue = 2;
+
 const createTestModule = (metadata: ModuleMetadata): ModuleType => {
   @Module(metadata)
   class ModuleFixture {}
@@ -47,7 +50,7 @@ test("class identifiers and branded tokens resolve through constructor injection
 
   const module = createTestModule({
     configure: ({ bind }) => {
-      bind(configToken).toConstantValue(2);
+      bind(configToken).toConstantValue(configuredDependencyValue);
       bind(infoToken).toConstantValue({ label: "alpha" });
       bind(serviceNameToken).toConstantValue("primary");
       bind(Dependency).toSelf().inSingletonScope();
@@ -64,7 +67,7 @@ test("class identifiers and branded tokens resolve through constructor injection
 
   expect(firstConsumer).toBe(secondConsumer);
   expect(firstConsumer.dependency.config).toBe(config);
-  expect(firstConsumer.dependency.config).toBe(2);
+  expect(firstConsumer.dependency.config).toBe(configuredDependencyValue);
   expect(firstConsumer.dependency.info).toBe(info);
   expect(firstConsumer.dependency.info.label).toBe("alpha");
   expect(firstConsumer.dependency.serviceName).toBe(serviceName);
@@ -134,7 +137,7 @@ test("duplicate token descriptions keep distinct identities", async () => {
   const module = createTestModule({
     configure: ({ bind }) => {
       bind(firstToken).toConstantValue(1);
-      bind(secondToken).toConstantValue(2);
+      bind(secondToken).toConstantValue(duplicateSecondValue);
     },
   });
 
@@ -144,7 +147,7 @@ test("duplicate token descriptions keep distinct identities", async () => {
 
   expect(firstToken).not.toBe(secondToken);
   expect(firstValue).toEqual(1);
-  expect(secondValue).toEqual(2);
+  expect(secondValue).toEqual(duplicateSecondValue);
 });
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: internal resolver details can become accidental public runtime API; Contract: the public Feature Kit entry point excludes internal resolver exports.

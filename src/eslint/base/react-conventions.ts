@@ -6,6 +6,7 @@ import {
 } from "@typescript-eslint/utils";
 
 const PASCAL_CASE = /^[A-Z][A-Za-z0-9]*$/;
+const FUNCTION_COMPONENT_TYPE_NAMES = new Set(["FC", "React.FC"]);
 
 type RuleModule = TSESLint.RuleModule<string, readonly unknown[]>;
 type RuleContext = Readonly<TSESLint.RuleContext<string, readonly unknown[]>>;
@@ -36,7 +37,7 @@ const isFcAnnotated = (node: TSESTree.VariableDeclarator): boolean => {
 
   const typeName = getTypeName(annotation.typeName);
 
-  return ["FC", "React.FC"].includes(typeName);
+  return FUNCTION_COMPONENT_TYPE_NAMES.has(typeName);
 };
 
 const report = (

@@ -6,6 +6,7 @@ import { expectInvalid, expectValid } from "../helpers/lint-rule.js";
 
 const ruleName = "max-lines-per-function";
 const ruleConfig = recommendedRules[ruleName];
+const oversizedFunctionLineCount = 61;
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: the function-size limit rejects concise implementation units; Contract: a function below sixty executable lines remains lint-clean.
 test(`${ruleName}: valid`, async () => {
@@ -20,7 +21,7 @@ test(`${ruleName}: valid`, async () => {
 test(`${ruleName}: invalid`, async () => {
   await expectInvalid({
     code: `function longTask(): void {\n${Array.from(
-      { length: 61 },
+      { length: oversizedFunctionLineCount },
       (_, index) => `  step${index}();`,
     ).join("\n")}\n}`,
     ruleConfig,
