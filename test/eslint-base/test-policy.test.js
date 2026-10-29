@@ -55,6 +55,9 @@ const rejectedDirectives = [
   `/* eslint ${rule}: ["off"] */`,
   `/* eslint ${rule}: [1] -- ${explanation} */`,
   `/* eslint no-alert: error, "${rule}": ["warn"] */`,
+  `/* eslint "${rule}": "error", "${rule}": "off" */`,
+  `/* eslint '${rule}': [2], '${rule}': [1] */`,
+  `/* eslint "${rule}": "off", "${rule}": "error" */`,
   `/* eslint\n  "${rule}": 0\n*/`,
 ];
 
