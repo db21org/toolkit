@@ -137,7 +137,9 @@ export class Application {
       // TODO(tech-debt): Attempt every module disposal, then report collected
       // failures instead of leaking remaining containers.
       // Dispose in reverse graph order so dependents are torn down before imports.
-      for (const moduleRuntime of [...this.moduleRuntimes].toReversed()) {
+      const moduleRuntimes = [...this.moduleRuntimes];
+
+      for (const moduleRuntime of moduleRuntimes.toReversed()) {
         try {
           await moduleRuntime.container[Symbol.asyncDispose]();
         } catch (cause: unknown) {
@@ -301,16 +303,14 @@ export class Application {
 
       const metadata = this.inspectModuleMetadata(moduleType);
       const cycleIndex = modulePath.indexOf(moduleType);
+      const cyclePath =
+        cycleIndex >= 0 ? [...modulePath.slice(cycleIndex), moduleType] : [];
 
       // Validate import cycles by checking the active DFS stack.
       assert.false(
         cycleIndex >= 0,
         createModuleImportCycleError(
-          cycleIndex >= 0
-            ? [...modulePath.slice(cycleIndex), moduleType].map((moduleType) =>
-                this.getModuleName(moduleType),
-              )
-            : [],
+          cyclePath.map((moduleType) => this.getModuleName(moduleType)),
         ),
       );
 

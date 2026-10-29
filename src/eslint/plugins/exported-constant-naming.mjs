@@ -1,4 +1,6 @@
 const upperSnakeCasePattern = /^[A-Z][A-Z\d]*(?:_[A-Z\d]+)*$/u;
+const PRIMITIVE_LITERAL_TYPES = new Set(["boolean", "number", "string"]);
+const UNARY_NUMERIC_OPERATORS = new Set(["+", "-"]);
 
 const hasNoTemplateExpressions = (node) => {
   // Avoid making the standalone ESLint plugin depend on application utilities.
@@ -26,12 +28,12 @@ const isPrimitiveLiteral = (node) => {
   }
 
   if (initializer.type === "Literal") {
-    return ["boolean", "number", "string"].includes(typeof initializer.value);
+    return PRIMITIVE_LITERAL_TYPES.has(typeof initializer.value);
   }
 
   if (
     initializer.type !== "UnaryExpression" ||
-    !["+", "-"].includes(initializer.operator)
+    !UNARY_NUMERIC_OPERATORS.has(initializer.operator)
   ) {
     return false;
   }

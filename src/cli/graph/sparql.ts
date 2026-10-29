@@ -10,6 +10,9 @@ import {
 
 const pageSize = 24;
 const responseLimit = 2_000_000;
+const localNameLimit = 80;
+const queryTimeoutMs = 15_000;
+const literalPreviewLimit = 1800;
 const prefixes = `PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>`;
 
@@ -50,7 +53,9 @@ const field = (row: Row, name: string): string => row[name]?.value ?? "";
 const localName = (value: string): string => {
   const suffix = value.split(/[/#:]/u).at(-1);
 
-  return isDefined(suffix) && isNotEmpty(suffix) && suffix.length < 80
+  return isDefined(suffix) &&
+    isNotEmpty(suffix) &&
+    suffix.length < localNameLimit
     ? suffix
     : value;
 };
@@ -109,8 +114,10 @@ export class SparqlReader {
    */
   public constructor(endpoint: string, graph?: string) {
     this.endpoint = new URL(endpoint);
+    const allowedProtocols = ["http:", "https:"];
+
     assert.true(
-      ["http:", "https:"].includes(this.endpoint.protocol),
+      allowedProtocols.includes(this.endpoint.protocol),
       "SPARQL endpoint must be HTTP(S), without URL credentials or fragment.",
     );
     assert.true(
@@ -145,7 +152,7 @@ export class SparqlReader {
       },
       body: new URLSearchParams({ query: prefixes + query }),
       signal: AbortSignal.any([
-        AbortSignal.timeout(15_000),
+        AbortSignal.timeout(queryTimeoutMs),
         ...(isDefined(signal) ? [signal] : []),
       ]),
     });
@@ -316,7 +323,7 @@ export class SparqlReader {
         return {
           id: value,
           label: kind === "node" ? localName(value) : value,
-          detail: `${value}${length > 1800 ? `… [preview; ${String(length)} characters total]` : ""}${isNotEmpty(field(row, "language")) ? `\nLanguage: ${field(row, "language")}` : ""}${isNotEmpty(field(row, "datatype")) ? `\nDatatype: ${field(row, "datatype")}` : ""}`,
+          detail: `${value}${length > literalPreviewLimit ? `… [preview; ${String(length)} characters total]` : ""}${isNotEmpty(field(row, "language")) ? `\nLanguage: ${field(row, "language")}` : ""}${isNotEmpty(field(row, "datatype")) ? `\nDatatype: ${field(row, "datatype")}` : ""}`,
           kind,
           predicate: field(row, "predicate"),
           direction: field(row, "direction") === "in" ? "in" : "out",

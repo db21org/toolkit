@@ -25,7 +25,11 @@ const typescriptFilenameConventionsRule = {
         const stem = filename.slice(0, -extension.length);
         const segments = stem.split(".");
 
-        if (segments.every((segment) => kebabCasePattern.test(segment))) {
+        const hasOnlyKebabCaseSegments = segments.every((segment) =>
+          kebabCasePattern.test(segment),
+        );
+
+        if (hasOnlyKebabCaseSegments) {
           return;
         }
 

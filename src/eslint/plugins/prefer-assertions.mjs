@@ -1,3 +1,6 @@
+const BOOLEAN_ASSERTION_NAMES = new Set(["false", "true"]);
+const PRESENCE_PREDICATE_NAMES = new Set(["isDefined", "isNotDefined"]);
+
 const getSingleThrow = (statement) => {
   if (statement.type === "ThrowStatement") {
     return statement;
@@ -64,7 +67,7 @@ const preferAssertionsRule = {
 
         if (
           node.callee.property.type !== "Identifier" ||
-          !["false", "true"].includes(node.callee.property.name)
+          !BOOLEAN_ASSERTION_NAMES.has(node.callee.property.name)
         ) {
           return;
         }
@@ -75,7 +78,7 @@ const preferAssertionsRule = {
 
         if (
           node.arguments[0].callee.type !== "Identifier" ||
-          !["isDefined", "isNotDefined"].includes(node.arguments[0].callee.name)
+          !PRESENCE_PREDICATE_NAMES.has(node.arguments[0].callee.name)
         ) {
           return;
         }

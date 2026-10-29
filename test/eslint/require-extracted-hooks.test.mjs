@@ -6,6 +6,16 @@ import typescriptEslint from "typescript-eslint";
 import { test } from "vitest";
 
 const targetRule = "db21-hooks/require-extracted-hooks";
+const componentHookFixtureLines = [
+  "const useProductMedia = () => [];",
+  "function useProductState() { return {}; }",
+];
+
+const importedHookFixtureLines = [
+  'import { useProductMedia } from "../../src/eslint/hooks/use-product-media.hook";',
+  "const renderMedia = () => null;",
+];
+
 const eslint = new ESLint({
   ignore: false,
   overrideConfig: [
@@ -28,10 +38,7 @@ const lint = async (source, filePath) => {
 // eslint-disable-next-line db21-tests/require-justification -- Risk: component files accumulate reusable hook logic and lose a focused UI boundary; Contract: local custom hook declarations in TSX report extraction errors.
 test("rejects custom hook declarations in TSX component files", async () => {
   const messages = await lint(
-    [
-      "const useProductMedia = () => [];",
-      "function useProductState() { return {}; }",
-    ].join("\n"),
+    componentHookFixtureLines.join("\n"),
     "src/features/feed/components/ProductArtwork.tsx",
   );
 
@@ -49,10 +56,7 @@ test("allows hook modules, imported hooks, and ordinary component helpers", asyn
       "src/features/feed/hooks/use-product-media.hook.ts",
     ],
     [
-      [
-        'import { useProductMedia } from "../../src/eslint/hooks/use-product-media.hook";',
-        "const renderMedia = () => null;",
-      ].join("\n"),
+      importedHookFixtureLines.join("\n"),
       "src/features/feed/components/ProductArtwork.tsx",
     ],
     [

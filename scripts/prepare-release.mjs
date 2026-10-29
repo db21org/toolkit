@@ -16,6 +16,8 @@ import {
   validateArchiveEntries,
 } from "./release-version.mjs";
 
+const jsonIndentSpaces = 2;
+
 assert(
   process.env.GITHUB_ACTIONS === "true" &&
     process.env.GITHUB_REF === "refs/heads/main",
@@ -99,7 +101,10 @@ try {
     "Archive manifest does not match selected dev version.",
   );
   manifest.version = version;
-  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  writeFileSync(
+    manifestPath,
+    `${JSON.stringify(manifest, null, jsonIndentSpaces)}\n`,
+  );
   const releaseArchive = join(directory, `release-${version}.tgz`);
 
   // Repack the built files directly: never rebuild or run downloaded package scripts.

@@ -61,12 +61,18 @@ if (event === "workflow_dispatch") {
     (value) => value !== "workspace_graph",
   );
 
-  components =
-    workspaceChanged === "true"
-      ? [...new Set([...workspace, ...changedComponents])].toSorted(
-          (left, right) => left.localeCompare(right),
-        )
-      : [...new Set(changedComponents)];
+  if (workspaceChanged === "true") {
+    const workspaceAndChangedComponents = [...workspace, ...changedComponents];
+    const uniqueWorkspaceAndChangedComponents = [
+      ...new Set(workspaceAndChangedComponents),
+    ];
+
+    components = uniqueWorkspaceAndChangedComponents.toSorted((left, right) =>
+      left.localeCompare(right),
+    );
+  } else {
+    components = [...new Set(changedComponents)];
+  }
 }
 
 appendFileSync(output, `components=${JSON.stringify(components)}\n`);

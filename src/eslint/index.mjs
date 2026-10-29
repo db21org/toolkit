@@ -25,23 +25,21 @@ import {
 const javascriptFiles = ["**/*.{cjs,js,jsx,mjs}"];
 const typescriptFiles = ["**/*.{ts,tsx,mts,cts}"];
 const sourceFiles = [...javascriptFiles, ...typescriptFiles];
+const SONAR_COGNITIVE_COMPLEXITY_WARNING_THRESHOLD = 15;
 
-const javascriptRestrictedSyntax = javascriptRecommended.reduce(
-  (selectors, config) => {
+const collectRestrictedSyntax = (configurations) =>
+  configurations.reduce((selectors, config) => {
     const rule = config.rules?.["no-restricted-syntax"];
 
     return Array.isArray(rule) ? rule.slice(1) : selectors;
-  },
-  [],
+  }, []);
+
+const javascriptRestrictedSyntax = collectRestrictedSyntax(
+  javascriptRecommended,
 );
 
-export const inheritedRestrictedSyntax = typescriptRecommended.reduce(
-  (selectors, config) => {
-    const rule = config.rules?.["no-restricted-syntax"];
-
-    return Array.isArray(rule) ? rule.slice(1) : selectors;
-  },
-  [],
+export const inheritedRestrictedSyntax = collectRestrictedSyntax(
+  typescriptRecommended,
 );
 
 export const commonPredicateRestrictedSyntax = [
@@ -94,7 +92,10 @@ export const sonarRules = {
   "sonarjs/no-redundant-assignments": "error",
   "sonarjs/no-redundant-jump": "error",
   "sonarjs/no-use-of-empty-return-value": "error",
-  "sonarjs/cognitive-complexity": ["warn", 15],
+  "sonarjs/cognitive-complexity": [
+    "warn",
+    SONAR_COGNITIVE_COMPLEXITY_WARNING_THRESHOLD,
+  ],
   "sonarjs/no-dead-store": "warn",
   "sonarjs/no-ignored-exceptions": "warn",
 };

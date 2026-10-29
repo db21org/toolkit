@@ -6,6 +6,7 @@ import { expectInvalid, expectValid } from "../helpers/lint-rule.js";
 
 const ruleName = "max-lines";
 const ruleConfig = maxLinesRules[ruleName];
+const oversizedFileLineCount = 301;
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: concise source files are falsely rejected by the repository file-size limit; Contract: a one-line file remains lint-clean.
 test(`${ruleName}: valid`, async () => {
@@ -16,7 +17,7 @@ test(`${ruleName}: valid`, async () => {
 test(`${ruleName}: invalid`, async () => {
   await expectInvalid({
     code: Array.from(
-      { length: 301 },
+      { length: oversizedFileLineCount },
       (_, index) => `const value${index} = ${index};`,
     ).join("\n"),
     ruleConfig,

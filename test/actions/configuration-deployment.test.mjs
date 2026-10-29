@@ -14,7 +14,13 @@ import { fileURLToPath, URL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const actions = fileURLToPath(new URL("../../actions/", import.meta.url));
-const digest = `sha256:${"b".repeat(64)}`;
+const digestHexLength = 64;
+const shaLength = 40;
+const executableFileMode = 0o700;
+const permissionMask = 0o777;
+const privateFileMode = 0o600;
+const receiptPollingCallCount = 4;
+const digest = `sha256:${"b".repeat(digestHexLength)}`;
 let directory;
 let env;
 
@@ -31,7 +37,7 @@ afterEach(() => rmSync(directory, { recursive: true, force: true }));
 
 beforeEach(() => {
   writeFileSync(join(directory, "make"), "#!/bin/bash\nexit 1\n", {
-    mode: 0o700,
+    mode: executableFileMode,
   });
 });
 
@@ -75,11 +81,11 @@ case "\${!#}" in
     if [[ "\${FAKE_SUBMIT:-}" == Superseded ]]; then
       printf '{"phase":"Superseded"}'
     else
-      printf '{"id":"release-${"a".repeat(40)}"}'
+      printf '{"id":"release-${"a".repeat(shaLength)}"}'
     fi ;;
   configuration-status-api)
     cp "$DEPLOY_CURL_CONFIG" "$RUNNER_TEMP/status-config"
-    test "$DEPLOYMENT_ID" = "release-${"a".repeat(40)}"
+    test "$DEPLOYMENT_ID" = "release-${"a".repeat(shaLength)}"
     if [[ "\${FAKE_INITIAL_404:-}" == true && ! -f "$RUNNER_TEMP/retried" ]]; then
       touch "$RUNNER_TEMP/retried"
       exit 22
@@ -88,7 +94,7 @@ case "\${!#}" in
   *) exit 1 ;;
 esac
 `,
-    { mode: 0o700 },
+    { mode: executableFileMode },
   );
 
 describe("configuration deployment", () => {
@@ -116,7 +122,9 @@ describe("configuration deployment", () => {
         name.startsWith("deployment-access."),
       ),
     ).toBe(false);
-    expect(statSync(join(directory, "captured")).mode & 0o777).toBe(0o600);
+    expect(statSync(join(directory, "captured")).mode & permissionMask).toBe(
+      privateFileMode,
+    );
   });
   // eslint-disable-next-line db21-tests/require-justification -- Risk: superseded configuration could poll a nonexistent release and claim success; Contract: superseded admission exits successfully after submission without status polling.
   it("stops after superseded admission without polling", () => {
@@ -146,7 +154,7 @@ describe("configuration deployment", () => {
     expect(configure({ FAKE_INITIAL_404: "true" }).status).toBe(0);
     expect(
       readFileSync(join(directory, "calls"), "utf8").split("\n"),
-    ).toHaveLength(4);
+    ).toHaveLength(receiptPollingCallCount);
   });
 });
 

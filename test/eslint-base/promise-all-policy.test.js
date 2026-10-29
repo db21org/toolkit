@@ -11,6 +11,7 @@ import tseslint from "typescript-eslint";
 
 const rule = "db21-promises/prefer-native-batch";
 const reasonRule = "db21-promises/require-local-reason";
+const maximumLinesForProcessorValidation = 3;
 const explanation =
   "Independent worker processes must overlap to exercise the lock race; a batch API would bypass it.";
 
@@ -90,7 +91,11 @@ const assertSharedProcessors = () => {
   const shared = [
     ...commonConfig,
     tseslint.configs.disableTypeChecked,
-    { rules: { "max-lines": ["error", { max: 3 }] } },
+    {
+      rules: {
+        "max-lines": ["error", { max: maximumLinesForProcessorValidation }],
+      },
+    },
   ];
 
   for (const extension of [

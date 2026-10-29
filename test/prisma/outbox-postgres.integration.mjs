@@ -7,6 +7,20 @@ import { createPostgresFixture } from "./postgres-fixture.mjs";
 let prisma;
 let heldTransaction;
 let fixture;
+const defaultClaimLimit = 10;
+const leaseDurationSeconds = 60;
+const concurrentMessageCount = 6;
+const concurrentClaimLimit = 2;
+const transactionTimeoutMilliseconds = 10_000;
+const uniqueClaimedMessageCount = 4;
+const maximumTopicLength = 128;
+const invalidTopicLength = maximumTopicLength + 1;
+const maximumClaimLimit = 1000;
+const invalidClaimLimit = maximumClaimLimit + 1;
+const fractionalClaimLimit = 1.5;
+const maximumLeaseSeconds = 86_400;
+const invalidLeaseSeconds = maximumLeaseSeconds + 1;
+const fractionalLeaseSeconds = 1.5;
 
 before(async () => {
   fixture = await createPostgresFixture();
@@ -25,9 +39,13 @@ const message = (topic, key = randomUUID()) => ({
   payload: { eventId: key },
 });
 
-const claim = (topic, limit = 10) =>
+const claim = (topic, limit = defaultClaimLimit) =>
   prisma.$transaction((tx) =>
-    tx.outboxMessage.claim({ topic, limit, leaseSeconds: 60 }),
+    tx.outboxMessage.claim({
+      topic,
+      limit,
+      leaseSeconds: leaseDurationSeconds,
+    }),
   );
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: root-client leakage commits messages without their domain writes; Contract: enqueue, claims, completion and retry all roll back with the calling transaction.
@@ -54,7 +72,7 @@ test("all extension operations remain on the caller transaction", async () => {
       const [leased] = await tx.outboxMessage.claim({
         topic: "rollback",
         limit: 1,
-        leaseSeconds: 60,
+        leaseSeconds: leaseDurationSeconds,
       });
 
       assert.ok(leased?.claimToken);
@@ -103,7 +121,7 @@ test("all extension operations remain on the caller transaction", async () => {
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: competing workers block or deliver overlapping batches; Contract: another transaction skips held row locks and later concurrent claims have disjoint identities.
 test("concurrent workers skip locked rows and claim disjoint batches", async () => {
-  for (let index = 0; index < 6; index += 1) {
+  for (let index = 0; index < concurrentMessageCount; index += 1) {
     await prisma.outboxMessage.enqueue(message("concurrent"));
   }
 
@@ -114,8 +132,8 @@ test("concurrent workers skip locked rows and claim disjoint batches", async () 
     async (tx) => {
       const batch = await tx.outboxMessage.claim({
         topic: "concurrent",
-        limit: 2,
-        leaseSeconds: 60,
+        limit: concurrentClaimLimit,
+        leaseSeconds: leaseDurationSeconds,
       });
 
       ready.resolve(batch);
@@ -123,18 +141,19 @@ test("concurrent workers skip locked rows and claim disjoint batches", async () 
 
       return batch;
     },
-    { timeout: 10_000 },
+    { timeout: transactionTimeoutMilliseconds },
   );
 
   try {
     const first = await Promise.race([ready.promise, heldTransaction]);
-    const second = await claim("concurrent", 2);
+    const second = await claim("concurrent", concurrentClaimLimit);
+    const claimedMessages = [...first, ...second];
 
-    assert.equal(first.length, 2);
-    assert.equal(second.length, 2);
+    assert.equal(first.length, concurrentClaimLimit);
+    assert.equal(second.length, concurrentClaimLimit);
     assert.equal(
-      new Set([...first, ...second].map((entry) => entry.id)).size,
-      4,
+      new Set(claimedMessages.map((entry) => entry.id)).size,
+      uniqueClaimedMessageCount,
     );
   } finally {
     release.resolve();
@@ -143,12 +162,15 @@ test("concurrent workers skip locked rows and claim disjoint batches", async () 
 
   // eslint-disable-next-line db21-promises/prefer-native-batch -- Distinct workers must claim concurrently to detect overlapping delivery; combining claims into one batch removes that race.
   const batches = await Promise.all([
-    claim("concurrent", 2),
-    claim("concurrent", 2),
+    claim("concurrent", concurrentClaimLimit),
+    claim("concurrent", concurrentClaimLimit),
   ]);
 
-  assert.equal(batches.flat().length, 2);
-  assert.equal(new Set(batches.flat().map((entry) => entry.id)).size, 2);
+  assert.equal(batches.flat().length, concurrentClaimLimit);
+  assert.equal(
+    new Set(batches.flat().map((entry) => entry.id)).size,
+    concurrentClaimLimit,
+  );
 });
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: an expired worker acknowledges or releases a newer delivery; Contract: reclaim rotates tokens and stale complete or failure operations cannot mutate the current claim.
@@ -239,19 +261,19 @@ test("deduplication, retries and claim bounds preserve durable intent", async ()
 
   for (const overrides of [
     { topic: " " },
-    { topic: "a".repeat(129) },
+    { topic: "a".repeat(invalidTopicLength) },
     { limit: 0 },
-    { limit: 1001 },
-    { limit: 1.5 },
+    { limit: invalidClaimLimit },
+    { limit: fractionalClaimLimit },
     { leaseSeconds: 0 },
-    { leaseSeconds: 1.5 },
-    { leaseSeconds: 86401 },
+    { leaseSeconds: fractionalLeaseSeconds },
+    { leaseSeconds: invalidLeaseSeconds },
   ]) {
     await assert.rejects(
       prisma.outboxMessage.claim({
         topic: "retry",
         limit: 1,
-        leaseSeconds: 60,
+        leaseSeconds: leaseDurationSeconds,
         ...overrides,
       }),
       /Outbox claim/u,

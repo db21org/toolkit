@@ -21,6 +21,7 @@ import {
 const templateRoot = fileURLToPath(
   new URL("../../templates/", import.meta.url),
 );
+const manifestIndentation = 2;
 
 const createTemplateAction = (
   template: string,
@@ -114,7 +115,7 @@ export const bootstrap = async (
           JSON.stringify(
             createAppManifest(app, projectName, toolkitVersion),
             null,
-            2,
+            manifestIndentation,
           ) + "\n",
       });
 
@@ -126,7 +127,7 @@ export const bootstrap = async (
     const generator = plop.setGenerator("bootstrap", { prompts: [], actions });
     const result = await generator.runActions({
       projectName,
-      rootManifest: JSON.stringify(rootManifest, null, 2),
+      rootManifest: JSON.stringify(rootManifest, null, manifestIndentation),
       hasAstro: apps.some((app) => app.startsWith("astro")),
       hasApi: apps.includes("api"),
       hasExpo: apps.includes("expo"),

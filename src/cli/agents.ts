@@ -5,6 +5,8 @@ import { join, resolve } from "node:path";
 import { assert, isNotEmpty } from "../utils/index.js";
 import { acquireAgentsLock, hasAgentInstructions } from "./agents-file.js";
 
+const ownerWritePublicReadMode = 0o644;
+
 /**
  * Append toolkit instructions without replacing existing repository guidance.
  * @param directory - Existing target repository directory.
@@ -59,7 +61,7 @@ const appendInstructions = async (path: string): Promise<boolean> => {
       constants.O_APPEND |
       constants.O_NOFOLLOW |
       constants.O_NONBLOCK,
-    0o644,
+    ownerWritePublicReadMode,
   );
 
   try {

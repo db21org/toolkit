@@ -4,6 +4,10 @@ import { setTimeout } from "node:timers/promises";
 
 import { assert, isDefined, isNotDefined } from "../utils/index.js";
 
+const lockAttempts = 100;
+const lockRetryDelayMs = 25;
+const ownerReadWriteMode = 0o600;
+
 export const hasAgentInstructions = async (path: string): Promise<boolean> => {
   const file = await open(
     path,
@@ -36,21 +40,23 @@ export const hasAgentInstructions = async (path: string): Promise<boolean> => {
 export const acquireAgentsLock = async (
   path: string,
 ): Promise<Awaited<ReturnType<typeof open>>> => {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    const lock = await open(path, "wx", 0o600).catch((error: unknown) => {
-      assert.true(
-        error instanceof Error && "code" in error && error.code === "EEXIST",
-        "Cannot acquire AGENTS.md initialization lock.",
-      );
+  for (let attempt = 0; attempt < lockAttempts; attempt += 1) {
+    const lock = await open(path, "wx", ownerReadWriteMode).catch(
+      (error: unknown) => {
+        assert.true(
+          error instanceof Error && "code" in error && error.code === "EEXIST",
+          "Cannot acquire AGENTS.md initialization lock.",
+        );
 
-      return undefined;
-    });
+        return undefined;
+      },
+    );
 
     if (isDefined(lock)) {
       return lock;
     }
 
-    await setTimeout(25);
+    await setTimeout(lockRetryDelayMs);
   }
 
   throw new Error(

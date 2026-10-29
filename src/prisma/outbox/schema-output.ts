@@ -30,10 +30,12 @@ const initializeOutput = (output: string): void => {
     try {
       renameSync(staging, output);
     } catch (error) {
+      const existingOutputErrors = ["EEXIST", "ENOTEMPTY", "ENOTDIR"];
+
       assert.true(
         error instanceof Error &&
           "code" in error &&
-          ["EEXIST", "ENOTEMPTY", "ENOTDIR"].includes(String(error.code)),
+          existingOutputErrors.includes(String(error.code)),
         String(error),
       );
     }
@@ -131,9 +133,10 @@ export const publishSchema = (
     "Output directory is not owned by the schema assembler.",
   );
 
+  const schemaEntries = [...files];
   const digest = createHash("sha256")
     .update(
-      JSON.stringify([...files].toSorted(([a], [b]) => a.localeCompare(b))),
+      JSON.stringify(schemaEntries.toSorted(([a], [b]) => a.localeCompare(b))),
     )
     .digest("hex");
   const target = join(output, digest);
@@ -157,10 +160,12 @@ export const publishSchema = (
     try {
       renameSync(staging, target);
     } catch (error) {
+      const concurrentPublishErrors = ["EEXIST", "ENOTEMPTY"];
+
       assert.true(
         error instanceof Error &&
           "code" in error &&
-          ["EEXIST", "ENOTEMPTY"].includes(String(error.code)),
+          concurrentPublishErrors.includes(String(error.code)),
         String(error),
       );
     }

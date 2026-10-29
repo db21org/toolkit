@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 const stableVersionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/u;
 const positiveIntegerPattern = /^[1-9]\d*$/u;
+const shortCommitShaLength = 12;
 
 export const createPreviewVersion = ({
   stableVersion,
@@ -27,5 +28,5 @@ export const createPreviewVersion = ({
 
   const [, major, minor, patch] = match;
 
-  return `${major}.${minor}.${BigInt(patch) + 1n}-dev.${runNumber}.${runAttempt}.g${sha.slice(0, 12)}`;
+  return `${major}.${minor}.${BigInt(patch) + 1n}-dev.${runNumber}.${runAttempt}.g${sha.slice(0, shortCommitShaLength)}`;
 };

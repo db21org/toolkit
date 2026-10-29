@@ -18,6 +18,7 @@ import {
 } from "../scripts/release-version.mjs";
 
 const devVersion = "1.0.1-dev.42.1.gabcdef123456";
+const executableFileMode = 0o755;
 
 describe("stable release version", () => {
   // eslint-disable-next-line db21-tests/require-justification -- Risk: arbitrary prereleases are promoted as unintended stable versions; Contract: only the exact toolkit CI preview format is accepted for promotion.
@@ -105,7 +106,7 @@ const createFixture = (directory) => {
   writeFileSync(
     join(packageDirectory, "dist/index.js"),
     "export const built = true;\n",
-    { mode: 0o755 },
+    { mode: executableFileMode },
   );
   writeFileSync(join(packageDirectory, ".example"), "preserved\n");
   const archive = join(directory, "preview.tgz");
@@ -131,7 +132,7 @@ if (args[0] === "view") {
 }
 `,
   );
-  chmodSync(join(binary, "npm"), 0o755);
+  chmodSync(join(binary, "npm"), executableFileMode);
 
   return { archive, binary, manifest };
 };

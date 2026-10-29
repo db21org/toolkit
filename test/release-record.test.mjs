@@ -13,6 +13,8 @@ import { delimiter, join, resolve } from "node:path";
 
 import { expect, it } from "vitest";
 
+const executableFileMode = 0o755;
+
 const createGitHubFixture = (directory) => {
   const binary = join(directory, "bin");
 
@@ -32,7 +34,7 @@ if (args.join(" ") === "api repos/db21org/toolkit/contents/package.json?ref=main
 }
 `,
   );
-  chmodSync(join(binary, "gh"), 0o755);
+  chmodSync(join(binary, "gh"), executableFileMode);
 
   return binary;
 };

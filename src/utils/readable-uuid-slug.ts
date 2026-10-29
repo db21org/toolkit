@@ -4,6 +4,13 @@ import { isNotDefined, isNotEmpty } from "./predicates.js";
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const COMPACT_UUID_PATTERN = /--([A-Za-z0-9_-]{22})$/;
+const hexDigitsPerByte = 2;
+const hexadecimalRadix = 16;
+const uuidByteLength = 16;
+const timeLowEnd = 8;
+const timeMidEnd = 12;
+const timeHighEnd = 16;
+const clockSequenceEnd = 20;
 
 type ReadableUuidSlugInput = Readonly<{
   fallback: string;
@@ -14,8 +21,16 @@ type ReadableUuidSlugInput = Readonly<{
 
 const encodeUuid = (id: string): string => {
   const hexadecimal = id.replaceAll("-", "");
-  const bytes = Array.from({ length: hexadecimal.length / 2 }, (_, index) =>
-    Number.parseInt(hexadecimal.slice(index * 2, index * 2 + 2), 16),
+  const bytes = Array.from(
+    { length: hexadecimal.length / hexDigitsPerByte },
+    (_, index) =>
+      Number.parseInt(
+        hexadecimal.slice(
+          index * hexDigitsPerByte,
+          index * hexDigitsPerByte + hexDigitsPerByte,
+        ),
+        hexadecimalRadix,
+      ),
   );
 
   return btoa(String.fromCodePoint(...bytes))
@@ -29,21 +44,26 @@ const decodeUuid = (compactId: string): string | undefined => {
     const base64 = compactId.replaceAll("-", "+").replaceAll("_", "/");
     const binary = atob(`${base64}==`);
 
-    if (binary.length !== 16) {
+    if (binary.length !== uuidByteLength) {
       return undefined;
     }
 
     const hexadecimal = Array.from(binary, (value) =>
-      value.codePointAt(0)?.toString(16).padStart(2, "0"),
+      value
+        .codePointAt(0)
+        ?.toString(hexadecimalRadix)
+        .padStart(hexDigitsPerByte, "0"),
     ).join("");
 
-    return [
-      hexadecimal.slice(0, 8),
-      hexadecimal.slice(8, 12),
-      hexadecimal.slice(12, 16),
-      hexadecimal.slice(16, 20),
-      hexadecimal.slice(20),
-    ].join("-");
+    const uuidFields = [
+      hexadecimal.slice(0, timeLowEnd),
+      hexadecimal.slice(timeLowEnd, timeMidEnd),
+      hexadecimal.slice(timeMidEnd, timeHighEnd),
+      hexadecimal.slice(timeHighEnd, clockSequenceEnd),
+      hexadecimal.slice(clockSequenceEnd),
+    ];
+
+    return uuidFields.join("-");
   } catch {
     return undefined;
   }

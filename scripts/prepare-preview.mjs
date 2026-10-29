@@ -4,6 +4,8 @@ import { resolve } from "node:path";
 
 import { createPreviewVersion } from "./preview-version.mjs";
 
+const jsonIndentSpaces = 2;
+
 assert(
   process.env.GITHUB_ACTIONS === "true" &&
     process.env.GITHUB_REF === "refs/heads/main",
@@ -19,7 +21,10 @@ manifest.version = createPreviewVersion({
   runAttempt: process.env.GITHUB_RUN_ATTEMPT,
   sha: process.env.GITHUB_SHA,
 });
-writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+writeFileSync(
+  manifestPath,
+  `${JSON.stringify(manifest, null, jsonIndentSpaces)}\n`,
+);
 console.log(
   `Prepared ${manifest.name}@${manifest.version} for the dev dist-tag.`,
 );

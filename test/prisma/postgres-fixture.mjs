@@ -18,6 +18,9 @@ import { withOutboxSchema } from "@db21/toolkit/prisma/outbox/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const root = resolve(import.meta.dirname, "../..");
+const maximumPostgresReadinessAttempts = 60;
+const postgresReadinessIntervalMilliseconds = 250;
+const commandTimeoutMilliseconds = 120_000;
 const productSchema = `
 generator client {
   provider = "prisma-client-js"
@@ -85,10 +88,10 @@ const waitForPostgres = async (run, container) => {
       return;
     } catch (error) {
       assert.ok(
-        attempt < 60,
+        attempt < maximumPostgresReadinessAttempts,
         `Disposable PostgreSQL did not become ready: ${String(error)}`,
       );
-      await setTimeout(250);
+      await setTimeout(postgresReadinessIntervalMilliseconds);
     }
   }
 };
@@ -192,7 +195,7 @@ export const createPostgresFixture = async () => {
       cwd: directory,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
-      timeout: 120_000,
+      timeout: commandTimeoutMilliseconds,
       ...options,
     });
   let prisma;

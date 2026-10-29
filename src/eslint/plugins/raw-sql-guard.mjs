@@ -7,6 +7,7 @@ const validators = [
   "db21-promises/require-local-reason",
 ];
 const pending = new Map();
+const ESLINT_ERROR_SEVERITY = 2;
 
 const disablesValidator = (comment, validator) => {
   const disable =
@@ -15,7 +16,9 @@ const disablesValidator = (comment, validator) => {
     );
 
   if (disable) {
-    return disable[1].split(/[\s,]+/u).includes(validator);
+    const [, disabledRules] = disable;
+
+    return disabledRules.split(/[\s,]+/u).includes(validator);
   }
 
   if (comment.type !== "Block") {
@@ -34,12 +37,18 @@ const disablesValidator = (comment, validator) => {
     String.raw`(?:^|[,{])\s*["']?${validator}["']?\s*:\s*(?:\[\s*)?(?:"([^"]*)"|'([^']*)'|([^\s,\]}]+))`,
     "gu",
   );
-  const settings = directive[1].matchAll(pattern);
+  const [, settingsText] = directive;
+  const settings = settingsText.matchAll(pattern);
+  const configuredSettings = [...settings];
 
-  return [...settings].some((setting) => {
-    const severity = setting[1] ?? setting[2] ?? setting[3];
+  return configuredSettings.some((setting) => {
+    const [, doubleQuotedSeverity, singleQuotedSeverity, unquotedSeverity] =
+      setting;
 
-    return severity !== "error" && Number(severity) !== 2;
+    const severity =
+      doubleQuotedSeverity ?? singleQuotedSeverity ?? unquotedSeverity;
+
+    return severity !== "error" && Number(severity) !== ESLINT_ERROR_SEVERITY;
   });
 };
 
@@ -70,7 +79,7 @@ export const rawSqlGuardProcessor = {
           .filter((validator) => disablesValidator(comment, validator))
           .map((validator) => ({
             ruleId: `${validator.split("/")[0]}/protected-validator`,
-            severity: 2,
+            severity: ESLINT_ERROR_SEVERITY,
             message: `Do not disable or downgrade ${validator}; justify individual operations instead.`,
             line: comment.loc.start.line,
             column: comment.loc.start.column + 1,

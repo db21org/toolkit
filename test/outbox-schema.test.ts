@@ -19,6 +19,7 @@ import { afterEach, expect, test } from "vitest";
 
 const directories: string[] = [];
 const execute = promisify(execFile);
+const concurrentAssemblerCount = 8;
 
 const fixture = (): {
   directory: string;
@@ -102,7 +103,7 @@ test("concurrent assemblers safely publish one complete snapshot", async () => {
   const code = `import { withOutboxSchema } from ${JSON.stringify(module)}; console.log(withOutboxSchema(${JSON.stringify({ baseDirectory: directory, source: "prisma/schema", output: ".generated/schema" })}));`;
   // eslint-disable-next-line db21-promises/prefer-native-batch -- Independent schema assemblers must race publication; a single batch assembler would not exercise process-level atomicity.
   const results = await Promise.all(
-    Array.from({ length: 8 }, () =>
+    Array.from({ length: concurrentAssemblerCount }, () =>
       execute(process.execPath, ["--input-type=module", "-e", code], {
         cwd: "/",
       }),

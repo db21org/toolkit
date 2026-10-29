@@ -6,6 +6,19 @@ import { recommended } from "@db21/toolkit/eslint/base";
 import { ESLint, Linter } from "eslint";
 import tseslint from "typescript-eslint";
 
+const enabledRuleSeverity = 2;
+const expectedSizeDiagnosticCount = 2;
+const configuredMaximumLineCount = 3;
+const sourceExtensions = ["js", "jsx", "mjs", "cjs", "ts", "tsx", "mts", "cts"];
+const sharedStyleRules = [
+  "curly",
+  "brace-style",
+  "padding-line-between-statements",
+  "simple-import-sort/imports",
+  "simple-import-sort/exports",
+  "jsdoc/require-param",
+];
+
 const assertJavascriptBehavior = async (eslint, filename) => {
   const [result] = await eslint.lintText(
     "const enabled = true;\nif (enabled) console.log(enabled);",
@@ -38,36 +51,29 @@ test("base and repository presets share style across JS and TS extensions", asyn
       overrideConfig: preset,
     });
 
-    for (const extension of [
-      "js",
-      "jsx",
-      "mjs",
-      "cjs",
-      "ts",
-      "tsx",
-      "mts",
-      "cts",
-    ]) {
+    for (const extension of sourceExtensions) {
       const filename = `consumer.${extension}`;
       const config = await eslint.calculateConfigForFile(filename);
-      const isTypescript = ["ts", "tsx", "mts", "cts"].includes(extension);
+      const typescriptExtensions = ["ts", "tsx", "mts", "cts"];
+      const isTypescript = typescriptExtensions.includes(extension);
 
-      for (const rule of [
-        "curly",
-        "brace-style",
-        "padding-line-between-statements",
-        "simple-import-sort/imports",
-        "simple-import-sort/exports",
-        "jsdoc/require-param",
-      ]) {
-        assert.equal(config.rules[rule][0], 2, `${filename}: ${rule}`);
+      for (const rule of sharedStyleRules) {
+        assert.equal(
+          config.rules[rule][0],
+          enabledRuleSeverity,
+          `${filename}: ${rule}`,
+        );
       }
 
-      assert.equal(config.rules["max-lines"][0], 2, filename);
-      assert.equal(config.rules["max-lines-per-function"][0], 2, filename);
+      assert.equal(config.rules["max-lines"][0], enabledRuleSeverity, filename);
+      assert.equal(
+        config.rules["max-lines-per-function"][0],
+        enabledRuleSeverity,
+        filename,
+      );
       assert.equal(
         config.rules["@typescript-eslint/strict-boolean-expressions"]?.[0] ?? 0,
-        isTypescript ? 2 : 0,
+        isTypescript ? enabledRuleSeverity : 0,
         filename,
       );
       assert.equal(
@@ -125,7 +131,11 @@ test("size diagnostics guide refactoring without changing core enforcement", asy
 
   const options = [
     "error",
-    { max: 3, skipComments: true, skipBlankLines: true },
+    {
+      max: configuredMaximumLineCount,
+      skipComments: true,
+      skipBlankLines: true,
+    },
   ];
 
   for (const preset of [recommended, commonConfig]) {
@@ -152,7 +162,7 @@ test("size diagnostics guide refactoring without changing core enforcement", asy
       });
       const processed = linter.verify(code, isolated);
 
-      assert.equal(processed.length, 2);
+      assert.equal(processed.length, expectedSizeDiagnosticCount);
 
       for (const [index, diagnostic] of processed.entries()) {
         const { message, ...details } = diagnostic;

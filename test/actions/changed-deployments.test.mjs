@@ -13,7 +13,9 @@ import { fileURLToPath, URL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const actions = fileURLToPath(new URL("../../actions/", import.meta.url));
-const sha = "a".repeat(40);
+const shaLength = 40;
+const executableFileMode = 0o700;
+const sha = "a".repeat(shaLength);
 let directory;
 let env;
 
@@ -64,7 +66,7 @@ describe("changed deployment selection", () => {
     writeFileSync(
       join(directory, "git"),
       `#!/bin/bash\nprintf '%s\\0' '${file}'\n`,
-      { mode: 0o700 },
+      { mode: executableFileMode },
     );
     expect(select(sha).status).toBe(0);
     expect(output()).toBe(`components=${expected}\n`);
@@ -75,7 +77,7 @@ describe("changed deployment selection", () => {
     writeFileSync(
       join(directory, "git"),
       "#!/bin/bash\nprintf 'deploy/removed.yaml\\0'\n",
-      { mode: 0o700 },
+      { mode: executableFileMode },
     );
     const result = select(sha);
 

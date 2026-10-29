@@ -3,6 +3,8 @@ import { execFileSync } from "node:child_process";
 
 import { compareStableVersions } from "./release-version.mjs";
 
+const jsonIndentSpaces = 2;
+
 assert(
   process.env.GITHUB_ACTIONS === "true" &&
     process.env.GITHUB_REF === "refs/heads/main",
@@ -41,9 +43,9 @@ if (difference === 0n) {
       message: `chore: record release ${version}`,
       branch: "main",
       sha: current.sha,
-      content: Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`).toString(
-        "base64",
-      ),
+      content: Buffer.from(
+        `${JSON.stringify(manifest, null, jsonIndentSpaces)}\n`,
+      ).toString("base64"),
     }),
     stdio: ["pipe", "ignore", "pipe"],
   });

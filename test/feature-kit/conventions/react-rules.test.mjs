@@ -14,6 +14,8 @@ import { clearModuleDiscoveryCache } from "#feature-kit-config/module-discovery"
 import { assertDependencyCruiserGraph } from "./dependency-cruiser-test-helpers.mjs";
 
 const temporaryDirectories = [];
+const expectedSurfaceFilenameViolationCount = 3;
+const expectedSurfaceDependencyViolationCount = 6;
 
 const createProject = () => {
   const cwd = mkdtempSync(join(tmpdir(), "feature-kit-react-rules-"));
@@ -168,7 +170,10 @@ test("validates Surface placement and decorator-backed filename boundaries", asy
     (message) => message.ruleId === "feature-kit-react/surface-class-filename",
   );
 
-  assert.equal(surfaceFilenameMessages.length, 3);
+  assert.equal(
+    surfaceFilenameMessages.length,
+    expectedSurfaceFilenameViolationCount,
+  );
 
   const noDecoratorResult = results.find((result) =>
     result.filePath.endsWith("NoDecorator.surface.tsx"),
@@ -224,7 +229,10 @@ test("enforces Surface import boundaries and allows DI/component wiring", async 
     (message) => message.ruleId === "feature-kit-react/surface-dependencies",
   );
 
-  assert.equal(dependencyMessages.length, 6);
+  assert.equal(
+    dependencyMessages.length,
+    expectedSurfaceDependencyViolationCount,
+  );
 });
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: treating unsupported presentation folders as framework roles rejects compatible consumer structures; Contract: linting leaves presenters and views free of role diagnostics.

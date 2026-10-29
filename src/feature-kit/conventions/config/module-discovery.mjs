@@ -81,9 +81,13 @@ export const discoverModules = ({ cwd = process.cwd(), moduleRoots }) => {
     scanDirectory(normalizedCwd, root, modules);
   }
 
-  const uniqueModules = [
+  const deduplicatedModules = [
     ...new Map(modules.map((module) => [module.directory, module])).values(),
-  ].toSorted((left, right) => left.directory.localeCompare(right.directory));
+  ];
+
+  const uniqueModules = deduplicatedModules.toSorted((left, right) =>
+    left.directory.localeCompare(right.directory),
+  );
 
   assertNoNestedModules(uniqueModules);
   const result = Object.freeze(

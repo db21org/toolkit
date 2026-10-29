@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { validateGraphqlFile } from "./graphql-conventions.mjs";
 
 const sources = new Map();
+const ESLINT_ERROR_SEVERITY = 2;
 
 export const createFeatureGraphqlPlugin = (appRoot, layout) => ({
   processors: {
@@ -25,7 +26,7 @@ export const createFeatureGraphqlPlugin = (appRoot, layout) => ({
         }).map((issue) => ({
           ...issue,
           ruleId: "feature-graphql/conventions",
-          severity: 2,
+          severity: ESLINT_ERROR_SEVERITY,
         }));
       },
       preprocess(source, filePath) {

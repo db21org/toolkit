@@ -45,15 +45,14 @@ export const withOutboxSchema = ({
   );
 
   const files = readSchemaFiles(sourceDirectory);
+  const schemaNames = [...files.keys()];
 
   assert.true(
     files.size > 0,
     "Product schema directory must contain Prisma schema files.",
   );
   assert.false(
-    [...files.keys()].some(
-      (name) => name.toLowerCase() === "toolkit-outbox.prisma",
-    ),
+    schemaNames.some((name) => name.toLowerCase() === "toolkit-outbox.prisma"),
     "Reserved toolkit-outbox.prisma filename already exists.",
   );
 
