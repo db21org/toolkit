@@ -579,6 +579,69 @@ export default [
 ];
 ```
 
+### `react-hooks/refs`: render-prop analysis limitation
+
+The React overlay inherits this rule from `eslint-plugin-react-hooks`' recommended
+config. Toolkit does not replace its analysis or exempt render props.
+
+With `eslint-plugin-react-hooks@7.1.1`, passing a ref-accessing callback through an
+object to a render-time function can report `Cannot access refs during render`:
+
+```tsx
+const show = useCallback(() => {
+  clearTimeout(timer.current);
+  setVisible(true);
+}, []);
+
+return <>{renderTrigger({ show })}</>;
+```
+
+This can be safe when every consumer only registers the callback for later use:
+
+```tsx
+<Tooltip
+  renderTrigger={({ show }) => <button onClick={show}>Show tooltip</button>}
+/>
+```
+
+But the same component API also permits a real render-time violation:
+
+```tsx
+<Tooltip
+  renderTrigger={({ show }) => {
+    show(); // Unsafe: accesses the ref during render.
+    return <button>Show tooltip</button>;
+  }}
+/>
+```
+
+The upstream analysis tracks ref effects inside callbacks and through argument
+objects. It conservatively flags the call because the renderer could invoke
+`show` immediately. It does not specialize the component's prop analysis from its
+JSX consumers; putting both components in one file does not resolve this example.
+A `() => void` TypeScript signature does not guarantee deferred execution. Even a
+known local renderer that only assigns the handler reproduces this limitation in
+7.1.1; this is not a claim that all local call-chain analysis is unsupported.
+
+Do not disable the rule globally or exempt calls based on names such as
+`renderTrigger`. If all consumers have been audited and the API contract forbids
+calling the handler during render, isolate the call and suppress only its line:
+
+```tsx
+// eslint-disable-next-line react-hooks/refs -- Audited renderTrigger consumers only attach show as an event handler; none call it during render.
+const trigger = renderTrigger({ show });
+
+return <>{trigger}</>;
+```
+
+This suppression does not prove safety and hides future violations at that call.
+Keep the deferred-execution contract explicit and recheck consumers when they
+change. Do not use it for unknown or externally supplied renderers whose behavior
+cannot be audited. Direct `<button onClick={show}>` usage needs no suppression;
+direct calls such as `show()` during render must remain errors.
+
+See React's [`refs` rule documentation](https://react.dev/reference/eslint-plugin-react-hooks/lints/refs).
+
 ### `jsdoc/require-description`
 
 React component JSDoc must include a purpose description.
