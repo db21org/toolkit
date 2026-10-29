@@ -95,6 +95,23 @@ After generation, run `corepack yarn install` and `corepack yarn format` in the
 workspace. Review and commit `yarn.lock` before CI (which installs immutably).
 See the generated README for app development commands and validation.
 
+## Find potential duplicate code
+
+```sh
+# Structural similarity between functions/methods (AST, no model needed):
+yarn toolkit duplicates src
+# Explicit one-time local model download (~548 MB, Hugging Face):
+yarn toolkit duplicates --download-model
+# Local semantic comparison, with cached embeddings:
+yarn toolkit duplicates src --semantic
+# Machine-readable reports:
+yarn toolkit duplicates src --semantic --reporters=console,json,ai --output=.toolkit/duplicates
+```
+
+Uses pinned jscpd; no ESLint rule or automatic refactoring. Findings are advisory:
+duplicates do not fail the command; scan/model errors and empty scans do.
+See [duplicate detection](docs/duplicates.md) for defaults, cache and limitations.
+
 ## Explore an RDF knowledge graph
 
 Start a local, read-only SVG explorer against a SPARQL query endpoint:
