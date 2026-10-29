@@ -48,6 +48,31 @@ const assertSizeBoundary = (config, max, name) => {
 const syntaxMessages = (config, code) =>
   verify(config, code).map(({ message }) => message);
 
+const assertReadabilityPolicy = (config, name) => {
+  const rules = {
+    "db21-arrays/no-inline-member-access": "error",
+    "db21-conditions/prefer-named-values": "error",
+    "db21-logic/max-checks": "error",
+    "db21-numbers/no-magic-numbers": "error",
+  };
+
+  const messages = new Linter().verify(
+    "consume(42); [first, second].includes(value); if (items.some(item => item.ready)) act(); if (ready) { if (valid) act(); }",
+    { plugins: config.plugins, rules },
+  );
+
+  const errorSeverity = 2;
+
+  for (const rule of Object.keys(rules)) {
+    assert.equal(config.rules[rule][0], errorSeverity, name);
+    assert.equal(
+      messages.filter(({ ruleId }) => ruleId === rule).length,
+      1,
+      name,
+    );
+  }
+};
+
 const assertSharedSyntax = (config, name) => {
   for (const [code, message] of [
     ['const value = 1;\nimport "react";', /Keep static imports at the top/u],
@@ -162,6 +187,7 @@ test("React policies compose without losing shared or Expo restrictions", async 
         name,
       );
       assertSharedSyntax(config, name);
+      assertReadabilityPolicy(config, name);
       assertExpoPolicy(config, name);
       assertReactPolicy(config, isReact || name === "Expo", name);
       assertHooksPolicy(

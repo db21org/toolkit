@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import commonConfig from "@db21/toolkit/eslint";
-import { react, recommended } from "@db21/toolkit/eslint/base";
+import { recommended } from "@db21/toolkit/eslint/base";
 import { namedNumbersPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint, Linter } from "eslint";
 import tseslint from "typescript-eslint";
@@ -89,8 +89,6 @@ test("allows named numbers and attached explanations", () => {
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: shared presets omit numeric policy for a supported language or framework; Contract: JS and TS extensions inherit error severity through base and repository presets and React composition.
 test("shared presets enforce named numbers across source extensions", async () => {
-  assert.equal(react.rules[rule], "error");
-
   const errorSeverity = 2;
 
   for (const preset of [recommended, commonConfig]) {

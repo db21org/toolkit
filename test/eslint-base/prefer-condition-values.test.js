@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import commonConfig from "@db21/toolkit/eslint";
-import { react, recommended } from "@db21/toolkit/eslint/base";
+import { recommended } from "@db21/toolkit/eslint/base";
 import { preferConditionValuesPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint, Linter } from "eslint";
 import tseslint from "typescript-eslint";
@@ -65,8 +65,6 @@ test("requires named results for inline-callback computations in conditions", ()
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: conditional-computation policy disappears in a supported preset or source extension; Contract: shared JS and TS presets and React composition consistently expose error severity.
 test("shared presets enforce named condition computations", async () => {
-  assert.equal(react.rules[rule], "error");
-
   const errorSeverity = 2;
 
   for (const preset of [recommended, commonConfig]) {

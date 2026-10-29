@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import commonConfig from "@db21/toolkit/eslint";
-import { react, recommended } from "@db21/toolkit/eslint/base";
+import { recommended } from "@db21/toolkit/eslint/base";
 import { namedArraysPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint, Linter } from "eslint";
 import tseslint from "typescript-eslint";
@@ -66,8 +66,6 @@ test("requires names before array literal member access", () => {
 
 // eslint-disable-next-line db21-tests/require-justification -- Risk: a shared preset silently omits anonymous-array enforcement for a supported language; Contract: every JS and TS extension inherits error severity in shared presets and React composition.
 test("shared presets require named arrays", async () => {
-  assert.equal(react.rules[rule], "error");
-
   const errorSeverity = 2;
 
   for (const preset of [recommended, commonConfig]) {

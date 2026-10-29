@@ -6,6 +6,7 @@ import {
   sizeGuidancePlugin,
 } from "@db21/toolkit/eslint/plugins";
 import js from "@eslint/js";
+import type { Linter } from "eslint";
 import { defineConfig } from "eslint/config";
 import jsdoc from "eslint-plugin-jsdoc";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
@@ -14,14 +15,8 @@ import tseslint from "typescript-eslint";
 
 import { commonRules, maxLinesRules, recommendedRules } from "./rules.js";
 
-export const javascriptRecommended = defineConfig({
+const sharedConfig = {
   processor: "db21-size/refactor-guidance",
-  files: ["**/*.{js,jsx,mjs,cjs}"],
-  extends: [js.configs.recommended, jsdoc.configs["flat/recommended"]],
-  languageOptions: {
-    globals: globals.node,
-    parserOptions: { ecmaFeatures: { jsx: true } },
-  },
   plugins: {
     "db21-arrays": namedArraysPlugin,
     "db21-conditions": preferConditionValuesPlugin,
@@ -31,17 +26,30 @@ export const javascriptRecommended = defineConfig({
     "simple-import-sort": simpleImportSort,
   },
   rules: {
-    ...commonRules,
     ...maxLinesRules,
     "db21-arrays/no-inline-member-access": "error",
     "db21-conditions/prefer-named-values": "error",
     "db21-logic/max-checks": "error",
     "db21-numbers/no-magic-numbers": "error",
   },
+} satisfies Linter.Config;
+
+export const javascriptRecommended = defineConfig({
+  ...sharedConfig,
+  files: ["**/*.{js,jsx,mjs,cjs}"],
+  extends: [js.configs.recommended, jsdoc.configs["flat/recommended"]],
+  languageOptions: {
+    globals: globals.node,
+    parserOptions: { ecmaFeatures: { jsx: true } },
+  },
+  rules: {
+    ...commonRules,
+    ...sharedConfig.rules,
+  },
 });
 
 export const typescriptRecommended = defineConfig({
-  processor: "db21-size/refactor-guidance",
+  ...sharedConfig,
   files: ["**/*.{ts,tsx,mts,cts}"],
   extends: [
     js.configs.recommended,
@@ -56,21 +64,9 @@ export const typescriptRecommended = defineConfig({
       tsconfigRootDir: process.cwd(),
     },
   },
-  plugins: {
-    "db21-arrays": namedArraysPlugin,
-    "db21-conditions": preferConditionValuesPlugin,
-    "db21-logic": logicalChecksPlugin,
-    "db21-numbers": namedNumbersPlugin,
-    "db21-size": sizeGuidancePlugin,
-    "simple-import-sort": simpleImportSort,
-  },
   rules: {
     ...recommendedRules,
-    ...maxLinesRules,
-    "db21-arrays/no-inline-member-access": "error",
-    "db21-conditions/prefer-named-values": "error",
-    "db21-logic/max-checks": "error",
-    "db21-numbers/no-magic-numbers": "error",
+    ...sharedConfig.rules,
   },
 });
 

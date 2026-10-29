@@ -4,6 +4,17 @@ This document describes the rules exported by `@db21/toolkit/eslint/base` and sh
 
 ## Base `recommended` rules
 
+Shared plugins and readability rules live in the base presets. Both
+`javascriptRecommended` and `typescriptRecommended` compose the same shared policy.
+The base `react` export is an overlay: use it after `recommended`, not alone.
+`@db21/toolkit/eslint/react` and the Expo preset already compose the common preset
+before React-specific rules. Astro also composes the common preset for JS/TS files;
+its `.astro` files use a separate parser and policy overlay.
+
+Flat config replaces rule options rather than merging them. Specialized presets
+therefore explicitly combine inherited `no-restricted-syntax` selectors with their
+own selectors so shared restrictions remain enforced.
+
 ### `db21-conditions/prefer-named-values`
 
 Assign calls receiving inline callbacks to meaningful named constants before using

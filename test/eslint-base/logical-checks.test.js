@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import commonConfig from "@db21/toolkit/eslint";
-import { react, recommended } from "@db21/toolkit/eslint/base";
+import { recommended } from "@db21/toolkit/eslint/base";
 import { logicalChecksPlugin } from "@db21/toolkit/eslint/plugins";
 import { ESLint, Linter } from "eslint";
 import tseslint from "typescript-eslint";
@@ -131,7 +131,6 @@ test("logical check limit counts nested operands in every expression context", a
     verify("const result = a && b && c && d ? e || f || g || h : i;").length,
     2,
   );
-  assert.equal(react.rules[rule], "error");
 
   for (const preset of [recommended, commonConfig]) {
     const eslint = new ESLint({
