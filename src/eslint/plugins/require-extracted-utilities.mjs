@@ -20,7 +20,7 @@ const isExemptFile = (filename, cwd, exemptPaths) => {
     return true;
   }
 
-  return (
+  if (
     exemptPaths.some((path) => {
       const fromExemption = relative(resolve(cwd, path), resolve(filename));
 
@@ -35,9 +35,13 @@ const isExemptFile = (filename, cwd, exemptPaths) => {
       return (
         !fromExemption.startsWith("../") && !fromExemption.startsWith("..\\")
       );
-    }) ||
-    (normalizedFilename.includes("/utils/") &&
-      utilityFilenamePattern.test(name))
+    })
+  ) {
+    return true;
+  }
+
+  return (
+    normalizedFilename.includes("/utils/") && utilityFilenamePattern.test(name)
   );
 };
 

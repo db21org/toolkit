@@ -1,13 +1,7 @@
 import { existsSync } from "node:fs";
 import { basename, extname, relative, resolve } from "node:path";
 
-import {
-  assert,
-  isDefined,
-  isEmpty,
-  isNotDefined,
-  isNotEmpty,
-} from "@db21/toolkit/utils";
+import { assert, isEmpty, isNotDefined, isNotEmpty } from "@db21/toolkit/utils";
 
 import {
   discoverModules,
@@ -75,11 +69,7 @@ const validateRoleFile = ({ context, filePath, module, roles }) => {
   const segments = relativePath.split("/");
   const fileName = segments.at(-1);
 
-  if (isNotDefined(fileName)) {
-    return;
-  }
-
-  if (fileName === "index.ts") {
+  if (isNotDefined(fileName) || fileName === "index.ts") {
     return;
   }
 
@@ -91,11 +81,12 @@ const validateRoleFile = ({ context, filePath, module, roles }) => {
       return true;
     }
 
-    return (
-      isNotEmpty(candidate.suffix) &&
-      candidate.extensions.some((extension) =>
-        fileName.endsWith(`${candidate.suffix}${extension}`),
-      )
+    if (isEmpty(candidate.suffix)) {
+      return false;
+    }
+
+    return candidate.extensions.some((extension) =>
+      fileName.endsWith(`${candidate.suffix}${extension}`),
     );
   });
 
@@ -199,10 +190,15 @@ const validatePublicIndex = ({ context, filePath, module, node }) => {
     }
 
     if (
-      statement.type === "ExportNamedDeclaration" &&
-      isDefined(statement.source) &&
+      statement.type !== "ExportNamedDeclaration" ||
+      isNotDefined(statement.source)
+    ) {
+      continue;
+    }
+
+    if (
       statement.source.value.replace(/\.(?:js|ts)$/u, "") ===
-        expectedModuleSource
+      expectedModuleSource
     ) {
       exportsModule = true;
     }

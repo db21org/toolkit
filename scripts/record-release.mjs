@@ -5,8 +5,11 @@ import { compareStableVersions } from "./release-version.mjs";
 
 assert(
   process.env.GITHUB_ACTIONS === "true" &&
-    process.env.GITHUB_REF === "refs/heads/main" &&
-    process.env.GITHUB_REPOSITORY === "db21org/toolkit",
+    process.env.GITHUB_REF === "refs/heads/main",
+  "Release versions may only be recorded on toolkit main in GitHub Actions.",
+);
+assert(
+  process.env.GITHUB_REPOSITORY === "db21org/toolkit",
   "Release versions may only be recorded on toolkit main in GitHub Actions.",
 );
 const version = process.env.RELEASE_VERSION;

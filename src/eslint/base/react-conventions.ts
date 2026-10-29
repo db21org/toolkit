@@ -66,9 +66,12 @@ const componentStyleRule: RuleModule = {
       VariableDeclarator(node): void {
         if (
           node.id.type !== AST_NODE_TYPES.Identifier ||
-          !PASCAL_CASE.test(node.id.name) ||
-          node.init?.type !== AST_NODE_TYPES.ArrowFunctionExpression
+          !PASCAL_CASE.test(node.id.name)
         ) {
+          return;
+        }
+
+        if (node.init?.type !== AST_NODE_TYPES.ArrowFunctionExpression) {
           return;
         }
 
@@ -110,10 +113,13 @@ const noImportedPropsTypesRule: RuleModule = {
       ImportDeclaration(node): void {
         for (const specifier of node.specifiers) {
           if (
-            specifier.type === AST_NODE_TYPES.ImportSpecifier &&
-            specifier.imported.type === AST_NODE_TYPES.Identifier &&
-            specifier.imported.name.endsWith("Props")
+            specifier.type !== AST_NODE_TYPES.ImportSpecifier ||
+            specifier.imported.type !== AST_NODE_TYPES.Identifier
           ) {
+            continue;
+          }
+
+          if (specifier.imported.name.endsWith("Props")) {
             report(
               context,
               specifier,
@@ -144,10 +150,13 @@ const oneComponentPerFileRule: RuleModule = {
     return {
       VariableDeclarator(node): void {
         if (
-          node.id.type === AST_NODE_TYPES.Identifier &&
-          PASCAL_CASE.test(node.id.name) &&
-          node.init?.type === AST_NODE_TYPES.ArrowFunctionExpression
+          node.id.type !== AST_NODE_TYPES.Identifier ||
+          !PASCAL_CASE.test(node.id.name)
         ) {
+          return;
+        }
+
+        if (node.init?.type === AST_NODE_TYPES.ArrowFunctionExpression) {
           components.push(node);
         }
       },

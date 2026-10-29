@@ -16,18 +16,20 @@ const isPrismaType = (type) => {
     return false;
   }
 
+  const declaredByPrisma = symbol.declarations?.some((declaration) =>
+    declaration
+      .getSourceFile()
+      .statements.some(
+        (statement) =>
+          statement.name?.text === "PrismaClient" ||
+          statement.moduleSpecifier?.text?.startsWith(
+            "@prisma/client/runtime/",
+          ),
+      ),
+  );
+
   return Boolean(
-    symbol.declarations?.some((declaration) =>
-      declaration
-        .getSourceFile()
-        .statements.some(
-          (statement) =>
-            statement.name?.text === "PrismaClient" ||
-            statement.moduleSpecifier?.text?.startsWith(
-              "@prisma/client/runtime/",
-            ),
-        ),
-    ) &&
+    declaredByPrisma &&
     type.getProperty("findMany") &&
     type.getProperty("findUnique"),
   );

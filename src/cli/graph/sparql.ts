@@ -72,22 +72,23 @@ const parseBindings = (body: string): Row[] => {
 
   assert.true(Array.isArray(rows), "Expected SPARQL result bindings.");
   assert.true(
-    rows.every(
-      (row: unknown) =>
-        typeof row === "object" &&
-        isDefined(row) &&
-        Object.values(row).every((value: unknown) => {
-          if (typeof value !== "object" || isNotDefined(value)) {
-            return false;
-          }
+    rows.every((row: unknown) => {
+      if (typeof row !== "object" || isNotDefined(row)) {
+        return false;
+      }
 
-          if (!("type" in value) || typeof value.type !== "string") {
-            return false;
-          }
+      return Object.values(row).every((value: unknown) => {
+        if (typeof value !== "object" || isNotDefined(value)) {
+          return false;
+        }
 
-          return "value" in value && typeof value.value === "string";
-        }),
-    ),
+        if (!("type" in value) || typeof value.type !== "string") {
+          return false;
+        }
+
+        return "value" in value && typeof value.value === "string";
+      });
+    }),
     "Invalid SPARQL result term.",
   );
 

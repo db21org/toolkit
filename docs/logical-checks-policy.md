@@ -6,6 +6,16 @@ not three operators. Parentheses, mixed `&&`/`||`/`??`, negation, and TypeScript
 assertions do not reset the count. Nested groups produce one report for the
 outer expression, not repeated reports for each subgroup.
 
+Expressions also permit at most **120 characters**, summed from source tokens.
+Whitespace between tokens and comments are excluded, so line wrapping cannot
+evade the limit. Literal contents (including spaces), operators, punctuation,
+nested calls, and callback bodies count. Length uses JavaScript string units
+(UTF-16); either limit produces one diagnostic showing both counts.
+
+Even two or three bulky checks can therefore require focused guards or meaningful
+domain predicates. Shorten structure, not descriptive names. A single check with
+no logical operator is outside this rule; it is not a general line-length limit.
+
 The limit applies everywhere: conditions, ternary tests and branches, returns,
 assignments, arguments, JSX, and loops. Independent expressions in different
 arguments, ternary branches, or function bodies are assessed separately. This is

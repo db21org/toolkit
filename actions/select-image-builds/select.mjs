@@ -14,13 +14,16 @@ const supported = JSON.parse(componentsJson ?? "null");
 const workspace = JSON.parse(workspaceJson ?? "null");
 const changes = JSON.parse(changesJson ?? "null");
 
+assert(Array.isArray(supported), "Invalid supported components.");
 assert(
-  Array.isArray(supported) &&
-    supported.every(
-      (value) =>
-        typeof value === "string" && /^[a-z][a-z\d-]{0,62}$/u.test(value),
-    ) &&
-    new Set(supported).size === supported.length,
+  supported.every(
+    (value) =>
+      typeof value === "string" && /^[a-z][a-z\d-]{0,62}$/u.test(value),
+  ),
+  "Invalid supported components.",
+);
+assert(
+  new Set(supported).size === supported.length,
   "Invalid supported components.",
 );
 assert(

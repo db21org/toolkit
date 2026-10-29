@@ -82,18 +82,20 @@ const isImportedTest = (definition, callee) => {
 
   const specifier = definition.node;
 
-  if (
-    specifier.type === "ImportNamespaceSpecifier" ||
-    (specifier.type === "ImportDefaultSpecifier" &&
-      declaration.source.value !== "node:test")
-  ) {
+  if (specifier.type === "ImportNamespaceSpecifier") {
     return TEST_NAMES.has(getFirstMember(callee));
   }
 
+  if (specifier.type === "ImportDefaultSpecifier") {
+    return (
+      declaration.source.value === "node:test" ||
+      TEST_NAMES.has(getFirstMember(callee))
+    );
+  }
+
   return (
-    specifier.type === "ImportDefaultSpecifier" ||
-    (specifier.type === "ImportSpecifier" &&
-      TEST_NAMES.has(specifier.imported.name ?? specifier.imported.value))
+    specifier.type === "ImportSpecifier" &&
+    TEST_NAMES.has(specifier.imported.name ?? specifier.imported.value)
   );
 };
 

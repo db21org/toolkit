@@ -64,9 +64,12 @@ const preferAssertionsRule = {
 
         if (
           node.callee.property.type !== "Identifier" ||
-          !["false", "true"].includes(node.callee.property.name) ||
-          node.arguments[0]?.type !== "CallExpression"
+          !["false", "true"].includes(node.callee.property.name)
         ) {
+          return;
+        }
+
+        if (node.arguments[0]?.type !== "CallExpression") {
           return;
         }
 
