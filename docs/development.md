@@ -11,7 +11,8 @@ remain scoped to TypeScript; JavaScript can use native `#private` fields. Framew
 presets add their own scoped rules. Generated files and explicit profile overrides
 retain their existing exceptions.
 
-`db21-logic/max-checks` limits each logical expression to three operands across
+`db21-logic/max-checks` limits each logical expression to three operands and
+120 source-token characters across
 all JS/TS contexts, not only `if` statements. Nested groups count together;
 diagnostics recommend focused guards and behavior-preserving early returns.
 See [logical expression readability](logical-checks-policy.md) for counting and

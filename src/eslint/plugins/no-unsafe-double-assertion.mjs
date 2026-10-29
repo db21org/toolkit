@@ -18,8 +18,11 @@ const noUnsafeDoubleAssertionRule = {
     const checkAssertion = (node) => {
       const intermediateAssertion = node.expression;
 
+      if (!assertionNodeTypes.has(intermediateAssertion.type)) {
+        return;
+      }
+
       if (
-        assertionNodeTypes.has(intermediateAssertion.type) &&
         unsafeIntermediateTypes.has(intermediateAssertion.typeAnnotation.type)
       ) {
         context.report({ messageId: "unsafeDoubleAssertion", node });

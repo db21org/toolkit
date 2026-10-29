@@ -95,6 +95,25 @@ const createExpoRoles = () => [
   { case: "kebab", extensions: [".ts"], folder: "types", suffix: ".type" },
 ];
 
+const expoAllowedFolders = [
+  "cache",
+  "components",
+  "generated",
+  "graphql",
+  "hooks",
+  "locales",
+  "providers",
+  "queries",
+  "react-providers",
+  "repositories",
+  "schemas",
+  "services",
+  "surfaces",
+  "test",
+  "types",
+  "utils",
+];
+
 export const createExpoFeatureKitConfig = ({
   cwd,
   sourceRoot = "src",
@@ -105,22 +124,7 @@ export const createExpoFeatureKitConfig = ({
   createReactEslintConfig({
     additionalRoles: [...createExpoRoles(), ...additionalRoles],
     allowedFolders: allowedFolders ?? [
-      "cache",
-      "components",
-      "generated",
-      "graphql",
-      "hooks",
-      "locales",
-      "providers",
-      "queries",
-      "react-providers",
-      "repositories",
-      "schemas",
-      "services",
-      "surfaces",
-      "test",
-      "types",
-      "utils",
+      ...expoAllowedFolders,
       ...additionalRoles.map(({ folder }) => folder),
     ],
     cwd,

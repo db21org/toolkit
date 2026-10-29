@@ -65,10 +65,16 @@ const forbiddenSurfaceSources = new Set([
   "queries",
 ]);
 
-const isForbiddenSurfaceImportSource = (source) =>
-  forbiddenSurfaceSources.has(source) ||
-  source.startsWith("@react-navigation/") ||
-  /(?:^|\/)(?:react-providers|hooks|queries)(?:\/$|\/.+$)/u.test(source);
+const isForbiddenSurfaceImportSource = (source) => {
+  if (
+    forbiddenSurfaceSources.has(source) ||
+    source.startsWith("@react-navigation/")
+  ) {
+    return true;
+  }
+
+  return /(?:^|\/)(?:react-providers|hooks|queries)(?:\/$|\/.+$)/u.test(source);
+};
 
 const reactProviderFilenameRule = {
   meta: {

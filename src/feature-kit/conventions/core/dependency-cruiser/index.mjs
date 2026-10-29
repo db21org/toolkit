@@ -89,12 +89,16 @@ const assertModulesInsideSourceRoot = (modules, sourceRoot) => {
 
 const assertAllowListIsShared = (allow, modules) => {
   for (const allowedPath of allow) {
-    const overlappingModule = modules.find(
-      (module) =>
-        allowedPath === module.directory ||
+    const overlappingModule = modules.find((module) => {
+      if (allowedPath === module.directory) {
+        return true;
+      }
+
+      return (
         allowedPath.startsWith(`${module.directory}/`) ||
-        module.directory.startsWith(`${allowedPath}/`),
-    );
+        module.directory.startsWith(`${allowedPath}/`)
+      );
+    });
 
     assert.notDefined(
       overlappingModule,
